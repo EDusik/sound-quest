@@ -1,0 +1,14 @@
+"use client";
+
+import type { Label as LabelType } from "@/lib/types";
+
+export function Label({ text, color }: LabelType) {
+  return (
+    <span
+      className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium text-white shadow-sm"
+      style={{ backgroundColor: color }}
+    >
+      {text}
+    </span>
+  );
+}

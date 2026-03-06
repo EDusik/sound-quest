@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SoundTable
 
-## Getting Started
+Frontend-only web app: Google auth, rooms with labels, and audio lists from public URLs. No custom backend; uses Firebase (optional) and localStorage or Firestore.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Auth**: Google OAuth (Firebase Auth) or local demo mode
+- **Dashboard**: List your rooms (title, subtitle, colored labels)
+- **Create room**: Title, subtitle, labels with color picker
+- **Room page** (`/room/[id]`): Audio list with search, play/pause/stop, volume, loop
+- **Global audio bar**: Fixed bottom bar when any audio is playing; pause/stop from there
+- **Storage**: localStorage (default) or Firestore (client SDK only)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install and run (no config)**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-## Learn More
+   Open [http://localhost:3000](http://localhost:3000). Use **“Continue with local storage (no account)”** on the login page. Data is stored in the browser only.
 
-To learn more about Next.js, take a look at the following resources:
+2. **Optional: Google sign-in (Supabase)**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   - Create a [Supabase project](https://supabase.com) and add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env`.
+   - In Supabase: **Authentication → Providers** → enable **Google** and paste your Google OAuth Client ID and Client Secret.
+   - In [Google Cloud Console](https://console.cloud.google.com): **APIs & Services → Credentials** → your OAuth 2.0 Client ID → **Authorized redirect URIs**. Add **exactly** this URL (replace `YOUR_PROJECT_REF` with your Supabase project ref from the dashboard URL):
+     ```
+     https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
+     ```
+     Example: `https://adglgkgudriqouudhamt.supabase.co/auth/v1/callback`.  
+     **Error 400: redirect_uri_mismatch** means this URI is missing or different in Google Cloud.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - In Supabase **Authentication → URL Configuration**, add your app URLs to **Redirect URLs** (e.g. `http://localhost:3000/auth/callback`).
 
-## Deploy on Vercel
+   - **Create the database tables** (required for rooms/audios with Supabase). Otherwise you'll see *"Could not find the table 'public.rooms' in the schema cache"*.
+     - **Option A:** In Supabase Dashboard go to **SQL Editor** → New query → paste and run the contents of `supabase/migrations/20250305000000_rooms_audios.sql`.
+     - **Option B:** If you use [Supabase CLI](https://supabase.com/docs/guides/cli), run `supabase db push` from the project root (or link the project and run migrations).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Optional: Firebase and Firestore**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   - Create a [Firebase project](https://console.firebase.google.com/)
+   - Enable **Authentication** → Sign-in method → **Google**
+   - Copy env vars from Project settings into `.env.local` (see `.env.example`)
+   - For **Firestore**: create a Firestore database, then set `NEXT_PUBLIC_USE_FIRESTORE=true` in `.env.local`
+   - Deploy security rules from `firestore.rules` (Firebase Console → Firestore → Rules)
+
+   If you use Firestore with a `rooms` query by `userId` and `orderBy('createdAt')`, create a composite index when the CLI or console prompts you.
+
+## Environment variables
+
+See `.env.example`. All are optional:
+
+- `NEXT_PUBLIC_FREESOUND_API_KEY`: Enables **Search Freesound** on the room page (search and add sounds from [Freesound](https://freesound.org)). Get a token at [freesound.org/apiv2/apply](https://freesound.org/apiv2/apply).
+- `NEXT_PUBLIC_FIREBASE_*`: Required for Google sign-in and Firestore
+- `NEXT_PUBLIC_USE_FIRESTORE`: Set to `"true"` to use Firestore instead of localStorage
+
+## Audio sources
+
+The app only stores **metadata** (name + URL). Use public/free audio URLs, for example:
+
+- [Tabletop Audio](https://tabletopaudio.com/) (ambient sounds)
+- [FreeSound](https://freesound.org/) (after creating an account, you can use direct links to preview files)
+- Any direct URL to an MP3 or supported audio file (e.g. royalty-free samples)
+
+Do not store audio files in the app; only the URL is saved.
+
+## Tech stack
+
+- Next.js 16 (App Router), TypeScript, Tailwind CSS
+- Firebase Auth + optional Firestore (client SDK only)
+- Zustand for global audio player state
+- No custom backend or database server
+
+## Scripts
+
+- `npm run dev` – development
+- `npm run build` – production build
+- `npm run start` – run production build
