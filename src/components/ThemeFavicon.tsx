@@ -10,17 +10,20 @@ export function ThemeFavicon() {
   const { dark } = useTheme();
 
   useEffect(() => {
-    const link =
-      document.querySelector<HTMLLinkElement>('link[rel="icon"]') ?? createFaviconLink();
-    link.href = dark ? FAVICON_DARK : FAVICON_LIGHT;
+    const base = dark ? FAVICON_DARK : FAVICON_LIGHT;
+    const href = `${base}?v=${dark ? "d" : "l"}`;
+    const links = document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="shortcut icon"]');
+    if (links.length) {
+      links.forEach((link) => {
+        link.href = href;
+      });
+    } else {
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = href;
+      document.head.appendChild(link);
+    }
   }, [dark]);
 
   return null;
-}
-
-function createFaviconLink(): HTMLLinkElement {
-  const link = document.createElement("link");
-  link.rel = "icon";
-  document.head.appendChild(link);
-  return link;
 }

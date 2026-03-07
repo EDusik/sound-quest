@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SoundTable",
   description: "Create the perfect sound space for every RPG session.",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({
