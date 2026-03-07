@@ -10,7 +10,7 @@ export function ThemeFavicon() {
   const { dark } = useTheme();
 
   useEffect(() => {
-    const base = dark ? FAVICON_DARK : FAVICON_LIGHT;
+    const base = dark ? FAVICON_LIGHT : FAVICON_DARK;
     const href = `${base}?v=${dark ? "d" : "l"}`;
     const links = document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="shortcut icon"]');
     if (links.length) {

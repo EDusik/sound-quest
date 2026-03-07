@@ -35,7 +35,7 @@ export default function CreateRoomPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
+  const [description, setDescription] = useState("");
   const [labels, setLabels] = useState<Label[]>([]);
   const [newLabelText, setNewLabelText] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(DEFAULT_COLORS[0]);
@@ -67,7 +67,7 @@ export default function CreateRoomPage() {
 
     const validation = validateRoomForm({
       title,
-      subtitle,
+      description,
       labels,
     });
     if (!validation.success) {
@@ -79,7 +79,7 @@ export default function CreateRoomPage() {
     try {
       const room = await createRoom(user.uid, {
         title: validation.data.title,
-        subtitle: validation.data.subtitle,
+        description: validation.data.description,
         labels: validation.data.labels,
       });
       router.push(`/room/${room.id}`);
@@ -178,30 +178,30 @@ export default function CreateRoomPage() {
 
               <div className="flex flex-col gap-1 min-w-0">
                 <label
-                  htmlFor="subtitle"
+                  htmlFor="description"
                   className="text-xs font-medium text-muted"
                 >
-                  Subtitle
+                  Description
                 </label>
                 <div className="flex flex-wrap items-center gap-1 min-w-0">
                   <input
-                    id="subtitle"
+                    id="description"
                     type="text"
-                    value={subtitle}
+                    value={description}
                     onChange={(e) =>
-                      setSubtitle(e.target.value.slice(0, DESCRIPTION_MAX))
+                      setDescription(e.target.value.slice(0, DESCRIPTION_MAX))
                     }
                     maxLength={DESCRIPTION_MAX}
                     className="h-9 min-w-0 flex-1 max-w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                    placeholder="Optional subtitle"
+                    placeholder="Optional description"
                   />
                   <span className="text-xs text-muted tabular-nums shrink-0">
-                    {subtitle.length}/{DESCRIPTION_MAX}
+                    {description.length}/{DESCRIPTION_MAX}
                   </span>
                 </div>
-                {fieldErrors.subtitle && (
+                {fieldErrors.description && (
                   <p className="text-xs text-red-400" role="alert">
-                    {fieldErrors.subtitle}
+                    {fieldErrors.description}
                   </p>
                 )}
               </div>

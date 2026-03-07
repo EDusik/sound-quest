@@ -147,7 +147,7 @@ function roomFromRow(row: {
   id: string;
   user_id: string;
   title: string;
-  subtitle: string | null;
+  description: string | null;
   labels: unknown;
   created_at: string;
   order: number | null;
@@ -159,7 +159,7 @@ function roomFromRow(row: {
     id: row.id,
     userId: row.user_id,
     title: row.title,
-    subtitle: row.subtitle ?? "",
+    description: row.description ?? "",
     labels,
     createdAt: new Date(row.created_at).getTime(),
     order: row.order ?? undefined,
@@ -219,7 +219,7 @@ async function setSupabaseRoom(room: Room): Promise<void> {
     id: room.id,
     user_id: room.userId,
     title: room.title,
-    subtitle: room.subtitle ?? "",
+    description: room.description ?? "",
     labels: room.labels ?? [],
     created_at: new Date(room.createdAt ?? Date.now()).toISOString(),
     order: room.order ?? null,
@@ -407,7 +407,7 @@ export async function getRoom(roomId: string): Promise<Room | null> {
 
 export async function createRoom(
   userId: string,
-  data: { title: string; subtitle: string; labels: Room["labels"] },
+  data: { title: string; description: string; labels: Room["labels"] },
 ): Promise<Room> {
   const id = generateId();
   let effectiveUserId = userId;
@@ -419,7 +419,7 @@ export async function createRoom(
   const room: Room = {
     id,
     title: data.title,
-    subtitle: data.subtitle,
+    description: data.description,
     labels: data.labels,
     userId: effectiveUserId,
     createdAt: Date.now(),

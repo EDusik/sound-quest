@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const [reordering, setReordering] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [editSubtitle, setEditSubtitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editLabels, setEditLabels] = useState<Label[]>([]);
   const [newLabelText, setNewLabelText] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(DEFAULT_COLORS[0]);
@@ -96,7 +96,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (editingRoom) {
       setEditTitle(editingRoom.title);
-      setEditSubtitle(editingRoom.subtitle ?? "");
+      setEditDescription(editingRoom.description ?? "");
       setEditLabels(editingRoom.labels ?? []);
       setNewLabelText("");
       setNewLabelColor(DEFAULT_COLORS[0]);
@@ -165,7 +165,7 @@ export default function DashboardPage() {
 
     const validation = validateRoomForm({
       title: editTitle,
-      subtitle: editSubtitle,
+      description: editDescription,
       labels: editLabels,
     });
     if (!validation.success) {
@@ -178,7 +178,7 @@ export default function DashboardPage() {
       const updated: Room = {
         ...editingRoom,
         title: validation.data.title,
-        subtitle: validation.data.subtitle,
+        description: validation.data.description,
         labels: validation.data.labels,
       };
       await updateRoom(updated);
@@ -311,32 +311,32 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <label
-                    htmlFor="edit-subtitle"
+                    htmlFor="edit-description"
                     className="block text-sm font-medium text-foreground"
                   >
-                    Subtitle
+                    Description
                   </label>
                   <div className="mt-1.5 flex items-center gap-2">
                     <input
-                      id="edit-subtitle"
+                      id="edit-description"
                       type="text"
-                      value={editSubtitle}
+                      value={editDescription}
                       onChange={(e) =>
-                        setEditSubtitle(
+                        setEditDescription(
                           e.target.value.slice(0, DESCRIPTION_MAX),
                         )
                       }
                       maxLength={DESCRIPTION_MAX}
                       className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                      placeholder="Optional subtitle"
+                      placeholder="Optional description"
                     />
                     <span className="text-xs text-muted tabular-nums shrink-0">
-                      {editSubtitle.length}/{DESCRIPTION_MAX}
+                      {editDescription.length}/{DESCRIPTION_MAX}
                     </span>
                   </div>
-                  {editFieldErrors.subtitle && (
+                  {editFieldErrors.description && (
                     <p className="mt-1 text-xs text-red-400" role="alert">
-                      {editFieldErrors.subtitle}
+                      {editFieldErrors.description}
                     </p>
                   )}
                 </div>

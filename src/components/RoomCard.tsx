@@ -6,7 +6,7 @@ import type { Room } from "@/lib/types";
 import { Label } from "./Label";
 
 const TITLE_MAX_CHARS = 32;
-const SUBTITLE_MAX_CHARS = 50;
+const DESCRIPTION_MAX_CHARS = 50;
 
 function truncate(str: string, max: number) {
   if (str.length <= max) return str;
@@ -22,10 +22,10 @@ export function RoomCard({
 }) {
   const isNarrow = useMediaQuery("(max-width: 2024px)");
   const title = isNarrow ? truncate(room.title, TITLE_MAX_CHARS) : room.title;
-  const subtitle =
-    room.subtitle && isNarrow
-      ? truncate(room.subtitle, SUBTITLE_MAX_CHARS)
-      : (room.subtitle ?? null);
+  const description =
+    room.description && isNarrow
+      ? truncate(room.description, DESCRIPTION_MAX_CHARS)
+      : (room.description ?? null);
 
   return (
     <Link
@@ -60,7 +60,7 @@ export function RoomCard({
         </button>
       )}
       <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
+      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       {room.labels.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {room.labels.map((label) => (

@@ -132,8 +132,8 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust as needed. **All are 
 ## ✨ Features
 
 - **Authentication** — Google login (Supabase) or demo mode with local storage.
-- **Dashboard** — List of rooms with title, subtitle and colored tags; reorder by drag; edit and delete.
-- **Create room** — Title, subtitle and tags with color picker.
+- **Dashboard** — List of rooms with title, description and colored tags; reorder by drag; edit and delete.
+- **Create room** — Title, description and tags with color picker.
 - **Room page** (`/room/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL or (with API key) Freesound search; YouTube support.
 - **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop control from any page.
 - **Storage** — localStorage (default), Supabase (PostgreSQL) or Firestore (optional).

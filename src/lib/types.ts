@@ -7,7 +7,7 @@ export interface Label {
 export interface Room {
   id: string;
   title: string;
-  subtitle: string;
+  description: string;
   labels: Label[];
   userId: string;
   createdAt: number;

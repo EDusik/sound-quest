@@ -22,9 +22,9 @@ export const roomFormSchema = z.object({
     .string()
     .min(1, "Room title is required.")
     .max(TITLE_MAX, `Title must be at most ${TITLE_MAX} characters.`),
-  subtitle: z
+  description: z
     .string()
-    .max(DESCRIPTION_MAX, `Subtitle must be at most ${DESCRIPTION_MAX} characters.`),
+    .max(DESCRIPTION_MAX, `Description must be at most ${DESCRIPTION_MAX} characters.`),
   labels: z
     .array(labelSchema)
     .max(LABELS_MAX, `At most ${LABELS_MAX} labels are allowed.`),
@@ -35,12 +35,12 @@ export type RoomFormData = z.infer<typeof roomFormSchema>;
 /** Validates form data and returns errors per field (key = field name). */
 export function validateRoomForm(data: {
   title: string;
-  subtitle: string;
+  description: string;
   labels: Array<{ id: string; text: string; color: string }>;
 }): { success: true; data: RoomFormData } | { success: false; errors: Record<string, string> } {
   const normalized = {
     title: (data.title ?? "").trim().slice(0, TITLE_MAX),
-    subtitle: (data.subtitle ?? "").trim().slice(0, DESCRIPTION_MAX),
+    description: (data.description ?? "").trim().slice(0, DESCRIPTION_MAX),
     labels: (data.labels ?? []).slice(0, LABELS_MAX).map((l) => ({
       id: l.id,
       text: l.text.trim().slice(0, LABEL_TEXT_MAX),
