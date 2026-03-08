@@ -1,5 +1,5 @@
 import type { Scene, AudioItem, AudioKind } from "./types";
-import { getFirebaseDb, useFirestore } from "./firebase";
+import { getFirebaseDb, isFirestoreEnabled } from "./firebase";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import {
   collection,
@@ -11,26 +11,44 @@ import {
   query,
   where,
   orderBy,
+  writeBatch,
 } from "firebase/firestore";
 
 const SCENES_KEY = "audio_scenes_scenes";
 const AUDIOS_KEY = "audio_scenes_audios";
 
-/** Returns the Supabase session user id or null (demo / not logged in). */
+const SUPABASE_UID_CACHE_MS = 5000;
+let supabaseUidCache: { userId: string | null; expires: number } | null = null;
+
+/** Returns the Supabase session user id or null (demo / not logged in). Cached briefly to avoid repeated auth.getUser() calls. */
 async function getSupabaseUserId(): Promise<string | null> {
   if (typeof window === "undefined" || !supabase || !isSupabaseConfigured)
     return null;
+  const now = Date.now();
+  if (supabaseUidCache != null && now < supabaseUidCache.expires)
+    return supabaseUidCache.userId;
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  const userId = user?.id ?? null;
+  supabaseUidCache = {
+    userId,
+    expires: now + SUPABASE_UID_CACHE_MS,
+  };
+  return userId;
 }
 
-function useSupabaseStorage(): boolean {
+/** Call on sign out to avoid serving stale user id from cache. */
+export function clearSupabaseUserIdCache(): void {
+  supabaseUidCache = null;
+}
+
+/** True when Supabase storage is used (not Firebase); not a React hook. */
+function isSupabaseStorageEnabled(): boolean {
   return (
     typeof window !== "undefined" &&
     isSupabaseConfigured &&
-    !useFirestore()
+    !isFirestoreEnabled()
   );
 }
 
@@ -120,9 +138,21 @@ export async function uploadAudioFile(
       msg.includes("bucket") &&
       (msg.includes("not found") || msg.includes("does not exist"));
     if (isBucketMissing && typeof fetch !== "undefined") {
+      const {
+        data: { session },
+      } = await client!.auth.getSession();
       const ensureRes = await fetch("/api/ensure-audios-bucket", {
         method: "POST",
+        headers:
+          session?.access_token != null
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : undefined,
       });
+      if (ensureRes.status === 401) {
+        throw new Error(
+          "Sessão expirada. Faça login novamente e tente o upload.",
+        );
+      }
       if (ensureRes.ok) {
         result = await doUpload();
         if (!result.error) {
@@ -148,7 +178,6 @@ export async function uploadAudioFile(
   return publicUrl;
 }
 
-// ——— localStorage ———
 function getLocalScenes(userId: string): Scene[] {
   if (typeof window === "undefined") return [];
   try {
@@ -252,7 +281,6 @@ function deleteLocalAudio(audioId: string): void {
   }
 }
 
-// ——— Supabase ———
 function sceneFromRow(row: {
   id: string;
   user_id: string;
@@ -391,7 +419,6 @@ async function deleteSupabaseAudio(audioId: string): Promise<void> {
   if (error) throw error;
 }
 
-// ——— Firestore ———
 async function getFirestoreScenes(userId: string): Promise<Scene[]> {
   const database = getFirebaseDb();
   if (!database) return getLocalScenes(userId);
@@ -441,13 +468,15 @@ async function deleteFirestoreScene(sceneId: string): Promise<void> {
     deleteLocalScene(sceneId);
     return;
   }
-  await deleteDoc(doc(database, "scenes", sceneId));
   const audiosSnap = await getDocs(
     query(collection(database, "audios"), where("sceneId", "==", sceneId)),
   );
+  const batch = writeBatch(database);
   for (const d of audiosSnap.docs) {
-    await deleteDoc(d.ref);
+    batch.delete(d.ref);
   }
+  batch.delete(doc(database, "scenes", sceneId));
+  await batch.commit();
 }
 
 async function getFirestoreAudios(sceneId: string): Promise<AudioItem[]> {
@@ -497,10 +526,9 @@ async function deleteFirestoreAudio(audioId: string): Promise<void> {
   await deleteDoc(doc(database, "audios", audioId));
 }
 
-// ——— Public API ———
 export async function getScenes(userId: string): Promise<Scene[]> {
-  if (useFirestore()) return getFirestoreScenes(userId);
-  if (useSupabaseStorage()) {
+  if (isFirestoreEnabled()) return getFirestoreScenes(userId);
+  if (isSupabaseStorageEnabled()) {
     const uid = await getSupabaseUserId();
     if (uid) return getSupabaseScenes(uid);
   }
@@ -508,8 +536,8 @@ export async function getScenes(userId: string): Promise<Scene[]> {
 }
 
 export async function getScene(sceneId: string): Promise<Scene | null> {
-  if (useFirestore()) return getFirestoreScene(sceneId);
-  if (useSupabaseStorage()) {
+  if (isFirestoreEnabled()) return getFirestoreScene(sceneId);
+  if (isSupabaseStorageEnabled()) {
     const uid = await getSupabaseUserId();
     if (uid) return getSupabaseScene(sceneId);
   }
@@ -522,7 +550,7 @@ export async function createScene(
 ): Promise<Scene> {
   const id = generateId();
   let effectiveUserId = userId;
-  if (useSupabaseStorage()) {
+  if (isSupabaseStorageEnabled()) {
     const sessionUserId = await getSupabaseUserId();
     if (sessionUserId) effectiveUserId = sessionUserId;
   }
@@ -536,9 +564,9 @@ export async function createScene(
     createdAt: Date.now(),
     order: existing.length,
   };
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await setFirestoreScene(scene);
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseScene(scene);
   } else {
     setLocalScene(scene);
@@ -547,9 +575,9 @@ export async function createScene(
 }
 
 export async function updateScene(scene: Scene): Promise<void> {
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await setFirestoreScene(scene);
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseScene(scene);
   } else {
     setLocalScene(scene);
@@ -557,9 +585,9 @@ export async function updateScene(scene: Scene): Promise<void> {
 }
 
 export async function deleteScene(sceneId: string): Promise<void> {
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await deleteFirestoreScene(sceneId);
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await deleteSupabaseScene(sceneId);
   } else {
     deleteLocalScene(sceneId);
@@ -567,8 +595,8 @@ export async function deleteScene(sceneId: string): Promise<void> {
 }
 
 export async function getAudios(sceneId: string): Promise<AudioItem[]> {
-  if (useFirestore()) return getFirestoreAudios(sceneId);
-  if (useSupabaseStorage()) {
+  if (isFirestoreEnabled()) return getFirestoreAudios(sceneId);
+  if (isSupabaseStorageEnabled()) {
     const uid = await getSupabaseUserId();
     if (uid) return getSupabaseAudios(sceneId);
   }
@@ -591,13 +619,13 @@ export async function addAudio(
     order,
     kind: data.kind ?? "file",
   };
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await setFirestoreAudio(audio);
     const after = await getFirestoreAudios(sceneId);
     if (!after.some((a) => a.id === id)) {
       throw new Error("Audio was not saved to the database. Please try again.");
     }
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseAudio(audio);
     const after = await getSupabaseAudios(sceneId);
     if (!after.some((a) => a.id === id)) {
@@ -610,9 +638,9 @@ export async function addAudio(
 }
 
 export async function updateAudio(audio: AudioItem): Promise<void> {
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await setFirestoreAudio(audio);
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseAudio(audio);
   } else {
     setLocalAudio(audio);
@@ -620,9 +648,9 @@ export async function updateAudio(audio: AudioItem): Promise<void> {
 }
 
 export async function removeAudio(audioId: string): Promise<void> {
-  if (useFirestore()) {
+  if (isFirestoreEnabled()) {
     await deleteFirestoreAudio(audioId);
-  } else if (useSupabaseStorage() && (await getSupabaseUserId())) {
+  } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await deleteSupabaseAudio(audioId);
   } else {
     deleteLocalAudio(audioId);

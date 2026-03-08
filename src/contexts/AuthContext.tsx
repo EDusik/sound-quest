@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { clearSupabaseUserIdCache } from "@/lib/storage";
 
 const DEMO_UID = "demo-user-local";
 
@@ -144,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut();
+    clearSupabaseUserIdCache();
     if (typeof window !== "undefined")
       localStorage.removeItem("audio_scenes_demo");
     setUser(null);

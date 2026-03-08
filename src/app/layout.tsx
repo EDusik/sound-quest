@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Cinzel } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Providers } from "@/components/Providers";
@@ -13,6 +14,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -29,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} flex min-h-dvh flex-col antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} flex min-h-dvh flex-col antialiased`}
       >
         <Script
           id="theme-init"
@@ -37,7 +44,13 @@ export default function RootLayout({
           src="/theme-init.js"
         />
         <Providers>
-          <main className="min-h-0 flex-1 overflow-auto bg-background">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:rounded focus:bg-accent focus:px-4 focus:py-2 focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+          >
+            Skip to main content
+          </a>
+          <main id="main-content" className="min-h-0 flex-1 overflow-auto bg-background" tabIndex={-1}>
             {children}
           </main>
           <Footer />

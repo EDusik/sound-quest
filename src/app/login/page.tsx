@@ -42,19 +42,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex w-full shrink-0 items-center justify-end border-b border-border bg-background px-4 py-3">
+      <header className="flex w-full shrink-0 items-center justify-between border-b border-border bg-background px-4 py-3" role="banner">
+        <SoundTableLogo size={28} className="text-lg" />
         <ThemeToggle />
       </header>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-border bg-card/80 p-8 shadow-xl">
-        <h1 className="text-center text-2xl font-semibold text-foreground">
-          <SoundTableLogo />
+        <h1 className="flex justify-center text-foreground" aria-label="SoundTable">
+          <SoundTableLogo size={44} className="text-3xl" />
         </h1>
-        <h2 className="text-center text-lg text-muted mt-2">
+        <p className="text-center text-lg text-muted mt-2">
           Create the perfect sound space for every RPG session.
-        </h2>
+        </p>
         {!isConfigured && (
-          <p className="mt-4 rounded-lg bg-accent-soft/30 p-3 text-sm text-accent">
+          <p className="mt-4 rounded-lg bg-accent-soft/30 p-3 text-sm text-accent" role="alert">
             Configure Supabase (see .env). Using demo mode: data is stored in
             this browser only.
           </p>
@@ -63,7 +64,8 @@ export default function LoginPage() {
           type="button"
           onClick={handleSignIn}
           disabled={!isConfigured}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-foreground transition hover:bg-border disabled:opacity-50 disabled:hover:bg-card"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-sm text-foreground transition hover:bg-border disabled:opacity-50 disabled:hover:bg-card"
+          aria-label="Sign in with Google"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -90,7 +92,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleSignInDemo}
-              className="mt-3 w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground transition hover:bg-card"
+              className="mt-3 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground transition hover:bg-card"
+              aria-label="Continue with local storage, no account required"
             >
               Continue with local storage (no account)
             </button>

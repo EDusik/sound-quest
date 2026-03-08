@@ -8,6 +8,7 @@ import {
   type FreesoundSound,
 } from "@/lib/freesound";
 import { addAudio } from "@/lib/storage";
+import { getErrorMessage } from "@/lib/errors";
 
 interface FreesoundSearchProps {
   sceneId: string;
@@ -36,7 +37,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
       const data = await searchFreesound(q, 1, 20);
       setResults(data.results ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Search failed");
+      setError(getErrorMessage(err, "Search failed"));
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
       });
       onAdded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Add failed");
+      setError(getErrorMessage(err, "Add failed"));
     } finally {
       setAddingId(null);
     }

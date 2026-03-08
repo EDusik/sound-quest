@@ -44,9 +44,11 @@ export function getFirebaseDb(): Firestore | null {
   return db;
 }
 
-export const useFirestore = (): boolean =>
-  Boolean(
+/** True when Firestore is configured and enabled (not a React hook). */
+export function isFirestoreEnabled(): boolean {
+  return Boolean(
     typeof window !== "undefined" &&
-    process.env.NEXT_PUBLIC_USE_FIRESTORE === "true" &&
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      process.env.NEXT_PUBLIC_USE_FIRESTORE === "true" &&
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   );
+}

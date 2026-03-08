@@ -127,7 +127,7 @@ export default function LoginVerifyPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-muted">
-          Haven't set it up yet?{" "}
+          Haven&apos;t set it up yet?{" "}
           <Link
             href="/login/enroll"
             className="text-accent underline hover:text-accent-hover"

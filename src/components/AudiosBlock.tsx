@@ -1,0 +1,109 @@
+"use client";
+
+import type { AudioItem } from "@/lib/types";
+import { AudioRow } from "@/components/AudioRow";
+import { DragHandle } from "@/components/DragHandle";
+
+interface AudiosBlockProps {
+  activeAudios: AudioItem[];
+  inactiveAudios: AudioItem[];
+  filteredAudios: AudioItem[];
+  sceneId: string;
+  draggedId: string | null;
+  reordering: boolean;
+  /** When true, show emptySearchMessage when list is empty; otherwise emptyMessage. */
+  hasAnyAudios: boolean;
+  emptyMessage: string;
+  emptySearchMessage: string;
+  onToggleActive: (audio: AudioItem) => void;
+  onDelete: (audio: AudioItem) => void;
+  onDragStart: (e: React.DragEvent, audioId: string) => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, toIndex: number) => void;
+}
+
+export function AudiosBlock({
+  activeAudios,
+  inactiveAudios,
+  filteredAudios,
+  sceneId,
+  draggedId,
+  reordering,
+  hasAnyAudios,
+  emptyMessage,
+  emptySearchMessage,
+  onToggleActive,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}: AudiosBlockProps) {
+  const isEmpty = filteredAudios.length === 0;
+
+  return (
+    <>
+      <ul className="space-y-3">
+        {isEmpty && (
+          <li className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center text-muted">
+            {hasAnyAudios ? emptySearchMessage : emptyMessage}
+          </li>
+        )}
+        {activeAudios.map((audio) => (
+          <li
+            key={audio.id}
+            onDragOver={onDragOver}
+            onDrop={(e) =>
+              onDrop(e, filteredAudios.findIndex((a) => a.id === audio.id))
+            }
+            onDragEnd={onDragEnd}
+            className={`flex items-stretch gap-2 rounded-lg transition-opacity ${
+              draggedId === audio.id ? "opacity-50" : ""
+            } ${reordering ? "pointer-events-none" : ""}`}
+          >
+            <DragHandle
+              onDragStart={(e) => onDragStart(e, audio.id)}
+              onDragEnd={onDragEnd}
+              className="rounded-l-lg bg-card/60"
+            />
+            <div className="min-w-0 flex-1">
+              <AudioRow
+                audio={audio}
+                sceneId={sceneId}
+                isInactive={false}
+                onToggleActive={onToggleActive}
+                onDelete={onDelete}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+      {inactiveAudios.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-medium text-muted">
+            Disabled audio
+          </h2>
+          <ul className="space-y-3">
+            {inactiveAudios.map((audio) => (
+              <li
+                key={audio.id}
+                className="flex items-stretch gap-2 rounded-lg"
+              >
+                <div className="min-w-0 flex-1">
+                  <AudioRow
+                    audio={audio}
+                    sceneId={sceneId}
+                    isInactive
+                    onToggleActive={onToggleActive}
+                    onDelete={onDelete}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}

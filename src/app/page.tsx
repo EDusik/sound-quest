@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { Spinner } from "@/components/Spinner";
 
-/** Rota inicial: redireciona para /login (deslogado) ou /dashboard (logado). */
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated, loading } = useAuth();
@@ -19,8 +19,9 @@ export default function Home() {
   }, [loading, isAuthenticated, router]);
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-background">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+    <div className="flex min-h-full items-center justify-center bg-background" role="status" aria-live="polite" aria-label="Loading">
+      <Spinner />
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }

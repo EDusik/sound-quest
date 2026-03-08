@@ -3,21 +3,59 @@
 import { useTheme } from "@/contexts/ThemeContext";
 
 type SoundTableLogoProps = {
+  /** Optional class for the wrapper. */
   className?: string;
+  /** Logo size in pixels (SVG width/height). Default 32. */
+  size?: number;
+  /** If true, only the d20 icon is shown (no "SoundTable" text). */
+  iconOnly?: boolean;
 };
 
-export function SoundTableLogo({ className }: SoundTableLogoProps) {
+export function SoundTableLogo({
+  className,
+  size = 32,
+  iconOnly = false,
+}: SoundTableLogoProps) {
   const { spinKey } = useTheme();
-  return (
-    <span className={className}>
-      <span
-        key={spinKey}
-        className="inline-block animate-dice-rotate"
-        aria-hidden
+
+  const d20 = (
+    <svg
+      key={spinKey}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      className="inline-block shrink-0 text-foreground animate-dice-rotate"
+      aria-hidden
+    >
+      {/* D20 - icosahedron edges only (wireframe); stroke follows theme via currentColor */}
+      <g
+        transform="translate(32,32) scale(1.15, 1.4)"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        🎲
-      </span>
-      <span className="inline"> SoundTable</span>
+        <path d="M0 18 L-16 -8 L16 -8 Z" />
+        <path d="M-16 -8 L-22 4 L0 18 Z" />
+        <path d="M16 -8 L0 18 L22 4 Z" />
+        <path d="M0 -18 L-16 8 L16 8 Z" />
+        <path d="M-16 8 L0 -18 L-22 -4 Z" />
+        <path d="M16 8 L22 -4 L0 -18 Z" />
+        <path d="M-16 8 L0 18 L16 8 Z" />
+      </g>
+    </svg>
+  );
+
+  if (iconOnly) {
+    return <span className={className}>{d20}</span>;
+  }
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className ?? ""}`}>
+      {d20}
+      <span className="inline font-cinzel font-semibold tracking-wide">SoundTable</span>
     </span>
   );
 }

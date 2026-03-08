@@ -65,10 +65,13 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   setRef: (id, ref) => {
-    const state = get();
-    const player = state.players.get(id);
-    if (!player || player.ref === ref) return;
-    player.ref = ref;
+    set((s) => {
+      const p = s.players.get(id);
+      if (!p || p.ref === ref) return s;
+      const next = new Map(s.players);
+      next.set(id, { ...p, ref });
+      return { players: next };
+    });
   },
 
   setYoutubeControl: (id, control) => {

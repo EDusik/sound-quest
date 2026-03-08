@@ -360,7 +360,7 @@ function YouTubeAudioRow({
             step="0.05"
             value={volume}
             onChange={handleVolume}
-            className="w-20 flex-1 min-w-0 sm:flex-initial"
+            className="w-20 flex-1 min-w-0 sm:flex-initial accent-accent"
           />
         </label>
       </div>
@@ -601,7 +601,7 @@ function HtmlAudioRow({
             step="0.05"
             value={volume}
             onChange={handleVolume}
-            className="w-20 flex-1 min-w-0 sm:flex-initial"
+            className="w-20 flex-1 min-w-0 sm:flex-initial accent-accent"
           />
         </label>
       </div>

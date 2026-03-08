@@ -23,7 +23,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [spinKey, setSpinKey] = useState(0);
 
   useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
+    const isDark = document.documentElement.classList.contains("dark");
+    queueMicrotask(() => setDark(isDark));
   }, []);
 
   const toggle = useCallback(() => {

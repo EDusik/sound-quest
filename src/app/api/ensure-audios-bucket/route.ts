@@ -12,22 +12,44 @@ const AUDIOS_MIME_TYPES = [
  * POST /api/ensure-audios-bucket
  * Creates the "audios" storage bucket and RLS policies if missing.
  * Requires SUPABASE_SERVICE_ROLE_KEY in env (Dashboard → Settings → API).
+ * Requires Authorization: Bearer <Supabase access_token> (authenticated user).
  */
-export async function POST() {
+export async function POST(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRoleKey) {
+  if (!url || !serviceRoleKey || !anonKey) {
     return NextResponse.json(
       {
         error:
-          "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Add SUPABASE_SERVICE_ROLE_KEY in .env (Supabase Dashboard → Settings → API).",
+          "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY. Add SUPABASE_SERVICE_ROLE_KEY in .env (Supabase Dashboard → Settings → API).",
       },
       { status: 500 },
     );
   }
+  const authHeader = request.headers.get("Authorization");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : null;
+  if (!token) {
+    return NextResponse.json(
+      { error: "Missing or invalid Authorization header." },
+      { status: 401 },
+    );
+  }
+  const anonClient = createClient(url, anonKey);
+  const {
+    data: { user },
+    error: userError,
+  } = await anonClient.auth.getUser(token);
+  if (userError || !user) {
+    return NextResponse.json(
+      { error: "Invalid or expired token." },
+      { status: 401 },
+    );
+  }
   const supabase = createClient(url, serviceRoleKey);
 
-  // Create bucket if it doesn't exist (no migration required)
   const { error: bucketError } = await supabase.storage.createBucket("audios", {
     public: true,
     fileSizeLimit: "25MB",
