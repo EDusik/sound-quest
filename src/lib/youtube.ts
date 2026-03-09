@@ -7,7 +7,12 @@ export function extractYouTubeId(urlOrId: string): string | null {
   try {
     const url = new URL(trimmed);
     if (url.hostname.includes("youtube.com")) {
-      return url.searchParams.get("v");
+      // ?v= (watch) or /shorts/VIDEO_ID
+      const fromQuery = url.searchParams.get("v");
+      if (fromQuery) return fromQuery;
+      const shortsMatch = url.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})$/);
+      if (shortsMatch) return shortsMatch[1];
+      return null;
     }
     if (url.hostname === "youtu.be") {
       return url.pathname.slice(1) || null;

@@ -1,11 +1,13 @@
 "use client";
 
+import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AudioBar } from "@/components/audio/AudioBar";
 import { GlobalAuthLoading } from "@/components/auth/GlobalAuthLoading";
 import { ThemeFavicon } from "@/components/theme/ThemeFavicon";
+import { queryClient } from "@/lib/queryClient";
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
@@ -20,11 +22,13 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <ThemeFavicon />
-      <AuthProvider>
-        <AuthShell>{children}</AuthShell>
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ThemeFavicon />
+        <AuthProvider>
+          <AuthShell>{children}</AuthShell>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

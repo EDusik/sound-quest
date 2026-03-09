@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
-  getScene,
-  getAudios,
-  reorderAudios,
-  removeAudio,
-  updateAudio,
-} from "@/lib/storage";
-import type { Scene, AudioItem } from "@/lib/types";
+  useSceneQuery,
+  useAudiosQuery,
+  useReorderAudiosMutation,
+  useRemoveAudioMutation,
+  useUpdateAudioMutation,
+} from "@/hooks/api";
+import type { AudioItem } from "@/lib/types";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
 import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
 import { Navbar } from "@/components/layout/Navbar";
@@ -30,48 +30,32 @@ export default function ScenePage() {
   const sceneId = Array.isArray(params.sceneId)
     ? params.sceneId[0] ?? ""
     : (params.sceneId ?? "");
-  const [scene, setScene] = useState<Scene | null>(null);
-  const [audios, setAudios] = useState<AudioItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: sceneData,
+    isLoading: sceneLoading,
+    error: sceneError,
+  } = useSceneQuery(sceneId);
+  const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
+  const loading = sceneLoading || (!!sceneId && audiosLoading);
+  const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
+  const removeAudioMutation = useRemoveAudioMutation(sceneId);
+  const updateAudioMutation = useUpdateAudioMutation(sceneId);
+  const scene = sceneData ?? null;
+  const error =
+    !sceneId
+      ? "Scene not found"
+      : sceneError
+        ? getErrorMessage(sceneError, "Failed to load")
+        : null;
   const [search, setSearch] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [reordering, setReordering] = useState(false);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [audioToDelete, setAudioToDelete] = useState<AudioItem | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [inactiveAudioIds, setInactiveAudioIds] = useState<string[]>([]);
   const [showAddSoundModal, setShowAddSoundModal] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const showFocusEntry = useFocusEntryOnce("scene");
-
-  useEffect(() => {
-    if (!sceneId) {
-      setLoading(false);
-      setScene(null);
-      setError("Scene not found");
-      return;
-    }
-    const cancelled = { current: false };
-    Promise.all([getScene(sceneId), getAudios(sceneId)])
-      .then(([s, a]) => {
-        if (!cancelled.current) {
-          setScene(s ?? null);
-          setAudios(a);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled.current)
-          setError(getErrorMessage(err, "Failed to load"));
-      })
-      .finally(() => {
-        if (!cancelled.current) setLoading(false);
-      });
-    return () => {
-      cancelled.current = true;
-    };
-  }, [sceneId]);
 
   const filteredAudios = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -102,10 +86,8 @@ export default function ScenePage() {
   }, []);
 
   const handleAddSoundAdded = useCallback(async () => {
-    const list = await getAudios(sceneId);
-    setAudios(list);
     setShowAddSoundModal(false);
-  }, [sceneId]);
+  }, []);
 
   const handleDragStart = (e: React.DragEvent, audioId: string) => {
     const target = e.target as HTMLElement;
@@ -134,37 +116,27 @@ export default function ScenePage() {
       return;
     }
     useAudioStore.getState().stopAll();
-    const previousAudios = audios;
     const reordered = [...filteredAudios];
     const [removed] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndex, 0, removed);
     const rest = audios.filter((a) => !reordered.some((r) => r.id === a.id));
     const newAudios = reordered.map((a, i) => ({ ...a, order: i }));
-    const restWithOrder = rest.map((a, i) => ({
-      ...a,
-      order: reordered.length + i,
-    }));
-    setAudios([...newAudios, ...restWithOrder]);
+    const orderedIds = [
+      ...newAudios.map((a) => a.id),
+      ...rest.map((a) => a.id),
+    ];
     setDraggedId(null);
     setReorderError(null);
-    setReordering(true);
     try {
-      await reorderAudios(sceneId, [
-        ...newAudios.map((a) => a.id),
-        ...rest.map((a) => a.id),
-      ]);
+      await reorderAudiosMutation.mutateAsync(orderedIds);
     } catch (err) {
-      setAudios(previousAudios);
       setReorderError(getErrorMessage(err, "Failed to reorder audios."));
-    } finally {
-      setReordering(false);
     }
   };
 
   const handleConfirmDelete = async () => {
     if (!audioToDelete) return;
     const id = audioToDelete.id;
-    setDeleting(true);
     try {
       const p = useAudioStore.getState().players.get(id);
       if (p?.ref) {
@@ -172,31 +144,27 @@ export default function ScenePage() {
         p.ref.currentTime = 0;
       }
       useAudioStore.getState().setState(id, "stopped");
-      await removeAudio(id);
-      setAudios((prev) => prev.filter((a) => a.id !== id));
+      await removeAudioMutation.mutateAsync(id);
       setAudioToDelete(null);
-    } finally {
-      setDeleting(false);
+    } catch {
+      // Error could be shown via mutation.error
     }
   };
 
   const closeDeleteModal = useCallback(() => {
-    if (!deleting) setAudioToDelete(null);
-  }, [deleting]);
+    if (!removeAudioMutation.isPending) setAudioToDelete(null);
+  }, [removeAudioMutation.isPending]);
 
   const handleRename = useCallback(
     async (audio: AudioItem, newName: string) => {
       setRenameError(null);
       try {
-        await updateAudio({ ...audio, name: newName });
-        setAudios((prev) =>
-          prev.map((a) => (a.id === audio.id ? { ...a, name: newName } : a))
-        );
+        await updateAudioMutation.mutateAsync({ ...audio, name: newName });
       } catch (err) {
         setRenameError(getErrorMessage(err, "Failed to rename sound."));
       }
     },
-    []
+    [updateAudioMutation],
   );
 
   useEffect(() => {
@@ -244,7 +212,7 @@ export default function ScenePage() {
         }
         confirmLabel="Delete"
         loadingConfirmLabel="Deleting…"
-        loading={deleting}
+        loading={removeAudioMutation.isPending}
         onConfirm={handleConfirmDelete}
       />
       <AddSoundModal
@@ -305,7 +273,7 @@ export default function ScenePage() {
           filteredAudios={filteredAudios}
           sceneId={sceneId}
           draggedId={draggedId}
-          reordering={reordering}
+              reordering={reorderAudiosMutation.isPending}
           hasAnyAudios={audios.length > 0}
           emptyMessage="No audios in this scene. Use the + button to add one."
           emptySearchMessage="No audios match your search."

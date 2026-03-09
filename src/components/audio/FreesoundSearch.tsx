@@ -2,12 +2,11 @@
 
 import { useState, useRef } from "react";
 import {
-  searchFreesound,
   getPreviewUrl,
   isFreesoundConfigured,
   type FreesoundSound,
 } from "@/lib/freesound";
-import { addAudio } from "@/lib/storage";
+import { useFreesoundSearchMutation, useAddAudioMutation } from "@/hooks/api";
 import { getErrorMessage } from "@/lib/errors";
 
 interface FreesoundSearchProps {
@@ -18,24 +17,25 @@ interface FreesoundSearchProps {
 export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("");
-  const [results, setResults] = useState<FreesoundSound[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [playingId, setPlayingId] = useState<number | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const searchMutation = useFreesoundSearchMutation();
+  const addAudioMutation = useAddAudioMutation(sceneId);
   const configured = isFreesoundConfigured();
+
+  const results: FreesoundSound[] = searchMutation.data?.results ?? [];
+  const loading = searchMutation.isPending;
+  const searchError = searchMutation.error
+    ? getErrorMessage(searchMutation.error, "Search failed")
+    : null;
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
-    setError(null);
-    setLoading(true);
-    setResults([]);
     const rawFilter = filter.trim();
-    // If filter has no ":", treat each word as a tag (no need to type "tag:" before each)
     const filterParam =
       rawFilter &&
       (rawFilter.includes(":")
@@ -45,14 +45,12 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
             .filter(Boolean)
             .map((t) => `tag:${t}`)
             .join(" "));
-    try {
-      const data = await searchFreesound(q, 1, 20, filterParam || undefined);
-      setResults(data.results ?? []);
-    } catch (err) {
-      setError(getErrorMessage(err, "Search failed"));
-    } finally {
-      setLoading(false);
-    }
+    searchMutation.mutate({
+      query: q,
+      filter: filterParam || undefined,
+      page: 1,
+      pageSize: 20,
+    });
   };
 
   const handlePlay = (sound: FreesoundSound) => {
@@ -82,25 +80,28 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   const handleAdd = async (sound: FreesoundSound) => {
     const url = getPreviewUrl(sound.previews);
     if (!url) return;
-    // stop preview when adding to scene
     previewAudioRef.current?.pause();
     previewAudioRef.current = null;
     setPlayingId(null);
     setAddingId(sound.id);
-    setError(null);
     try {
-      await addAudio(sceneId, {
+      await addAudioMutation.mutateAsync({
         name: sound.name,
         sourceUrl: url,
         kind: "freesound",
       });
       onAdded();
-    } catch (err) {
-      setError(getErrorMessage(err, "Add failed"));
+    } catch {
+      // Error shown via addAudioMutation.error - could add toast/display
     } finally {
       setAddingId(null);
     }
   };
+
+  const addError = addAudioMutation.error
+    ? getErrorMessage(addAudioMutation.error, "Add failed")
+    : null;
+  const error = addError ?? searchError;
 
   if (!configured) {
     return (
@@ -195,8 +196,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
                 const v = e.target.value;
                 setQuery(v);
                 if (!v.trim()) {
-                  setResults([]);
-                  setError(null);
+                  searchMutation.reset();
                 }
               }}
               placeholder="Query: e.g. rain, piano, fantasy…"

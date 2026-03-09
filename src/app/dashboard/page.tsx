@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback, type FormEvent } from "react";
+import { useState, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getScenes, reorderScenes, updateScene, deleteScene, createScene } from "@/lib/storage";
+import {
+  useScenesQuery,
+  useCreateSceneMutation,
+  useUpdateSceneMutation,
+  useDeleteSceneMutation,
+  useReorderScenesMutation,
+} from "@/hooks/api";
 import type { Scene, Label } from "@/lib/types";
 import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
 import { Navbar } from "@/components/layout/Navbar";
@@ -23,11 +29,16 @@ import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [scenes, setScenes] = useState<Scene[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: scenes = [],
+    isLoading: loading,
+    error: queryError,
+  } = useScenesQuery(user?.uid);
+  const createSceneMutation = useCreateSceneMutation(user?.uid);
+  const updateSceneMutation = useUpdateSceneMutation(user?.uid);
+  const deleteSceneMutation = useDeleteSceneMutation(user?.uid);
+  const reorderScenesMutation = useReorderScenesMutation(user?.uid);
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [reordering, setReordering] = useState(false);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [editingScene, setEditingScene] = useState<Scene | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -35,11 +46,9 @@ export default function DashboardPage() {
   const [editLabels, setEditLabels] = useState<Label[]>([]);
   const [newLabelText, setNewLabelText] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(LABEL_DEFAULT_COLORS[0]);
-  const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingScene, setDeletingScene] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,89 +57,64 @@ export default function DashboardPage() {
   const [createLabels, setCreateLabels] = useState<Label[]>([]);
   const [createNewLabelText, setCreateNewLabelText] = useState("");
   const [createNewLabelColor, setCreateNewLabelColor] = useState(LABEL_DEFAULT_COLORS[0]);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
   const [createFieldErrors, setCreateFieldErrors] = useState<Record<string, string>>({});
   const showFocusEntry = useFocusEntryOnce("dashboard");
 
-  useEffect(() => {
-    if (!user?.uid) return;
-    const cancelled = { current: false };
-    getScenes(user.uid)
-      .then((list) => {
-        if (!cancelled.current) setScenes(list);
-      })
-      .catch((err) => {
-        if (!cancelled.current)
-          setError(getErrorMessage(err, "Failed to load scenes"));
-      })
-      .finally(() => {
-        if (!cancelled.current) setLoading(false);
-      });
-    return () => {
-      cancelled.current = true;
-    };
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (editingScene) {
-      setEditTitle(editingScene.title);
-      setEditDescription(editingScene.description ?? "");
-      setEditLabels(editingScene.labels ?? []);
-      setNewLabelText("");
-      setNewLabelColor(LABEL_DEFAULT_COLORS[0]);
-      setEditError(null);
-      setEditFieldErrors({});
-    }
-  }, [editingScene]);
+  const error = queryError ? getErrorMessage(queryError, "Failed to load scenes") : null;
 
   const closeEditModal = useCallback(() => {
     setEditingScene(null);
     setEditError(null);
     setEditFieldErrors({});
     setShowDeleteConfirm(false);
-  }, []);
+  }, [setShowDeleteConfirm]);
 
   const closeCreateModal = useCallback(() => {
     setShowCreateModal(false);
-    setCreateError(null);
+    createSceneMutation.reset();
     setCreateFieldErrors({});
-  }, []);
+  }, [createSceneMutation]);
 
-  useEffect(() => {
-    if (showCreateModal) {
-      setCreateTitle("");
-      setCreateDescription("");
-      setCreateLabels([]);
-      setCreateNewLabelText("");
-      setCreateNewLabelColor(LABEL_DEFAULT_COLORS[0]);
-      setCreateError(null);
-      setCreateFieldErrors({});
-    }
-  }, [showCreateModal]);
+  const openEditModal = (scene: Scene) => {
+    setEditingScene(scene);
+    setEditTitle(scene.title);
+    setEditDescription(scene.description ?? "");
+    setEditLabels(scene.labels ?? []);
+    setNewLabelText("");
+    setNewLabelColor(LABEL_DEFAULT_COLORS[0]);
+    setEditError(null);
+    setEditFieldErrors({});
+  };
 
-  const openEditModal = (scene: Scene) => setEditingScene(scene);
+  const openCreateModal = () => {
+    setShowCreateModal(true);
+    setCreateTitle("");
+    setCreateDescription("");
+    setCreateLabels([]);
+    setCreateNewLabelText("");
+    setCreateNewLabelColor(LABEL_DEFAULT_COLORS[0]);
+    createSceneMutation.reset();
+    setCreateFieldErrors({});
+  };
 
   const handleDeleteScene = async () => {
     if (!editingScene) return;
-    setDeletingScene(true);
     try {
-      await deleteScene(editingScene.id);
-      setScenes((prev) => prev.filter((r) => r.id !== editingScene.id));
+      await deleteSceneMutation.mutateAsync(editingScene.id);
       closeEditModal();
     } catch (err) {
       setEditError(getErrorMessage(err, "Failed to delete scene"));
-    } finally {
-      setDeletingScene(false);
     }
   };
 
-  const openCreateModal = () => setShowCreateModal(true);
+  const createError = createSceneMutation.error
+    ? getErrorMessage(createSceneMutation.error, "Failed to create scene.")
+    : null;
 
   const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user?.uid) return;
-    setCreateError(null);
+    createSceneMutation.reset();
     setCreateFieldErrors({});
     const validation = validateSceneForm({
       title: createTitle,
@@ -141,20 +125,16 @@ export default function DashboardPage() {
       setCreateFieldErrors(validation.errors);
       return;
     }
-    setCreateLoading(true);
     try {
-      const scene = await createScene(user.uid, {
+      const scene = await createSceneMutation.mutateAsync({
         title: validation.data.title,
         description: validation.data.description,
         labels: validation.data.labels,
       });
-      setScenes((prev) => [scene, ...prev]);
       closeCreateModal();
       router.push(`/scene/${scene.id}`);
-    } catch (err) {
-      setCreateError(getErrorMessage(err, "Failed to create scene."));
-    } finally {
-      setCreateLoading(false);
+    } catch {
+      // Error handled via createSceneMutation.error
     }
   };
 
@@ -172,7 +152,6 @@ export default function DashboardPage() {
       setEditFieldErrors(validation.errors);
       return;
     }
-    setSaving(true);
     try {
       const updated: Scene = {
         ...editingScene,
@@ -180,13 +159,10 @@ export default function DashboardPage() {
         description: validation.data.description,
         labels: validation.data.labels,
       };
-      await updateScene(updated);
-      setScenes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      await updateSceneMutation.mutateAsync(updated);
       closeEditModal();
     } catch (err) {
       setEditError(getErrorMessage(err, "Failed to save."));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -225,25 +201,16 @@ export default function DashboardPage() {
       setDraggedId(null);
       return;
     }
-    const previousScenes = scenes;
     const reordered = [...scenes];
     const [removed] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndexFull, 0, removed);
-    const newScenes = reordered.map((r, i) => ({ ...r, order: i }));
-    setScenes(newScenes);
+    const orderedIds = reordered.map((r) => r.id);
     setDraggedId(null);
     setReorderError(null);
-    setReordering(true);
     try {
-      await reorderScenes(
-        user.uid,
-        newScenes.map((r) => r.id),
-      );
+      await reorderScenesMutation.mutateAsync(orderedIds);
     } catch (err) {
-      setScenes(previousScenes);
       setReorderError(getErrorMessage(err, "Failed to reorder scenes."));
-    } finally {
-      setReordering(false);
     }
   };
 
@@ -268,7 +235,7 @@ export default function DashboardPage() {
         fieldErrors={createFieldErrors}
         submitError={createError}
         onSubmit={handleCreateSubmit}
-        saving={createLoading}
+        saving={createSceneMutation.isPending}
         submitLabel="Create Scene"
         loadingLabel="Creating…"
       />
@@ -292,7 +259,7 @@ export default function DashboardPage() {
         fieldErrors={editFieldErrors}
         submitError={editError}
         onSubmit={handleSaveEdit}
-        saving={saving}
+        saving={updateSceneMutation.isPending}
         submitLabel="Save"
         loadingLabel="Saving…"
         onDelete={() => setShowDeleteConfirm(true)}
@@ -300,7 +267,7 @@ export default function DashboardPage() {
 
       <ConfirmModal
         open={showDeleteConfirm && !!editingScene}
-        onClose={() => !deletingScene && setShowDeleteConfirm(false)}
+        onClose={() => !deleteSceneMutation.isPending && setShowDeleteConfirm(false)}
         title="Delete scene"
         titleId="delete-scene-modal-title"
         message={
@@ -314,7 +281,7 @@ export default function DashboardPage() {
         }
         confirmLabel="Delete"
         loadingConfirmLabel="Deleting…"
-        loading={deletingScene}
+        loading={deleteSceneMutation.isPending}
         onConfirm={handleDeleteScene}
       />
 
@@ -374,7 +341,7 @@ export default function DashboardPage() {
               scenes={filteredScenes}
               sceneIds={scenes.map((s) => s.id)}
               draggedId={draggedId}
-              reordering={reordering}
+              reordering={reorderScenesMutation.isPending}
               onEdit={openEditModal}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}

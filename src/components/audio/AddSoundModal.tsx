@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  addAudio,
-  uploadAudioFile,
   AUDIO_UPLOAD_MAX_BYTES,
   isAllowedAudioUrl,
   getAllowedAudioExtension,
@@ -13,6 +11,11 @@ import { FreesoundSearch } from "@/components/audio/FreesoundSearch";
 import { Modal } from "@/components/ui/Modal";
 import { extractYouTubeId } from "@/lib/youtube";
 import { getErrorMessage } from "@/lib/errors";
+import {
+  useUploadAudioFileMutation,
+  useAddAudioMutation,
+  useYouTubeTitleQuery,
+} from "@/hooks/api";
 
 interface AddSoundModalProps {
   open: boolean;
@@ -31,15 +34,22 @@ export function AddSoundModal({
   const [addName, setAddName] = useState("");
   const [addUrl, setAddUrl] = useState("");
   const [addFile, setAddFile] = useState<File | null>(null);
-  const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+
+  const youtubeId = extractYouTubeId(addUrl.trim());
+  const { data: youtubeTitle } = useYouTubeTitleQuery(youtubeId);
+  const uploadMutation = useUploadAudioFileMutation();
+  const addAudioMutation = useAddAudioMutation(sceneId);
+  const adding = uploadMutation.isPending || addAudioMutation.isPending;
 
   useEffect(() => {
     if (open) {
-      setAddName("");
-      setAddUrl("");
-      setAddFile(null);
-      setAddError(null);
+      setTimeout(() => {
+        setAddName("");
+        setAddUrl("");
+        setAddFile(null);
+        setAddError(null);
+      }, 0);
     }
   }, [open]);
 
@@ -84,36 +94,29 @@ export function AddSoundModal({
       return;
     }
     setAddError(null);
-    setAdding(true);
     try {
       if (addFile) {
-        const sourceUrl = await uploadAudioFile(sceneId, addFile);
+        const sourceUrl = await uploadMutation.mutateAsync({
+          sceneId,
+          file: addFile,
+        });
         const displayName = name || addFile.name;
-        await addAudio(sceneId, {
+        await addAudioMutation.mutateAsync({
           name: displayName,
           sourceUrl,
           kind: "file",
         });
       } else {
-        const youtubeId = extractYouTubeId(urlTrimmed);
-        if (youtubeId) {
-          let youtubeName = name || "YouTube audio";
-          try {
-            const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
-            const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`;
-            const res = await fetch(oembedUrl);
-            if (res.ok) {
-              const data = (await res.json()) as { title?: string };
-              if (data.title) youtubeName = data.title;
-            }
-          } catch {}
-          await addAudio(sceneId, {
+        const ytId = extractYouTubeId(urlTrimmed);
+        if (ytId) {
+          const youtubeName = name || youtubeTitle || "YouTube audio";
+          await addAudioMutation.mutateAsync({
             name: youtubeName,
-            sourceUrl: youtubeId,
+            sourceUrl: ytId,
             kind: "youtube",
           });
         } else {
-          await addAudio(sceneId, {
+          await addAudioMutation.mutateAsync({
             name,
             sourceUrl: urlTrimmed,
             kind: "file",
@@ -123,8 +126,6 @@ export function AddSoundModal({
       await onAdded();
     } catch (err) {
       setAddError(getErrorMessage(err, "Failed to add audio"));
-    } finally {
-      setAdding(false);
     }
   };
 
