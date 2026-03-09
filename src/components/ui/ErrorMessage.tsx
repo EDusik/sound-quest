@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "@/contexts/I18nContext";
+
 interface ErrorMessageProps {
   message: string;
   className?: string;
@@ -12,6 +14,8 @@ export function ErrorMessage({
   className = "",
   onDismiss,
 }: ErrorMessageProps) {
+  const t = useTranslations();
+
   return (
     <div
       className={`rounded-lg bg-red-500/20 p-4 text-red-200 ${className}`}
@@ -24,7 +28,7 @@ export function ErrorMessage({
             type="button"
             onClick={onDismiss}
             className="shrink-0 rounded p-1 text-red-200 hover:bg-red-500/30 focus:outline-none focus:ring-2 focus:ring-red-400"
-            aria-label="Dismiss"
+            aria-label={t("common.dismiss")}
           >
             ×
           </button>

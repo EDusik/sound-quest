@@ -1,6 +1,10 @@
 "use client";
 
+import { useTranslations } from "@/contexts/I18nContext";
+
 export function GlobalAuthLoading() {
+  const t = useTranslations();
+
   return (
     <div
       className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-background"
@@ -9,7 +13,7 @@ export function GlobalAuthLoading() {
       role="status"
     >
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      <p className="mt-4 text-sm text-muted">Loading…</p>
+      <p className="mt-4 text-sm text-muted">{t("common.loading")}</p>
     </div>
   );
 }

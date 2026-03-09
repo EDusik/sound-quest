@@ -3,6 +3,7 @@
 import type { AudioItem } from "@/lib/types";
 import { AudioRow } from "@/components/audio/AudioRow";
 import { DragHandle } from "@/components/ui/DragHandle";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface AudiosBlockProps {
   activeAudios: AudioItem[];
@@ -42,6 +43,7 @@ export function AudiosBlock({
   onDragOver,
   onDrop,
 }: AudiosBlockProps) {
+  const t = useTranslations();
   const isEmpty = filteredAudios.length === 0;
 
   return (
@@ -86,7 +88,7 @@ export function AudiosBlock({
       {inactiveAudios.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-sm font-medium text-muted">
-            Disabled audio
+            {t("audiosBlock.disabledAudio")}
           </h2>
           <ul className="space-y-3">
             {inactiveAudios.map((audio) => (

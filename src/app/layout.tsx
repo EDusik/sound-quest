@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Cinzel } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/layout/Footer";
+import { SkipToContent } from "@/components/a11y/SkipToContent";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Providers } from "@/components/layout/Providers";
 import { siteMetadata } from "@/lib/seo";
@@ -51,12 +52,7 @@ export default function RootLayout({
           src="/theme-init.js"
         />
         <Providers>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:rounded focus:bg-accent focus:px-4 focus:py-2 focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-          >
-            Skip to main content
-          </a>
+          <SkipToContent />
           <main
             id="main-content"
             className="min-h-0 flex-1 overflow-auto bg-background"

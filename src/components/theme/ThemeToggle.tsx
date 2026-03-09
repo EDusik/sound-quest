@@ -1,9 +1,11 @@
 "use client";
 
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslations } from "@/contexts/I18nContext";
 
 export function ThemeToggle() {
   const { dark, toggle } = useTheme();
+  const t = useTranslations();
 
   return (
     <button
@@ -14,8 +16,8 @@ export function ThemeToggle() {
           ? "bg-slate-700/40 text-slate-200 hover:bg-slate-600/50 hover:text-white"
           : "bg-amber-100/60 text-amber-800 hover:bg-amber-200/70 hover:text-amber-900"
       }`}
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      title={dark ? "Light mode" : "Dark mode"}
+      aria-label={dark ? t("nav.themeSwitchToLight") : t("nav.themeSwitchToDark")}
+      title={dark ? t("nav.themeLight") : t("nav.themeDark")}
     >
       {dark ? (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>

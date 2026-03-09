@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LabelEditor } from "@/components/editor/LabelEditor";
 import { TrashIcon } from "@/components/icons";
 import { TITLE_MAX, DESCRIPTION_MAX } from "@/lib/sceneSchema";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface SceneFormModalProps {
   open: boolean;
@@ -64,6 +65,7 @@ export function SceneFormModal({
   loadingLabel,
   onDelete,
 }: SceneFormModalProps) {
+  const t = useTranslations();
   const labelsError = getLabelsError(fieldErrors);
 
   return (
@@ -82,7 +84,7 @@ export function SceneFormModal({
               htmlFor={`${titleId}-field-title`}
               className="block text-sm font-medium text-foreground"
             >
-              Title
+              {t("sceneForm.title")}
             </label>
             <div className="mt-1.5 flex items-center gap-2">
               <input
@@ -95,7 +97,7 @@ export function SceneFormModal({
                 maxLength={TITLE_MAX}
                 required
                 className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                placeholder="Scene title"
+                placeholder={t("sceneForm.sceneTitlePlaceholder")}
               />
               <span className="text-xs text-muted tabular-nums shrink-0">
                 {formTitle.length}/{TITLE_MAX}
@@ -112,7 +114,7 @@ export function SceneFormModal({
               htmlFor={`${titleId}-field-description`}
               className="block text-sm font-medium text-foreground"
             >
-              Description
+              {t("sceneForm.description")}
             </label>
             <div className="mt-1.5 flex items-center gap-2">
               <input
@@ -126,7 +128,7 @@ export function SceneFormModal({
                 }
                 maxLength={DESCRIPTION_MAX}
                 className="h-10 flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                placeholder="Optional description"
+                placeholder={t("sceneForm.optionalDescription")}
               />
               <span className="text-xs text-muted tabular-nums shrink-0">
                 {formDescription.length}/{DESCRIPTION_MAX}
@@ -166,8 +168,8 @@ export function SceneFormModal({
               type="button"
               onClick={onDelete}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-red-400 transition hover:bg-red-500/20"
-              aria-label="Delete scene"
-              title="Delete scene"
+              aria-label={t("sceneForm.deleteSceneAria")}
+              title={t("dashboard.deleteScene")}
             >
               <TrashIcon className="h-5 w-5" />
             </button>
@@ -178,7 +180,7 @@ export function SceneFormModal({
               onClick={onClose}
               className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-card focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"

@@ -6,8 +6,10 @@ import { useEffect } from "react";
 import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations } from "@/contexts/I18nContext";
 
 export default function LoginPage() {
+  const t = useTranslations();
   const {
     isAuthenticated,
     loading,
@@ -29,7 +31,7 @@ export default function LoginPage() {
       router.replace("/dashboard");
     } catch (err) {
       console.error(err);
-      alert("Sign in failed. Check console and ensure Supabase is configured.");
+      alert(t("login.signInFailed"));
     }
   };
 
@@ -52,12 +54,11 @@ export default function LoginPage() {
           <SoundTableLogo size={44} className="text-3xl" />
         </h1>
         <p className="text-center text-lg text-muted mt-2">
-          Create the perfect sound space for every RPG session.
+          {t("login.tagline")}
         </p>
         {!isConfigured && (
           <p className="mt-4 rounded-lg bg-accent-soft/30 p-3 text-sm text-accent" role="alert">
-            Configure Supabase (see .env). Using demo mode: data is stored in
-            this browser only.
+            {t("login.demoNotice")}
           </p>
         )}
         <button
@@ -65,7 +66,7 @@ export default function LoginPage() {
           onClick={handleSignIn}
           disabled={!isConfigured}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-sm text-foreground transition hover:bg-border disabled:opacity-50 disabled:hover:bg-card"
-          aria-label="Sign in with Google"
+          aria-label={t("login.signInWithGoogle")}
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -85,7 +86,7 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Sign in with Google
+          {t("login.signInWithGoogle")}
         </button>
         {!isConfigured && (
           <>
@@ -93,23 +94,23 @@ export default function LoginPage() {
               type="button"
               onClick={handleSignInDemo}
               className="mt-3 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground transition hover:bg-card"
-              aria-label="Continue with local storage, no account required"
+              aria-label={t("login.continueLocalStorageAria")}
             >
-              Continue with local storage (no account)
+              {t("login.continueLocalStorage")}
             </button>
             <p className="mt-4 text-center text-xs text-muted">
-              Add Supabase env vars to enable Google sign-in.
+              {t("login.addSupabaseEnv")}
             </p>
           </>
         )}
         {isAuthenticated && (
           <p className="mt-6 text-center text-sm text-muted">
-            Already signed in?{" "}
+            {t("login.alreadySignedIn")}{" "}
             <Link
               href="/dashboard"
               className="text-accent underline hover:text-accent-hover"
             >
-              Go to dashboard
+              {t("login.goToDashboard")}
             </Link>
           </p>
         )}

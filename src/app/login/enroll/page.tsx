@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useTranslations } from "@/contexts/I18nContext";
 
 export default function LoginEnrollPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [factorId, setFactorId] = useState("");
   const [qrSvg, setQrSvg] = useState("");
@@ -19,7 +21,6 @@ export default function LoginEnrollPage() {
   useEffect(() => {
     if (!supabase) {
       setEnrollLoading(false);
-      setError("Supabase is not configured.");
       return;
     }
     supabase.auth.mfa
@@ -38,7 +39,7 @@ export default function LoginEnrollPage() {
       })
       .catch(() => {
         setEnrollLoading(false);
-        setError("Failed to start setup.");
+        setError(t("loginEnroll.failedStart"));
       });
   }, []);
 
@@ -66,7 +67,7 @@ export default function LoginEnrollPage() {
       const message =
         err && typeof err === "object" && "message" in err
           ? String((err as { message: string }).message)
-          : "Invalid code. Try again.";
+          : t("loginEnroll.invalidCode");
       setError(message);
     } finally {
       setLoading(false);
@@ -76,7 +77,7 @@ export default function LoginEnrollPage() {
   if (enrollLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
-        <p className="text-muted">Preparing Google Authenticator...</p>
+        <p className="text-muted">{t("loginEnroll.preparing")}</p>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
       </div>
     );
@@ -86,7 +87,7 @@ export default function LoginEnrollPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
         <p className="text-center text-muted">
-          Authenticator set up. Redirecting...
+          {t("loginEnroll.redirecting")}
         </p>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
       </div>
@@ -114,16 +115,15 @@ export default function LoginEnrollPage() {
           </div>
         </div>
         <h1 className="text-center text-xl font-semibold text-foreground">
-          Set up Google Authenticator
+          {t("loginEnroll.title")}
         </h1>
         <p className="mt-2 text-center text-sm text-muted">
-          Scan the QR code with the Google Authenticator app (or Authy, etc.) or
-          enter the code manually.
+          {t("loginEnroll.scanQR")}
         </p>
 
-        {error && (
+        {(error || (!supabase && !enrollLoading)) && (
           <p className="mt-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-200">
-            {error}
+            {error || (!supabase ? t("loginEnroll.supabaseNotConfigured") : "")}
           </p>
         )}
 
@@ -134,7 +134,7 @@ export default function LoginEnrollPage() {
             </div>
             {secret && (
               <p className="mt-3 break-all text-center font-mono text-xs text-muted">
-                Or enter: {secret}
+                {t("loginEnroll.orEnter", { secret })}
               </p>
             )}
           </div>
@@ -143,14 +143,14 @@ export default function LoginEnrollPage() {
         <form onSubmit={handleVerify} className="mt-6 space-y-4">
           <div>
             <label htmlFor="verifyCode" className="sr-only">
-              Verification code
+              {t("loginEnroll.verificationCode")}
             </label>
             <input
               id="verifyCode"
               type="text"
               inputMode="numeric"
               maxLength={8}
-              placeholder="6-digit code"
+              placeholder={t("loginEnroll.placeholder")}
               value={verifyCode}
               onChange={(e) =>
                 setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -164,13 +164,13 @@ export default function LoginEnrollPage() {
             disabled={loading || verifyCode.length < 6}
             className="w-full rounded-xl bg-accent px-4 py-3 font-medium text-background transition hover:bg-accent-hover disabled:opacity-50 disabled:hover:bg-accent"
           >
-            {loading ? "Verifying…" : "Enable authenticator"}
+            {loading ? t("loginEnroll.verifying") : t("loginEnroll.enableAuthenticator")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-muted">
           <Link href="/dashboard" className="underline hover:text-muted">
-            Back to dashboard
+            {t("loginEnroll.backToDashboard")}
           </Link>
         </p>
       </div>

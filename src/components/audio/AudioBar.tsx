@@ -2,6 +2,7 @@
 
 import { useShallow } from "zustand/react/shallow";
 import { useAudioStore } from "@/store/audioStore";
+import { useTranslations } from "@/contexts/I18nContext";
 
 function usePlayingList() {
   return useAudioStore(
@@ -74,26 +75,28 @@ export function AudioBar() {
     seekTo(id, fraction * duration);
   };
 
+  const t = useTranslations();
+
   if (playing.length === 0) return null;
 
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom duration-300 border-t border-border bg-card/95 backdrop-blur"
       role="region"
-      aria-label="Now playing"
+      aria-label={t("common.nowPlaying")}
     >
       <div className="flex w-full flex-col gap-2 px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-muted">
-            Playing ({playing.length})
+            {t("common.playingCount", { count: playing.length })}
           </p>
           <button
             type="button"
             onClick={stopAll}
             className="rounded-lg bg-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border/80"
-            title="Stop all songs"
+            title={t("common.stopAllSongs")}
           >
-            Stop all
+            {t("common.stopAll")}
           </button>
         </div>
         <div className="flex flex-col gap-2">
@@ -115,7 +118,7 @@ export function AudioBar() {
                   type="button"
                   onClick={() => pause(p.id)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent-hover"
-                  title="Pause"
+                  title={t("common.pause")}
                 >
                   <svg
                     className="h-4 w-4"
@@ -129,7 +132,7 @@ export function AudioBar() {
                   type="button"
                   onClick={() => stop(p.id)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
-                  title="Stop"
+                  title={t("common.stop")}
                 >
                   <svg
                     className="h-4 w-4"
@@ -147,7 +150,7 @@ export function AudioBar() {
                       ? "bg-accent text-foreground hover:bg-accent-hover"
                       : "bg-border text-foreground hover:bg-border/80"
                   }`}
-                  title={p.loop ? "Desativar loop" : "Ativar loop"}
+                  title={p.loop ? t("common.disableLoop") : t("common.enableLoop")}
                   aria-pressed={p.loop}
                 >
                   <svg
@@ -172,7 +175,10 @@ export function AudioBar() {
                     aria-valuenow={current}
                     aria-valuemin={0}
                     aria-valuemax={duration}
-                    aria-label={`Progress: ${formatTime(current)} of ${formatTime(duration)}. Click to seek.`}
+                    aria-label={t("common.progressSeek", {
+                      current: formatTime(current),
+                      duration: formatTime(duration),
+                    })}
                     onClick={(e) => handleProgressClick(p.id, duration, e)}
                   >
                     <div

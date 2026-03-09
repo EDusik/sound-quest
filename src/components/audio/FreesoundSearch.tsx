@@ -8,6 +8,7 @@ import {
 } from "@/lib/freesound";
 import { useFreesoundSearchMutation, useAddAudioMutation } from "@/hooks/api";
 import { getErrorMessage } from "@/lib/errors";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface FreesoundSearchProps {
   sceneId: string;
@@ -15,6 +16,7 @@ interface FreesoundSearchProps {
 }
 
 export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
+  const t = useTranslations();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("");
   const [addingId, setAddingId] = useState<number | null>(null);
@@ -28,7 +30,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   const results: FreesoundSound[] = searchMutation.data?.results ?? [];
   const loading = searchMutation.isPending;
   const searchError = searchMutation.error
-    ? getErrorMessage(searchMutation.error, "Search failed")
+    ? getErrorMessage(searchMutation.error, t("freesound.searchFailed"))
     : null;
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -99,7 +101,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   };
 
   const addError = addAudioMutation.error
-    ? getErrorMessage(addAudioMutation.error, "Add failed")
+    ? getErrorMessage(addAudioMutation.error, t("freesound.addFailed"))
     : null;
   const error = addError ?? searchError;
 
@@ -107,7 +109,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
     return (
       <details className="group rounded-lg border border-border bg-card/50">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-card/80 [&::-webkit-details-marker]:hidden">
-          <span>🔍 Search Freesound</span>
+          <span>{t("freesound.title")}</span>
           <svg
             className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
             fill="none"
@@ -125,27 +127,25 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
         </summary>
         <div className="border-t border-border p-4">
           <p className="text-sm text-muted">
-            Add{" "}
-            <code className="rounded bg-border px-1">
-              NEXT_PUBLIC_FREESOUND_API_KEY
-            </code>{" "}
-            to search and add sounds from{" "}
+            {t("freesound.notConfiguredPrefix")}
+            <code className="rounded bg-border px-1">{t("freesound.notConfiguredCode")}</code>
+            {t("freesound.notConfiguredMiddle")}
             <a
               href="https://freesound.org"
               target="_blank"
               rel="noopener noreferrer"
               className="text-accent hover:underline"
             >
-              Freesound
+              {t("freesound.freesoundLink")}
             </a>
-            . Get a token at{" "}
+            {t("freesound.notConfiguredSuffix")}
             <a
               href="https://freesound.org/apiv2/apply"
               target="_blank"
               rel="noopener noreferrer"
               className="text-accent hover:underline"
             >
-              freesound.org/apiv2/apply
+              {t("freesound.applyLink")}
             </a>
             .
           </p>
@@ -157,10 +157,12 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   return (
     <details className="group rounded-lg border border-border bg-card/50">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-card/80 [&::-webkit-details-marker]:hidden">
-        <span>🔍 Search Freesound</span>
+        <span>{t("freesound.title")}</span>
         {results.length > 0 && (
           <span className="text-xs font-normal text-muted">
-            {results.length} result{results.length !== 1 ? "s" : ""}
+            {results.length === 1
+              ? t("freesound.resultCount", { count: 1 })
+              : t("freesound.resultCountPlural", { count: results.length })}
           </span>
         )}
         <svg
@@ -180,12 +182,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
       </summary>
       <div className="border-t border-border p-4">
         <p className="mb-2 text-xs text-muted">
-          <strong>Query:</strong> Terms or tags (e.g. rpg, fantasy, ambience) -
-          search matches tags, name, and description. Use{" "}
-          <code className="rounded bg-border px-0.5">-term</code> to exclude.{" "}
-          <strong>Filter (optional):</strong> Type tags as words (e.g.{" "}
-          <code className="rounded bg-border px-0.5">fantasy rpg ambience</code>
-          );
+          {t("freesound.queryHelp")}
         </p>
         <form onSubmit={handleSearch} className="mb-3 space-y-2">
           <div className="flex flex-wrap gap-2">
@@ -199,25 +196,25 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
                   searchMutation.reset();
                 }
               }}
-              placeholder="Query: e.g. rain, piano, fantasy…"
+              placeholder={t("freesound.queryPlaceholder")}
               className="min-w-0 flex-1 basis-full rounded-lg border border-border bg-card px-3 py-2 text-foreground placeholder-muted focus:border-accent focus:outline-none sm:basis-0"
-              aria-label="Search Freesound"
+              aria-label={t("freesound.searchAria")}
             />
             <button
               type="submit"
               disabled={loading}
               className="w-full shrink-0 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-50 sm:w-auto"
             >
-              {loading ? "Searching…" : "Search"}
+              {loading ? t("freesound.searching") : t("freesound.search")}
             </button>
           </div>
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter (optional): e.g. fantasy rpg or dungeon"
+            placeholder={t("freesound.filterPlaceholder")}
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none"
-            aria-label="Freesound filter"
+            aria-label={t("freesound.filterAria")}
           />
         </form>
         {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
@@ -248,7 +245,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
                       onClick={() => handlePlay(sound)}
                       disabled={!previewUrl}
                       className="rounded bg-border p-2 text-foreground hover:bg-border/80 disabled:opacity-50"
-                      title={isPlaying ? "Stop" : "Play preview"}
+                      title={isPlaying ? t("common.stop") : t("common.playPreview")}
                     >
                       {isPlaying ? (
                         <svg
@@ -274,7 +271,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
                       disabled={!previewUrl || isAdding}
                       className="rounded bg-accent px-3 py-2 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50"
                     >
-                      {isAdding ? "Adding…" : "Add to scene"}
+                      {isAdding ? t("freesound.adding") : t("freesound.addToScene")}
                     </button>
                   </div>
                 </li>

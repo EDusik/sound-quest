@@ -2,6 +2,7 @@
 
 import { SearchIcon } from "@/components/icons";
 import { CloseIcon } from "@/components/icons";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface SearchBarProps {
   open: boolean;
@@ -21,10 +22,14 @@ export function SearchBar({
   onClose,
   value,
   onChange,
-  placeholder = "Search…",
-  "aria-label": ariaLabel = "Search",
+  placeholder,
+  "aria-label": ariaLabel,
   trailingButton,
 }: SearchBarProps) {
+  const t = useTranslations();
+  const resolvedPlaceholder = placeholder ?? t("common.search");
+  const resolvedAriaLabel = ariaLabel ?? t("common.search");
+
   if (open) {
     return (
       <div
@@ -39,16 +44,16 @@ export function SearchBar({
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder-muted focus:outline-none"
           autoFocus
-          aria-label={ariaLabel}
+          aria-label={resolvedAriaLabel}
         />
         <button
           type="button"
           onClick={onClose}
           className="shrink-0 rounded p-0.5 text-muted hover:text-foreground"
-          aria-label="Close search"
+          aria-label={t("common.closeSearch")}
         >
           <CloseIcon className="h-4 w-4" />
         </button>
@@ -61,8 +66,8 @@ export function SearchBar({
       type="button"
       onClick={onOpen}
       className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition hover:text-foreground"
-      aria-label={ariaLabel}
-      title={ariaLabel}
+      aria-label={resolvedAriaLabel}
+      title={resolvedAriaLabel}
     >
       <SearchIcon className="h-4 w-4" />
     </button>

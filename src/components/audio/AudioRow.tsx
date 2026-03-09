@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import type { AudioItem } from "@/lib/types";
 import { useAudioStore } from "@/store/audioStore";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface AudioRowProps {
   audio: AudioItem;
@@ -56,6 +57,7 @@ function YouTubeAudioRow({
   onRename,
   className,
 }: AudioRowProps) {
+  const t = useTranslations();
   const videoId = audio.sourceUrl;
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
@@ -277,7 +279,7 @@ function YouTubeAudioRow({
             checked={!isInactive}
             onChange={() => onToggleActive?.(audio)}
             className="h-4 w-4 cursor-pointer accent-accent"
-            aria-label={isInactive ? "Re-enable audio" : "Disable audio"}
+            aria-label={isInactive ? t("common.reEnableAudio") : t("common.disableAudio")}
           />
         </label>
         <div
@@ -296,7 +298,7 @@ function YouTubeAudioRow({
                 if (e.key === "Escape") cancelRename();
               }}
               className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
-              aria-label="Edit sound name"
+              aria-label={t("common.editSoundName")}
             />
           ) : (
             <a
@@ -320,7 +322,7 @@ function YouTubeAudioRow({
                 type="button"
                 onClick={handlePlay}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title="Play"
+                title={t("common.play")}
               >
                 <svg
                   className="h-4 w-4"
@@ -335,7 +337,7 @@ function YouTubeAudioRow({
                 type="button"
                 onClick={handlePause}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title="Pause"
+                title={t("common.pause")}
               >
                 <svg
                   className="h-4 w-4"
@@ -350,7 +352,7 @@ function YouTubeAudioRow({
               type="button"
               onClick={handleStop}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
-              title="Stop"
+              title={t("common.stop")}
             >
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" />
@@ -359,7 +361,7 @@ function YouTubeAudioRow({
             <button
               type="button"
               onClick={handleLoop}
-              title={loop ? "Loop on" : "Loop off"}
+              title={loop ? t("common.loopOn") : t("common.loopOff")}
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
                 loop
                   ? "bg-accent text-foreground hover:bg-accent-hover"
@@ -385,8 +387,8 @@ function YouTubeAudioRow({
                 setIsEditingName(true);
               }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-              title="Edit sound name"
-              aria-label="Edit sound name"
+              title={t("common.editSoundName")}
+              aria-label={t("common.editSoundName")}
             >
               <svg
                 className="h-4 w-4"
@@ -408,8 +410,8 @@ function YouTubeAudioRow({
               type="button"
               onClick={() => onDelete(audio)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
-              title="Delete sound"
-              aria-label="Delete sound"
+              title={t("common.deleteSound")}
+              aria-label={t("common.deleteSound")}
             >
               <svg
                 className="h-4 w-4"
@@ -430,7 +432,7 @@ function YouTubeAudioRow({
         <label
           className={`flex w-full items-center gap-1 text-xs text-muted sm:w-auto ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
         >
-          <span>Vol</span>
+          <span>{t("common.vol")}</span>
           <input
             type="range"
             min="0"
@@ -458,6 +460,7 @@ function HtmlAudioRow({
   onRename,
   className,
 }: AudioRowProps) {
+  const t = useTranslations();
   const ref = useRef<HTMLAudioElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -593,7 +596,7 @@ function HtmlAudioRow({
             checked={!isInactive}
             onChange={() => onToggleActive?.(audio)}
             className="h-4 w-4 cursor-pointer accent-accent"
-            aria-label={isInactive ? "Re-enable audio" : "Disable audio"}
+            aria-label={isInactive ? t("common.reEnableAudio") : t("common.disableAudio")}
           />
         </label>
         <div
@@ -612,7 +615,7 @@ function HtmlAudioRow({
                 if (e.key === "Escape") cancelRename();
               }}
               className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
-              aria-label="Edit sound name"
+              aria-label={t("common.editSoundName")}
             />
           ) : (
             <a
@@ -636,7 +639,7 @@ function HtmlAudioRow({
                 type="button"
                 onClick={handlePlay}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title="Play"
+                title={t("common.play")}
               >
                 <svg
                   className="h-4 w-4"
@@ -651,7 +654,7 @@ function HtmlAudioRow({
                 type="button"
                 onClick={handlePause}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title="Pause"
+                title={t("common.pause")}
               >
                 <svg
                   className="h-4 w-4"
@@ -666,7 +669,7 @@ function HtmlAudioRow({
               type="button"
               onClick={handleStop}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
-              title="Stop"
+              title={t("common.stop")}
             >
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" />
@@ -675,7 +678,7 @@ function HtmlAudioRow({
             <button
               type="button"
               onClick={handleLoop}
-              title={player?.loop ? "Loop on" : "Loop off"}
+              title={player?.loop ? t("common.loopOn") : t("common.loopOff")}
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
                 player?.loop
                   ? "bg-accent text-foreground hover:bg-accent-hover"
@@ -701,8 +704,8 @@ function HtmlAudioRow({
                 setIsEditingName(true);
               }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-              title="Edit sound name"
-              aria-label="Edit sound name"
+              title={t("common.editSoundName")}
+              aria-label={t("common.editSoundName")}
             >
               <svg
                 className="h-4 w-4"
@@ -724,8 +727,8 @@ function HtmlAudioRow({
               type="button"
               onClick={() => onDelete(audio)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
-              title="Delete sound"
-              aria-label="Delete sound"
+              title={t("common.deleteSound")}
+              aria-label={t("common.deleteSound")}
             >
               <svg
                 className="h-4 w-4"
@@ -746,7 +749,7 @@ function HtmlAudioRow({
         <label
           className={`flex w-full items-center gap-1 text-xs text-muted sm:w-auto ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
         >
-          <span>Vol</span>
+          <span>{t("common.vol")}</span>
           <input
             type="range"
             min="0"

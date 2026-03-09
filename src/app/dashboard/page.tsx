@@ -3,6 +3,7 @@
 import { useState, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations } from "@/contexts/I18nContext";
 import {
   useScenesQuery,
   useCreateSceneMutation,
@@ -59,8 +60,9 @@ export default function DashboardPage() {
   const [createNewLabelColor, setCreateNewLabelColor] = useState(LABEL_DEFAULT_COLORS[0]);
   const [createFieldErrors, setCreateFieldErrors] = useState<Record<string, string>>({});
   const showFocusEntry = useFocusEntryOnce("dashboard");
+  const t = useTranslations();
 
-  const error = queryError ? getErrorMessage(queryError, "Failed to load scenes") : null;
+  const error = queryError ? getErrorMessage(queryError, t("errors.loadScenes")) : null;
 
   const closeEditModal = useCallback(() => {
     setEditingScene(null);
@@ -103,12 +105,12 @@ export default function DashboardPage() {
       await deleteSceneMutation.mutateAsync(editingScene.id);
       closeEditModal();
     } catch (err) {
-      setEditError(getErrorMessage(err, "Failed to delete scene"));
+      setEditError(getErrorMessage(err, t("errors.deleteScene")));
     }
   };
 
   const createError = createSceneMutation.error
-    ? getErrorMessage(createSceneMutation.error, "Failed to create scene.")
+    ? getErrorMessage(createSceneMutation.error, t("errors.createScene"))
     : null;
 
   const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -162,7 +164,7 @@ export default function DashboardPage() {
       await updateSceneMutation.mutateAsync(updated);
       closeEditModal();
     } catch (err) {
-      setEditError(getErrorMessage(err, "Failed to save."));
+      setEditError(getErrorMessage(err, t("errors.saveScene")));
     }
   };
 
@@ -210,7 +212,7 @@ export default function DashboardPage() {
     try {
       await reorderScenesMutation.mutateAsync(orderedIds);
     } catch (err) {
-      setReorderError(getErrorMessage(err, "Failed to reorder scenes."));
+      setReorderError(getErrorMessage(err, t("errors.reorderScenes")));
     }
   };
 
@@ -219,7 +221,7 @@ export default function DashboardPage() {
       <SceneFormModal
         open={showCreateModal}
         onClose={closeCreateModal}
-        title="New scene"
+        title={t("dashboard.newScene")}
         titleId="create-scene-title"
         mode="create"
         formTitle={createTitle}
@@ -236,14 +238,14 @@ export default function DashboardPage() {
         submitError={createError}
         onSubmit={handleCreateSubmit}
         saving={createSceneMutation.isPending}
-        submitLabel="Create Scene"
-        loadingLabel="Creating…"
+        submitLabel={t("dashboard.createScene")}
+        loadingLabel={t("dashboard.creating")}
       />
 
       <SceneFormModal
         open={!!editingScene}
         onClose={closeEditModal}
-        title="Edit scene"
+        title={t("dashboard.editScene")}
         titleId="edit-scene-title"
         mode="edit"
         formTitle={editTitle}
@@ -260,34 +262,30 @@ export default function DashboardPage() {
         submitError={editError}
         onSubmit={handleSaveEdit}
         saving={updateSceneMutation.isPending}
-        submitLabel="Save"
-        loadingLabel="Saving…"
+        submitLabel={t("common.save")}
+        loadingLabel={t("dashboard.saving")}
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
       <ConfirmModal
         open={showDeleteConfirm && !!editingScene}
         onClose={() => !deleteSceneMutation.isPending && setShowDeleteConfirm(false)}
-        title="Delete scene"
+        title={t("dashboard.deleteScene")}
         titleId="delete-scene-modal-title"
         message={
           <>
-            Are you sure you want to delete this scene{" "}
-            <strong className="text-foreground">
-              &quot;{editingScene?.title}&quot;
-            </strong>
-            ? All audio will be removed and this action cannot be undone.
+            {t("dashboard.deleteSceneConfirm", { title: editingScene?.title ?? "" })}
           </>
         }
-        confirmLabel="Delete"
-        loadingConfirmLabel="Deleting…"
+        confirmLabel={t("common.delete")}
+        loadingConfirmLabel={t("dashboard.deleting")}
         loading={deleteSceneMutation.isPending}
         onConfirm={handleDeleteScene}
       />
 
       <Navbar logo={<SoundTableLogo />} logoHref="/dashboard" />
 
-      <section className="mx-auto max-w-6xl px-4 py-4 pb-24 bg-background" aria-label="Scenes list">
+      <section className="mx-auto max-w-6xl px-4 py-4 pb-24 bg-background" aria-label={t("dashboard.scenesListAria")}>
         {loading && (
           <div className="flex justify-center py-12">
             <Spinner />
@@ -302,17 +300,17 @@ export default function DashboardPage() {
         )}
         {!loading && !error && scenes.length === 0 && (
           <EmptyState
-            message="No scenes yet."
-            actionLabel="Create your first scene"
+            message={t("dashboard.noScenes")}
+            actionLabel={t("dashboard.createFirstScene")}
             onAction={openCreateModal}
           />
         )}
         {!loading && !error && scenes.length > 0 && (
           <>
             <div className="mb-2 flex items-center justify-between gap-4">
-              <h1 className="text-xl font-semibold text-accent" aria-label="Scenes">
+              <h1 className="text-xl font-semibold text-accent" aria-label={t("dashboard.scenes")}>
               <span className="sm:hidden">🎬</span>
-              <span className="hidden sm:inline">Scenes</span>
+              <span className="hidden sm:inline">{t("dashboard.scenes")}</span>
             </h1>
               <div className="flex items-center gap-1">
                 <SearchBar
@@ -324,12 +322,12 @@ export default function DashboardPage() {
                   }}
                   value={searchQuery}
                   onChange={setSearchQuery}
-                  placeholder="Search by title, description or labels…"
-                  aria-label="Search scenes"
+                  placeholder={t("dashboard.searchPlaceholder")}
+                  aria-label={t("dashboard.searchScenes")}
                 />
                 <IconButton
                   onClick={openCreateModal}
-                  aria-label="New scene"
+                  aria-label={t("dashboard.newScene")}
                   variant="primary"
                   className={showFocusEntry ? "animate-focus-on-entry" : ""}
                 >
@@ -350,7 +348,7 @@ export default function DashboardPage() {
             />
             {filteredScenes.length === 0 && q !== "" && (
               <p className="mt-6 text-center text-muted">
-                No scenes match &quot;{searchQuery.trim()}&quot;.
+                {t("dashboard.noScenesMatch", { query: searchQuery.trim() })}
               </p>
             )}
           </>

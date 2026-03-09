@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useTranslations } from "@/contexts/I18nContext";
 
 export default function LoginVerifyPage() {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
@@ -19,11 +21,11 @@ export default function LoginVerifyPage() {
     setError("");
     const trimmed = code.replace(/\s/g, "").trim();
     if (!trimmed) {
-      setError("Enter the 6-digit code.");
+      setError(t("loginVerify.enterCodeError"));
       return;
     }
     if (!supabase) {
-      setError("Supabase is not configured.");
+      setError(t("loginVerify.supabaseNotConfigured"));
       return;
     }
 
@@ -34,7 +36,7 @@ export default function LoginVerifyPage() {
 
       const totpFactor = factorsRes.data.totp?.[0];
       if (!totpFactor) {
-        setError("No authenticator configured. Set up Google Authenticator first.");
+        setError(t("loginVerify.noAuthenticator"));
         setLoading(false);
         return;
       }
@@ -60,7 +62,7 @@ export default function LoginVerifyPage() {
       const message =
         err && typeof err === "object" && "message" in err
           ? String((err as { message: string }).message)
-          : "Invalid code. Try again.";
+          : t("loginVerify.invalidCode");
       setError(message);
       setLoading(false);
     }
@@ -87,17 +89,16 @@ export default function LoginVerifyPage() {
           </div>
         </div>
         <h1 className="text-center text-xl font-semibold text-foreground">
-          Two-factor verification
+          {t("loginVerify.title")}
         </h1>
         <p className="mt-2 text-center text-sm text-muted">
-          Enter the 6-digit code from the Google Authenticator app (or another
-          compatible app).
+          {t("loginVerify.enterCode")}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label htmlFor="code" className="sr-only">
-              Authenticator code
+              {t("loginVerify.authenticatorCode")}
             </label>
             <input
               id="code"
@@ -105,7 +106,7 @@ export default function LoginVerifyPage() {
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={8}
-              placeholder="000000"
+              placeholder={t("loginVerify.placeholder")}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center text-lg tracking-[0.5em] text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
@@ -122,22 +123,22 @@ export default function LoginVerifyPage() {
             disabled={loading || code.length < 6}
             className="w-full rounded-xl bg-accent px-4 py-3 font-medium text-background transition hover:bg-accent-hover disabled:opacity-50 disabled:hover:bg-accent"
           >
-            {loading ? "Verifying…" : "Continue"}
+            {loading ? t("loginVerify.verifying") : t("loginVerify.continue")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-muted">
-          Haven&apos;t set it up yet?{" "}
+          {t("loginVerify.notSetUp")}{" "}
           <Link
             href="/login/enroll"
             className="text-accent underline hover:text-accent-hover"
           >
-            Set up Google Authenticator
+            {t("loginVerify.setUpAuthenticator")}
           </Link>
         </p>
         <p className="mt-2 text-center text-xs text-muted">
           <Link href="/login" className="underline hover:text-muted">
-            Back to login
+            {t("loginVerify.backToLogin")}
           </Link>
         </p>
       </div>

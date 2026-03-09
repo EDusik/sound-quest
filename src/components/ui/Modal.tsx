@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { CloseIcon } from "@/components/icons";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface ModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function Modal({
   panelClassName = "",
 }: ModalProps) {
   const trapRef = useFocusTrap(open);
+  const t = useTranslations();
 
   useEffect(() => {
     if (!open || !closeOnEscape) return;
@@ -69,7 +71,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className="rounded-lg p-1.5 text-muted hover:bg-border hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <CloseIcon className="h-5 w-5" />
             </button>

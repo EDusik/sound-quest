@@ -16,6 +16,7 @@ import {
   useAddAudioMutation,
   useYouTubeTitleQuery,
 } from "@/hooks/api";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface AddSoundModalProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function AddSoundModal({
   sceneId,
   onAdded,
 }: AddSoundModalProps) {
+  const t = useTranslations();
   const [addName, setAddName] = useState("");
   const [addUrl, setAddUrl] = useState("");
   const [addFile, setAddFile] = useState<File | null>(null);
@@ -61,14 +63,13 @@ export function AddSoundModal({
     e.preventDefault();
     const name = addName.trim();
     const urlTrimmed = addUrl.trim();
+    const extensions = ALLOWED_AUDIO_EXTENSIONS.join(", ");
     if (!name && !addFile) {
-      setAddError("Name is required (or choose a file to use its name)");
+      setAddError(t("addSound.nameRequired"));
       return;
     }
     if (!urlTrimmed && !addFile) {
-      setAddError(
-        `Enter a URL (YouTube or audio ${ALLOWED_AUDIO_EXTENSIONS.join(", ")}) or choose a file`,
-      );
+      setAddError(t("addSound.enterUrlOrFile", { extensions }));
       return;
     }
     if (
@@ -76,20 +77,18 @@ export function AddSoundModal({
       !extractYouTubeId(urlTrimmed) &&
       !isAllowedAudioUrl(urlTrimmed)
     ) {
-      setAddError(
-        `URL must be a YouTube link or an audio file (${ALLOWED_AUDIO_EXTENSIONS.join(", ")}).`,
-      );
+      setAddError(t("addSound.urlMustBeValid", { extensions }));
       return;
     }
     if (addFile && !getAllowedAudioExtension(addFile)) {
-      setAddError(
-        `Invalid file type. Allowed formats: ${ALLOWED_AUDIO_EXTENSIONS.join(", ")}`,
-      );
+      setAddError(t("addSound.invalidFileType", { extensions }));
       return;
     }
     if (addFile && addFile.size > AUDIO_UPLOAD_MAX_BYTES) {
       setAddError(
-        `File is too large. Maximum size is ${AUDIO_UPLOAD_MAX_BYTES / 1024 / 1024} MB.`,
+        t("addSound.fileTooLarge", {
+          maxMb: String(AUDIO_UPLOAD_MAX_BYTES / 1024 / 1024),
+        }),
       );
       return;
     }
@@ -109,7 +108,7 @@ export function AddSoundModal({
       } else {
         const ytId = extractYouTubeId(urlTrimmed);
         if (ytId) {
-          const youtubeName = name || youtubeTitle || "YouTube audio";
+          const youtubeName = name || youtubeTitle || t("addSound.youtubeAudio");
           await addAudioMutation.mutateAsync({
             name: youtubeName,
             sourceUrl: ytId,
@@ -125,7 +124,7 @@ export function AddSoundModal({
       }
       await onAdded();
     } catch (err) {
-      setAddError(getErrorMessage(err, "Failed to add audio"));
+      setAddError(getErrorMessage(err, t("addSound.failedToAdd")));
     }
   };
 
@@ -136,7 +135,7 @@ export function AddSoundModal({
         setAddFile(null);
         onClose();
       }}
-      title="🔊 Add sound"
+      title={t("addSound.title")}
       titleId="add-sound-modal-title"
       maxWidth="max-w-2xl"
       panelClassName="max-h-[90vh] overflow-y-auto"
@@ -149,25 +148,25 @@ export function AddSoundModal({
         </div>
         <details className="rounded-lg border border-border bg-card/50">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">
-            🎵 Add audio
+            {t("addSound.addAudio")}
           </summary>
           <form
             onSubmit={handleAddAudio}
             className="space-y-3 border-t border-border p-4"
           >
             <div>
-              <label className="block text-xs text-foreground">Name</label>
+              <label className="block text-xs text-foreground">{t("addSound.name")}</label>
               <input
                 type="text"
                 value={addName}
                 onChange={(e) => setAddName(e.target.value)}
                 className="mt-1 w-full rounded border border-border bg-card px-3 py-2 text-foreground"
-                placeholder="e.g. Rain ambience"
+                placeholder={t("addSound.namePlaceholder")}
               />
             </div>
             <div>
               <label className="block text-xs text-foreground">
-                URL (YouTube or MP3/WAV/OGG audio) or upload — max. 25 MB
+                {t("addSound.urlLabel")}
               </label>
               <input
                 type="url"
@@ -178,10 +177,10 @@ export function AddSoundModal({
                 }}
                 disabled={hasFileInput}
                 className="mt-1 w-full rounded border border-border bg-card px-3 py-2 text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
-                placeholder="https://youtube.com/… or https://…/audio.mp3"
+                placeholder={t("addSound.urlPlaceholder")}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Or choose a file on your computer:
+                {t("addSound.orChooseFile")}
               </p>
               <input
                 type="file"
@@ -191,7 +190,9 @@ export function AddSoundModal({
                   const f = e.target.files?.[0];
                   if (f && !getAllowedAudioExtension(f)) {
                     setAddError(
-                      `Format not allowed. Use: ${ALLOWED_AUDIO_EXTENSIONS.join(", ")}`,
+                      t("addSound.formatNotAllowed", {
+                        extensions: ALLOWED_AUDIO_EXTENSIONS.join(", "),
+                      }),
                     );
                     e.target.value = "";
                     return;
@@ -212,12 +213,12 @@ export function AddSoundModal({
                       <span className="text-red-400"> — over 25 MB limit</span>
                     )}
                   </span>
-                  <button
+                    <button
                     type="button"
                     onClick={() => setAddFile(null)}
                     className="text-accent hover:underline"
                   >
-                    Remove file
+                    {t("addSound.removeFile")}
                   </button>
                 </p>
               )}
@@ -228,7 +229,7 @@ export function AddSoundModal({
               disabled={adding}
               className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
             >
-              {adding ? "Adding…" : "🎵 Add audio"}
+              {adding ? t("addSound.adding") : t("addSound.addAudioButton")}
             </button>
           </form>
         </details>
@@ -242,7 +243,7 @@ export function AddSoundModal({
           }}
           className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-card"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
       </div>
     </Modal>

@@ -2,6 +2,7 @@
 
 import type { Label } from "@/lib/types";
 import { LABEL_TEXT_MAX, LABELS_MAX } from "@/lib/sceneSchema";
+import { useTranslations } from "@/contexts/I18nContext";
 
 const DEFAULT_COLORS = [
   "#f43f5e",
@@ -40,6 +41,8 @@ export function LabelEditor({
   error,
   idPrefix = "labels",
 }: LabelEditorProps) {
+  const t = useTranslations();
+
   const addLabel = () => {
     const t = newLabelText.trim().slice(0, LABEL_TEXT_MAX);
     if (!t || labels.length >= LABELS_MAX) return;
@@ -58,7 +61,7 @@ export function LabelEditor({
   return (
     <div className="min-w-0">
       <label className="block text-sm font-medium text-foreground">
-        Labels ({labels.length}/{LABELS_MAX})
+        {t("common.labelsCount", { current: String(labels.length), max: String(LABELS_MAX) })}
       </label>
       <div className="mt-2 flex min-w-0 flex-wrap gap-2">
         {labels.map((l) => (
@@ -72,7 +75,7 @@ export function LabelEditor({
               type="button"
               onClick={() => removeLabel(l.id)}
               className="shrink-0 rounded-full hover:bg-white/20"
-              aria-label={`Remove ${l.text}`}
+              aria-label={t("common.removeLabel", { text: l.text })}
             >
               ×
             </button>
@@ -89,7 +92,7 @@ export function LabelEditor({
           maxLength={LABEL_TEXT_MAX}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLabel())}
           className="h-9 min-w-[140px] flex-1 rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none"
-          placeholder="Label text"
+          placeholder={t("common.labelText")}
           id={`${idPrefix}-label-input`}
         />
         <span className="text-xs text-muted tabular-nums shrink-0">
@@ -106,7 +109,7 @@ export function LabelEditor({
                 backgroundColor: color,
                 borderColor: newLabelColor === color ? "white" : "transparent",
               }}
-              aria-label={`Color ${color}`}
+              aria-label={t("common.colorLabel", { color })}
             />
           ))}
         </div>
@@ -116,7 +119,7 @@ export function LabelEditor({
           disabled={labels.length >= LABELS_MAX}
           className="rounded-lg bg-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-border/80 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Add label
+          {t("common.addLabel")}
         </button>
       </div>
       {error && (

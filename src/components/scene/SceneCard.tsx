@@ -4,6 +4,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import Link from "next/link";
 import type { Scene } from "@/lib/types";
 import { Label } from "@/components/ui/Label";
+import { useTranslations } from "@/contexts/I18nContext";
 
 const TITLE_MAX_CHARS = 32;
 const DESCRIPTION_MAX_CHARS = 50;
@@ -20,6 +21,7 @@ export function SceneCard({
   scene: Scene;
   onEdit?: (scene: Scene) => void;
 }) {
+  const t = useTranslations();
   const isNarrow = useMediaQuery("(max-width: 2024px)");
   const title = isNarrow ? truncate(scene.title, TITLE_MAX_CHARS) : scene.title;
   const description =
@@ -41,8 +43,8 @@ export function SceneCard({
             onEdit(scene);
           }}
           className="absolute right-3 top-3 rounded-lg p-1.5 text-muted hover:bg-border hover:text-foreground"
-          aria-label="Edit scene"
-          title="Edit scene"
+          aria-label={t("dashboard.editSceneAria")}
+          title={t("dashboard.editScene")}
         >
           <svg
             className="h-4 w-4"

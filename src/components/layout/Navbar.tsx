@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations } from "@/contexts/I18nContext";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
 import { SignOutIcon } from "@/components/icons";
 
 interface NavbarProps {
@@ -15,6 +17,7 @@ interface NavbarProps {
 
 export function Navbar({ logo, logoHref }: NavbarProps) {
   const { user, signOut } = useAuth();
+  const t = useTranslations();
 
   return (
     <header className="sticky top-0 z-10 w-full border-b border-border bg-background backdrop-blur" role="banner">
@@ -25,7 +28,7 @@ export function Navbar({ logo, logoHref }: NavbarProps) {
               <Link
                 href={logoHref}
                 className="flex items-center gap-1 hover:opacity-90 transition-opacity"
-                aria-label="Back to Dashboard"
+                aria-label={t("nav.backToDashboard")}
               >
                 {logo}
               </Link>
@@ -33,18 +36,18 @@ export function Navbar({ logo, logoHref }: NavbarProps) {
               logo
             )}
           </h1>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-[6px] shrink-0">
             <button
               type="button"
               onClick={() => signOut()}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition hover:bg-card sm:h-auto sm:w-auto sm:px-3 sm:py-2.5 sm:text-sm"
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label={t("nav.signOut")}
+              title={t("nav.signOut")}
             >
               <span className="sm:hidden" aria-hidden>
                 <SignOutIcon className="h-5 w-5" />
               </span>
-              <span className="hidden sm:inline">Sign out</span>
+              <span className="hidden sm:inline">{t("nav.signOut")}</span>
             </button>
             {user ? (
               <span className="flex items-center gap-2 rounded-lg border border-border bg-card/80 px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-sm text-foreground min-w-0">
@@ -62,10 +65,11 @@ export function Navbar({ logo, logoHref }: NavbarProps) {
                   </span>
                 )}
                 <span className="max-w-[140px] truncate hidden sm:inline">
-                  {user.displayName ?? user.email ?? "User"}
+                  {user.displayName ?? user.email ?? t("nav.userFallback")}
                 </span>
               </span>
             ) : null}
+            <LanguageSwitch />
             <ThemeToggle />
           </div>
         </div>

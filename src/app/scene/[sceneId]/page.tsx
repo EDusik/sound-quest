@@ -10,6 +10,7 @@ import {
   useUpdateAudioMutation,
 } from "@/hooks/api";
 import type { AudioItem } from "@/lib/types";
+import { useTranslations } from "@/contexts/I18nContext";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
 import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
 import { Navbar } from "@/components/layout/Navbar";
@@ -41,11 +42,12 @@ export default function ScenePage() {
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
   const scene = sceneData ?? null;
+  const t = useTranslations();
   const error =
     !sceneId
-      ? "Scene not found"
+      ? t("scene.sceneNotFound")
       : sceneError
-        ? getErrorMessage(sceneError, "Failed to load")
+        ? getErrorMessage(sceneError, t("scene.failedToLoad"))
         : null;
   const [search, setSearch] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -130,7 +132,7 @@ export default function ScenePage() {
     try {
       await reorderAudiosMutation.mutateAsync(orderedIds);
     } catch (err) {
-      setReorderError(getErrorMessage(err, "Failed to reorder audios."));
+      setReorderError(getErrorMessage(err, t("scene.failedReorder")));
     }
   };
 
@@ -161,7 +163,7 @@ export default function ScenePage() {
       try {
         await updateAudioMutation.mutateAsync({ ...audio, name: newName });
       } catch (err) {
-        setRenameError(getErrorMessage(err, "Failed to rename sound."));
+        setRenameError(getErrorMessage(err, t("scene.failedRename")));
       }
     },
     [updateAudioMutation],
@@ -187,9 +189,9 @@ export default function ScenePage() {
   if (error || !scene) {
     return (
       <ErrorPage
-        message={error ?? "Scene not found"}
+        message={error ?? t("scene.sceneNotFound")}
         backHref="/dashboard"
-        backLabel="← Dashboard"
+        backLabel={t("scene.backToDashboard")}
       />
     );
   }
@@ -199,19 +201,11 @@ export default function ScenePage() {
       <ConfirmModal
         open={!!audioToDelete}
         onClose={closeDeleteModal}
-        title="Delete sound"
+        title={t("scene.deleteSoundTitle")}
         titleId="delete-modal-title"
-        message={
-          <>
-            Are you sure you want to delete{" "}
-            <strong className="text-foreground">
-              &quot;{audioToDelete?.name}&quot;
-            </strong>
-            ? This action cannot be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        loadingConfirmLabel="Deleting…"
+        message={t("scene.deleteSoundConfirm", { name: audioToDelete?.name ?? "" })}
+        confirmLabel={t("common.delete")}
+        loadingConfirmLabel={t("dashboard.deleting")}
         loading={removeAudioMutation.isPending}
         onConfirm={handleConfirmDelete}
       />
@@ -227,7 +221,7 @@ export default function ScenePage() {
         <SceneTitleBlock scene={scene} />
       </div>
 
-      <section className="mx-auto max-w-6xl px-4 py-4 bg-background" aria-label="Scene audios">
+      <section className="mx-auto max-w-6xl px-4 py-4 bg-background" aria-label={t("scene.audiosAria")}>
         {(reorderError || renameError) && (
           <ErrorMessage
             message={reorderError ?? renameError ?? ""}
@@ -239,9 +233,9 @@ export default function ScenePage() {
           />
         )}
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h1 className="text-xl font-semibold text-accent" aria-label="Audios">
+          <h1 className="text-xl font-semibold text-accent" aria-label={t("scene.audios")}>
           <span className="sm:hidden">🎵</span>
-          <span className="hidden sm:inline">Audios</span>
+          <span className="hidden sm:inline">{t("scene.audios")}</span>
         </h1>
           <div className="flex items-center gap-1">
             <SearchBar
@@ -253,12 +247,12 @@ export default function ScenePage() {
               }}
               value={search}
               onChange={setSearch}
-              placeholder="Filter by audio name…"
-              aria-label="Filter audios in this scene"
+              placeholder={t("scene.filterPlaceholder")}
+              aria-label={t("scene.filterAudios")}
             />
             <IconButton
               onClick={() => setShowAddSoundModal(true)}
-              aria-label="Add sound"
+              aria-label={t("scene.addSound")}
               variant="primary"
               className={showFocusEntry ? "animate-focus-on-entry" : ""}
             >
@@ -275,8 +269,8 @@ export default function ScenePage() {
           draggedId={draggedId}
               reordering={reorderAudiosMutation.isPending}
           hasAnyAudios={audios.length > 0}
-          emptyMessage="No audios in this scene. Use the + button to add one."
-          emptySearchMessage="No audios match your search."
+          emptyMessage={t("scene.noAudios")}
+          emptySearchMessage={t("scene.noAudiosMatch")}
           onToggleActive={toggleAudioActive}
           onDelete={setAudioToDelete}
           onRename={handleRename}

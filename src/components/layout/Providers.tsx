@@ -3,6 +3,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { I18nProvider } from "@/contexts/I18nContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AudioBar } from "@/components/audio/AudioBar";
 import { GlobalAuthLoading } from "@/components/auth/GlobalAuthLoading";
@@ -24,10 +25,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <ThemeFavicon />
-        <AuthProvider>
-          <AuthShell>{children}</AuthShell>
-        </AuthProvider>
+        <I18nProvider>
+          <ThemeFavicon />
+          <AuthProvider>
+            <AuthShell>{children}</AuthShell>
+          </AuthProvider>
+        </I18nProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

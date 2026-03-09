@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useTranslations } from "@/contexts/I18nContext";
 
 interface ConfirmModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface ConfirmModalProps {
   confirmLabel: string;
   /** Shown when loading (e.g. "Deleting…"). If not set, shows confirmLabel + "…". */
   loadingConfirmLabel?: string;
+  /** Defaults to translated "Cancel". */
   cancelLabel?: string;
   loading?: boolean;
   onConfirm: () => void;
@@ -27,12 +29,14 @@ export function ConfirmModal({
   message,
   confirmLabel,
   loadingConfirmLabel,
-  cancelLabel = "Cancel",
+  cancelLabel,
   loading = false,
   onConfirm,
   confirmVariant = "danger",
 }: ConfirmModalProps) {
   const trapRef = useFocusTrap(open);
+  const t = useTranslations();
+  const resolvedCancelLabel = cancelLabel ?? t("common.cancel");
 
   useEffect(() => {
     if (!open) return;
@@ -79,7 +83,7 @@ export function ConfirmModal({
             disabled={loading}
             className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-card disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             type="button"
