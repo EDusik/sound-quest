@@ -90,10 +90,6 @@ function YouTubeAudioRow({
   }, [loop]);
 
   useEffect(() => {
-    if (!isEditingName) setEditNameValue(audio.name);
-  }, [audio.name, isEditingName]);
-
-  useEffect(() => {
     if (isEditingName && nameInputRef.current) {
       nameInputRef.current.focus();
       nameInputRef.current.select();
