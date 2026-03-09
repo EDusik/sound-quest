@@ -9,19 +9,19 @@ import {
   removeAudio,
 } from "@/lib/storage";
 import type { Scene, AudioItem } from "@/lib/types";
-import { SceneTitleBlock } from "@/components/SceneTitleBlock";
-import { SoundTableLogo } from "@/components/SoundTableLogo";
-import { Navbar } from "@/components/Navbar";
-import { SearchBar } from "@/components/SearchBar";
-import { ConfirmModal } from "@/components/ConfirmModal";
-import { AddSoundModal } from "@/components/AddSoundModal";
-import { AudiosBlock } from "@/components/AudiosBlock";
-import { Spinner } from "@/components/Spinner";
-import { ErrorPage } from "@/components/ErrorPage";
-import { IconButton } from "@/components/IconButton";
+import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
+import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
+import { Navbar } from "@/components/layout/Navbar";
+import { SearchBar } from "@/components/search/SearchBar";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AddSoundModal } from "@/components/audio/AddSoundModal";
+import { AudiosBlock } from "@/components/audio/AudiosBlock";
+import { Spinner } from "@/components/ui/Spinner";
+import { ErrorPage } from "@/components/ui/ErrorPage";
+import { IconButton } from "@/components/ui/IconButton";
 import { useAudioStore } from "@/store/audioStore";
 import { getErrorMessage } from "@/lib/errors";
-import { ErrorMessage } from "@/components/ErrorMessage";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 
 export default function ScenePage() {

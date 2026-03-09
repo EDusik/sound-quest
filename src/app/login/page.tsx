@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { SoundTableLogo } from "@/components/SoundTableLogo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {

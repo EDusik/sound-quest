@@ -3,7 +3,7 @@
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import Link from "next/link";
 import type { Scene } from "@/lib/types";
-import { Label } from "./Label";
+import { Label } from "@/components/ui/Label";
 
 const TITLE_MAX_CHARS = 32;
 const DESCRIPTION_MAX_CHARS = 50;

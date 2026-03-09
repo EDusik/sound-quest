@@ -2,8 +2,8 @@
 
 import { type FormEvent } from "react";
 import type { Label } from "@/lib/types";
-import { Modal } from "@/components/Modal";
-import { LabelEditor } from "@/components/LabelEditor";
+import { Modal } from "@/components/ui/Modal";
+import { LabelEditor } from "@/components/editor/LabelEditor";
 import { TrashIcon } from "@/components/icons";
 import { TITLE_MAX, DESCRIPTION_MAX } from "@/lib/sceneSchema";
 

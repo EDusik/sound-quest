@@ -1,8 +1,8 @@
 "use client";
 
 import type { Scene } from "@/lib/types";
-import { SceneCard } from "@/components/SceneCard";
-import { DragHandle } from "@/components/DragHandle";
+import { SceneCard } from "@/components/scene/SceneCard";
+import { DragHandle } from "@/components/ui/DragHandle";
 
 interface ScenesBlockProps {
   /** Scenes to display (e.g. filtered list). */

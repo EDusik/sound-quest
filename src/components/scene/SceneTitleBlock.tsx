@@ -1,7 +1,7 @@
 "use client";
 
 import type { Scene } from "@/lib/types";
-import { Label as LabelChip } from "@/components/Label";
+import { Label as LabelChip } from "@/components/ui/Label";
 
 function Dot() {
   return (

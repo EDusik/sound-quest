@@ -1,8 +1,8 @@
 "use client";
 
 import type { AudioItem } from "@/lib/types";
-import { AudioRow } from "@/components/AudioRow";
-import { DragHandle } from "@/components/DragHandle";
+import { AudioRow } from "@/components/audio/AudioRow";
+import { DragHandle } from "@/components/ui/DragHandle";
 
 interface AudiosBlockProps {
   activeAudios: AudioItem[];

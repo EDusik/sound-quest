@@ -2,10 +2,10 @@
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthGuard } from "./AuthGuard";
-import { AudioBar } from "./AudioBar";
-import { GlobalAuthLoading } from "./GlobalAuthLoading";
-import { ThemeFavicon } from "./ThemeFavicon";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { AudioBar } from "@/components/audio/AudioBar";
+import { GlobalAuthLoading } from "@/components/auth/GlobalAuthLoading";
+import { ThemeFavicon } from "@/components/theme/ThemeFavicon";
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();

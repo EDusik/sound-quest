@@ -9,8 +9,8 @@ import {
   getAllowedAudioExtension,
   ALLOWED_AUDIO_EXTENSIONS,
 } from "@/lib/storage";
-import { FreesoundSearch } from "@/components/FreesoundSearch";
-import { Modal } from "@/components/Modal";
+import { FreesoundSearch } from "@/components/audio/FreesoundSearch";
+import { Modal } from "@/components/ui/Modal";
 import { extractYouTubeId } from "@/lib/youtube";
 import { getErrorMessage } from "@/lib/errors";
 

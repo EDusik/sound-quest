@@ -2,9 +2,9 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Cinzel } from "next/font/google";
 import "./globals.css";
-import { Footer } from "@/components/Footer";
-import { JsonLd } from "@/components/JsonLd";
-import { Providers } from "@/components/Providers";
+import { Footer } from "@/components/layout/Footer";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { Providers } from "@/components/layout/Providers";
 import { siteMetadata } from "@/lib/seo";
 
 const geistSans = Geist({
