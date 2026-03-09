@@ -10,6 +10,7 @@ interface AudioRowProps {
   isInactive?: boolean;
   onToggleActive?: (audio: AudioItem) => void;
   onDelete?: (audio: AudioItem) => void;
+  onRename?: (audio: AudioItem, newName: string) => void;
   /** Optional class for the root card (e.g. rounded-tr-lg rounded-bl-lg when next to drag handle). */
   className?: string;
 }
@@ -52,6 +53,7 @@ function YouTubeAudioRow({
   isInactive = false,
   onToggleActive,
   onDelete,
+  onRename,
   className,
 }: AudioRowProps) {
   const videoId = audio.sourceUrl;
@@ -63,6 +65,10 @@ function YouTubeAudioRow({
   const setYoutubeControl = useAudioStore((s) => s.setYoutubeControl);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(audio.name);
+
   const playerRef = useRef<{
     playVideo: () => void;
     pauseVideo: () => void;
@@ -82,6 +88,30 @@ function YouTubeAudioRow({
   useEffect(() => {
     loopRef.current = loop;
   }, [loop]);
+
+  useEffect(() => {
+    if (!isEditingName) setEditNameValue(audio.name);
+  }, [audio.name, isEditingName]);
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  const saveRename = () => {
+    const trimmed = editNameValue.trim();
+    if (trimmed && trimmed !== audio.name && onRename) {
+      onRename(audio, trimmed);
+    }
+    setIsEditingName(false);
+  };
+
+  const cancelRename = () => {
+    setEditNameValue(audio.name);
+    setIsEditingName(false);
+  };
 
   useEffect(() => {
     register({
@@ -258,14 +288,30 @@ function YouTubeAudioRow({
           className={`min-w-0 flex-1 ${isInactive ? "opacity-40" : ""}`}
           aria-hidden={isInactive}
         >
-          <a
-            href={watchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="truncate block font-medium text-accent hover:underline"
-          >
-            {audio.name}
-          </a>
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              onBlur={saveRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveRename();
+                if (e.key === "Escape") cancelRename();
+              }}
+              className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
+              aria-label="Edit sound name"
+            />
+          ) : (
+            <a
+              href={watchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate block font-medium text-accent hover:underline"
+            >
+              {audio.name}
+            </a>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
@@ -280,7 +326,11 @@ function YouTubeAudioRow({
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
                 title="Play"
               >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
@@ -291,7 +341,11 @@ function YouTubeAudioRow({
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
                 title="Pause"
               >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                 </svg>
               </button>
@@ -327,6 +381,32 @@ function YouTubeAudioRow({
               </svg>
             </button>
           </div>
+          {onRename ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditNameValue(audio.name);
+                setIsEditingName(true);
+              }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+              title="Edit sound name"
+              aria-label="Edit sound name"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+          ) : null}
           {onDelete ? (
             <button
               type="button"
@@ -379,9 +459,14 @@ function HtmlAudioRow({
   isInactive = false,
   onToggleActive,
   onDelete,
+  onRename,
   className,
 }: AudioRowProps) {
   const ref = useRef<HTMLAudioElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(audio.name);
+
   const register = useAudioStore((s) => s.register);
   const unregister = useAudioStore((s) => s.unregister);
   const setState = useAudioStore((s) => s.setState);
@@ -390,6 +475,26 @@ function HtmlAudioRow({
   const setLoop = useAudioStore((s) => s.setLoop);
   const setTime = useAudioStore((s) => s.setTime);
   const player = useAudioStore((s) => s.players.get(audio.id));
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  const saveRename = () => {
+    const trimmed = editNameValue.trim();
+    if (trimmed && trimmed !== audio.name && onRename) {
+      onRename(audio, trimmed);
+    }
+    setIsEditingName(false);
+  };
+
+  const cancelRename = () => {
+    setEditNameValue(audio.name);
+    setIsEditingName(false);
+  };
 
   useEffect(() => {
     register({
@@ -499,14 +604,30 @@ function HtmlAudioRow({
           className={`min-w-0 flex-1 ${isInactive ? "opacity-40" : ""}`}
           aria-hidden={isInactive}
         >
-          <a
-            href={audio.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="truncate block font-medium text-accent hover:underline"
-          >
-            {audio.name}
-          </a>
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              onBlur={saveRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveRename();
+                if (e.key === "Escape") cancelRename();
+              }}
+              className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
+              aria-label="Edit sound name"
+            />
+          ) : (
+            <a
+              href={audio.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate block font-medium text-accent hover:underline"
+            >
+              {audio.name}
+            </a>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -521,7 +642,11 @@ function HtmlAudioRow({
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
                 title="Play"
               >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
@@ -532,7 +657,11 @@ function HtmlAudioRow({
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
                 title="Pause"
               >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                 </svg>
               </button>
@@ -568,6 +697,32 @@ function HtmlAudioRow({
               </svg>
             </button>
           </div>
+          {onRename ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditNameValue(audio.name);
+                setIsEditingName(true);
+              }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+              title="Edit sound name"
+              aria-label="Edit sound name"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+          ) : null}
           {onDelete ? (
             <button
               type="button"

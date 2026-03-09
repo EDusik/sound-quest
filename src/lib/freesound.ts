@@ -49,6 +49,7 @@ export async function searchFreesound(
   query: string,
   page = 1,
   pageSize = 15,
+  filter?: string,
 ): Promise<FreesoundSearchResponse> {
   const token = getToken();
   if (!token) {
@@ -58,7 +59,10 @@ export async function searchFreesound(
   }
   const q = encodeURIComponent(query.trim());
   const fields = "id,name,previews,duration";
-  const url = `${BASE}/search/?query=${q}&token=${token}&fields=${fields}&page=${page}&page_size=${Math.min(pageSize, 30)}`;
+  let url = `${BASE}/search/?query=${q}&token=${token}&fields=${fields}&page=${page}&page_size=${Math.min(pageSize, 30)}`;
+  if (filter?.trim()) {
+    url += `&filter=${encodeURIComponent(filter.trim())}`;
+  }
   const res = await fetch(url);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

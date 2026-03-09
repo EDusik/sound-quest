@@ -7,6 +7,7 @@ import {
   getAudios,
   reorderAudios,
   removeAudio,
+  updateAudio,
 } from "@/lib/storage";
 import type { Scene, AudioItem } from "@/lib/types";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
@@ -37,6 +38,7 @@ export default function ScenePage() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const [reorderError, setReorderError] = useState<string | null>(null);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [audioToDelete, setAudioToDelete] = useState<AudioItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [inactiveAudioIds, setInactiveAudioIds] = useState<string[]>([]);
@@ -182,6 +184,21 @@ export default function ScenePage() {
     if (!deleting) setAudioToDelete(null);
   }, [deleting]);
 
+  const handleRename = useCallback(
+    async (audio: AudioItem, newName: string) => {
+      setRenameError(null);
+      try {
+        await updateAudio({ ...audio, name: newName });
+        setAudios((prev) =>
+          prev.map((a) => (a.id === audio.id ? { ...a, name: newName } : a))
+        );
+      } catch (err) {
+        setRenameError(getErrorMessage(err, "Failed to rename sound."));
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     if (!audioToDelete) return;
     const onKey = (e: KeyboardEvent) => {
@@ -243,10 +260,13 @@ export default function ScenePage() {
       </div>
 
       <section className="mx-auto max-w-6xl px-4 py-4 bg-background" aria-label="Scene audios">
-        {reorderError && (
+        {(reorderError || renameError) && (
           <ErrorMessage
-            message={reorderError}
-            onDismiss={() => setReorderError(null)}
+            message={reorderError ?? renameError ?? ""}
+            onDismiss={() => {
+              setReorderError(null);
+              setRenameError(null);
+            }}
             className="mb-4"
           />
         )}
@@ -291,6 +311,7 @@ export default function ScenePage() {
           emptySearchMessage="No audios match your search."
           onToggleActive={toggleAudioActive}
           onDelete={setAudioToDelete}
+          onRename={handleRename}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}

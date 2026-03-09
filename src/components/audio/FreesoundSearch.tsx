@@ -17,6 +17,7 @@ interface FreesoundSearchProps {
 
 export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("");
   const [results, setResults] = useState<FreesoundSound[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +34,19 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
     setError(null);
     setLoading(true);
     setResults([]);
+    const rawFilter = filter.trim();
+    // If filter has no ":", treat each word as a tag (no need to type "tag:" before each)
+    const filterParam =
+      rawFilter &&
+      (rawFilter.includes(":")
+        ? rawFilter
+        : rawFilter
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((t) => `tag:${t}`)
+            .join(" "));
     try {
-      const data = await searchFreesound(q, 1, 20);
+      const data = await searchFreesound(q, 1, 20, filterParam || undefined);
       setResults(data.results ?? []);
     } catch (err) {
       setError(getErrorMessage(err, "Search failed"));
@@ -166,29 +178,47 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
         </svg>
       </summary>
       <div className="border-t border-border p-4">
-        <form onSubmit={handleSearch} className="mb-3 flex flex-wrap gap-2">
+        <p className="mb-2 text-xs text-muted">
+          <strong>Query:</strong> Terms or tags (e.g. rpg, fantasy, ambience) -
+          search matches tags, name, and description. Use{" "}
+          <code className="rounded bg-border px-0.5">-term</code> to exclude.{" "}
+          <strong>Filter (optional):</strong> Type tags as words (e.g.{" "}
+          <code className="rounded bg-border px-0.5">fantasy rpg ambience</code>
+          );
+        </p>
+        <form onSubmit={handleSearch} className="mb-3 space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => {
+                const v = e.target.value;
+                setQuery(v);
+                if (!v.trim()) {
+                  setResults([]);
+                  setError(null);
+                }
+              }}
+              placeholder="Query: e.g. rain, piano, fantasy…"
+              className="min-w-0 flex-1 basis-full rounded-lg border border-border bg-card px-3 py-2 text-foreground placeholder-muted focus:border-accent focus:outline-none sm:basis-0"
+              aria-label="Search Freesound"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full shrink-0 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-50 sm:w-auto"
+            >
+              {loading ? "Searching…" : "Search"}
+            </button>
+          </div>
           <input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              const v = e.target.value;
-              setQuery(v);
-              if (!v.trim()) {
-                setResults([]);
-                setError(null);
-              }
-            }}
-            placeholder="e.g. rain, piano, alarm…"
-            className="min-w-0 flex-1 basis-full rounded-lg border border-border bg-card px-3 py-2 text-foreground placeholder-muted focus:border-accent focus:outline-none sm:basis-0"
-            aria-label="Search Freesound"
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filter (optional): e.g. fantasy rpg or dungeon"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder-muted focus:border-accent focus:outline-none"
+            aria-label="Freesound filter"
           />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full shrink-0 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-50 sm:w-auto"
-          >
-            {loading ? "Searching…" : "Search"}
-          </button>
         </form>
         {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
         {results.length > 0 && (

@@ -14,7 +14,7 @@ export function Footer() {
           href={`${process.env.PIX_ID}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-semibold text-primary underline decoration-primary/60 underline-offset-2 transition hover:text-primary hover:decoration-primary dark:text-foreground dark:decoration-(--foreground)/30 dark:hover:decoration-foreground"
+          className="font-semibold text-primary underline decoration-primary/60 underline-offset-2 transition hover:text-accent hover:decoration-accent dark:text-foreground dark:decoration-(--foreground)/30 dark:hover:text-accent dark:hover:decoration-accent"
           title="Buy Me a Coffee"
           aria-label="Support the project on Buy Me a Coffee (opens in new tab)"
         >
