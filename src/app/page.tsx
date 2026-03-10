@@ -9,16 +9,12 @@ import { Spinner } from "@/components/ui/Spinner";
 export default function Home() {
   const t = useTranslations();
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
   useEffect(() => {
     if (loading) return;
-    if (isAuthenticated) {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/login");
-    }
-  }, [loading, isAuthenticated, router]);
+    router.replace("/dashboard");
+  }, [loading, router]);
 
   return (
     <div className="flex min-h-full items-center justify-center bg-background" role="status" aria-live="polite" aria-label={t("common.loading")}>

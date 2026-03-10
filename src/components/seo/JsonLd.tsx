@@ -3,8 +3,8 @@ import { siteUrl } from "@/lib/seo";
 const webSiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Sound Table",
-  alternateName: "Sound Table – RPG Ambient Soundboard",
+  name: "Sound Quest",
+  alternateName: "Sound Quest – RPG Ambient Soundboard",
   url: siteUrl,
   description:
     "Create immersive RPG sessions with ambient sounds, music and sound effects. Build scenes for your tabletop campaigns. Free soundboard for dungeon masters.",

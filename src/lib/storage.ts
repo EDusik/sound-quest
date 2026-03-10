@@ -1,6 +1,15 @@
+/**
+ * Storage abstraction layer:
+ * - Anonymous users: data is persisted in localStorage (keyed by anonymous userId).
+ * - Authenticated users: data is persisted in Supabase when configured (and Firestore is not used).
+ * - Firebase/Firestore: when enabled, takes precedence over Supabase for persistence.
+ * Callers use getScenes(userId), createScene(userId, ...), etc.; the layer chooses the backend
+ * based on auth (getSupabaseUserId()) and configuration.
+ */
 import type { Scene, AudioItem, AudioKind } from "./types";
 import { getFirebaseDb, isFirestoreEnabled } from "./firebase";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { ANONYMOUS_UID } from "./authConstants";
 import {
   collection,
   doc,
@@ -279,6 +288,18 @@ function deleteLocalAudio(audioId: string): void {
   } catch {
     // ignore
   }
+}
+
+function mirrorSceneToAnonymousLocal(scene: Scene): void {
+  const anonymousScene: Scene = {
+    ...scene,
+    userId: ANONYMOUS_UID,
+  };
+  setLocalScene(anonymousScene);
+}
+
+function mirrorAudioToAnonymousLocal(audio: AudioItem): void {
+  setLocalAudio(audio);
 }
 
 function sceneFromRow(row: {
@@ -568,6 +589,7 @@ export async function createScene(
     await setFirestoreScene(scene);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseScene(scene);
+    mirrorSceneToAnonymousLocal(scene);
   } else {
     setLocalScene(scene);
   }
@@ -579,6 +601,7 @@ export async function updateScene(scene: Scene): Promise<void> {
     await setFirestoreScene(scene);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseScene(scene);
+    mirrorSceneToAnonymousLocal(scene);
   } else {
     setLocalScene(scene);
   }
@@ -589,6 +612,7 @@ export async function deleteScene(sceneId: string): Promise<void> {
     await deleteFirestoreScene(sceneId);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await deleteSupabaseScene(sceneId);
+    deleteLocalScene(sceneId);
   } else {
     deleteLocalScene(sceneId);
   }
@@ -631,6 +655,7 @@ export async function addAudio(
     if (!after.some((a) => a.id === id)) {
       throw new Error("Audio was not saved to the database. Please try again.");
     }
+    mirrorAudioToAnonymousLocal(audio);
   } else {
     setLocalAudio(audio);
   }
@@ -642,6 +667,7 @@ export async function updateAudio(audio: AudioItem): Promise<void> {
     await setFirestoreAudio(audio);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await setSupabaseAudio(audio);
+    mirrorAudioToAnonymousLocal(audio);
   } else {
     setLocalAudio(audio);
   }
@@ -652,6 +678,7 @@ export async function removeAudio(audioId: string): Promise<void> {
     await deleteFirestoreAudio(audioId);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
     await deleteSupabaseAudio(audioId);
+    deleteLocalAudio(audioId);
   } else {
     deleteLocalAudio(audioId);
   }
@@ -682,5 +709,69 @@ export async function reorderScenes(
     const scene = byId.get(id);
     if (!scene || scene.order === index) continue;
     await updateScene({ ...scene, order: index });
+  }
+}
+
+/**
+ * Migrates all localStorage-based scenes and audios for a given "from" user id
+ * into Supabase for the currently authenticated Supabase user.
+ *
+ * - Only runs when Supabase storage is enabled and there is a logged-in user.
+ * - Data in localStorage is intentionally preserved; a per-user flag prevents
+ *   running the migration more than once.
+ */
+export async function migrateLocalDataToSupabase(
+  // Kept for backwards compatibility; currently unused, but allows
+  // future targeting of specific anonymous ids if needed.
+  _fromUserId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!isSupabaseStorageEnabled()) return;
+
+  const toUserId = await getSupabaseUserId();
+  if (!toUserId) return;
+
+  let localScenes: Scene[] = [];
+  let localAudios: AudioItem[] = [];
+
+  try {
+    const scenesRaw = window.localStorage.getItem(SCENES_KEY);
+    localScenes = scenesRaw ? (JSON.parse(scenesRaw) as Scene[]) : [];
+  } catch {
+    localScenes = [];
+  }
+
+  try {
+    const audiosRaw = window.localStorage.getItem(AUDIOS_KEY);
+    localAudios = audiosRaw ? (JSON.parse(audiosRaw) as AudioItem[]) : [];
+  } catch {
+    localAudios = [];
+  }
+
+  // Migrate all local scenes found, regardless of stored userId.
+  // This better reflects the user expectation: "everything I created
+  // in this browser before logging in should appear in my account".
+  const scenesToMigrate = localScenes;
+  if (scenesToMigrate.length === 0) {
+    return;
+  }
+
+  for (const scene of scenesToMigrate) {
+    const sceneForSupabase: Scene = {
+      ...scene,
+      userId: toUserId,
+    };
+    await setSupabaseScene(sceneForSupabase);
+
+    const audiosForScene = localAudios.filter(
+      (audio) => audio.sceneId === scene.id,
+    );
+    for (const audio of audiosForScene) {
+      const audioForSupabase: AudioItem = {
+        ...audio,
+        sceneId: sceneForSupabase.id,
+      };
+      await setSupabaseAudio(audioForSupabase);
+    }
   }
 }

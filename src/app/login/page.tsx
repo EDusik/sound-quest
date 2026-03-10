@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
+import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
+import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
@@ -44,14 +45,25 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex w-full shrink-0 items-center justify-between border-b border-border bg-background px-4 py-3" role="banner">
-        <SoundTableLogo size={28} className="text-lg" />
-        <ThemeToggle />
+      <header className="sticky top-0 z-10 w-full shrink-0 border-b border-border bg-background py-3" role="banner">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 hover:opacity-90 transition-opacity"
+            aria-label={`${t("brand.name")}, ${t("nav.backToDashboard")}`}
+          >
+            <SoundQuestLogo size={28} className="text-lg" />
+          </Link>
+          <div className="flex items-center gap-[6px] shrink-0">
+            <LanguageSwitch />
+            <ThemeToggle />
+          </div>
+        </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-border bg-card/80 p-8 shadow-xl">
-        <h1 className="flex justify-center text-foreground" aria-label="SoundTable">
-          <SoundTableLogo size={44} className="text-3xl" />
+        <h1 className="flex justify-center text-foreground" aria-label={t("brand.name")}>
+          <SoundQuestLogo size={44} className="text-3xl" />
         </h1>
         <p className="text-center text-lg text-muted mt-2">
           {t("login.tagline")}
@@ -68,7 +80,7 @@ export default function LoginPage() {
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-sm text-foreground transition hover:bg-border disabled:opacity-50 disabled:hover:bg-card"
           aria-label={t("login.signInWithGoogle")}
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -102,6 +114,16 @@ export default function LoginPage() {
               {t("login.addSupabaseEnv")}
             </p>
           </>
+        )}
+        {isConfigured && !isAuthenticated && (
+          <p className="mt-4 text-center text-sm text-muted">
+            <Link
+              href="/dashboard"
+              className="text-accent underline hover:text-accent-hover"
+            >
+              {t("login.continueAsGuest")}
+            </Link>
+          </p>
         )}
         {isAuthenticated && (
           <p className="mt-6 text-center text-sm text-muted">

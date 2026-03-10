@@ -12,13 +12,13 @@ import {
   useReorderScenesMutation,
 } from "@/hooks/api";
 import type { Scene, Label } from "@/lib/types";
-import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
+import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
 import { ScenesBlock } from "@/components/scene/ScenesBlock";
+import { DashboardSkeleton } from "@/components/scene/DashboardSkeleton";
 import { SceneFormModal } from "@/components/scene/SceneFormModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { IconButton } from "@/components/ui/IconButton";
@@ -283,12 +283,24 @@ export default function DashboardPage() {
         onConfirm={handleDeleteScene}
       />
 
-      <Navbar logo={<SoundTableLogo />} logoHref="/dashboard" />
+      <Navbar logo={<SoundQuestLogo />} logoHref="/dashboard" logoAriaLabel="SoundQuest" />
 
-      <section className="mx-auto max-w-6xl px-4 py-4 pb-24 bg-background" aria-label={t("dashboard.scenesListAria")}>
+      <section
+        className={`mx-auto max-w-6xl px-4 py-4 pb-24 bg-background ${loading ? "min-h-[60vh]" : ""}`}
+        aria-label={t("dashboard.scenesListAria")}
+        aria-busy={loading}
+      >
         {loading && (
-          <div className="flex justify-center py-12">
-            <Spinner />
+          <div role="status" aria-live="polite" aria-label={t("common.loading")}>
+            <div className="mb-2 flex items-center justify-between gap-4">
+              <div className="h-7 w-24 rounded bg-border/40 animate-pulse" aria-hidden />
+              <div className="flex items-center gap-1">
+                <div className="h-9 w-32 rounded bg-border/30 animate-pulse" aria-hidden />
+                <div className="h-9 w-9 rounded bg-border/30 animate-pulse" aria-hidden />
+              </div>
+            </div>
+            <DashboardSkeleton />
+            <span className="sr-only">{t("common.loading")}</span>
           </div>
         )}
         {error && <ErrorMessage message={error} />}

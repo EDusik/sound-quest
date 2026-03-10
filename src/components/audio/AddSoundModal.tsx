@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AUDIO_UPLOAD_MAX_BYTES,
   isAllowedAudioUrl,
@@ -17,6 +18,7 @@ import {
   useYouTubeTitleQuery,
 } from "@/hooks/api";
 import { useTranslations } from "@/contexts/I18nContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddSoundModalProps {
   open: boolean;
@@ -33,12 +35,14 @@ export function AddSoundModal({
   onAdded,
 }: AddSoundModalProps) {
   const t = useTranslations();
+  const { isAuthenticated } = useAuth();
   const [addName, setAddName] = useState("");
   const [addUrl, setAddUrl] = useState("");
   const [addFile, setAddFile] = useState<File | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
 
   const youtubeId = extractYouTubeId(addUrl.trim());
+  const canUploadFile = isAuthenticated;
   const { data: youtubeTitle } = useYouTubeTitleQuery(youtubeId);
   const uploadMutation = useUploadAudioFileMutation();
   const addAudioMutation = useAddAudioMutation(sceneId);
@@ -155,20 +159,23 @@ export function AddSoundModal({
             className="space-y-3 border-t border-border p-4"
           >
             <div>
-              <label className="block text-xs text-foreground">{t("addSound.name")}</label>
+              <label htmlFor="add-sound-name" className="block text-xs text-foreground">{t("addSound.name")}</label>
               <input
+                id="add-sound-name"
                 type="text"
                 value={addName}
                 onChange={(e) => setAddName(e.target.value)}
                 className="mt-1 w-full rounded border border-border bg-card px-3 py-2 text-foreground"
                 placeholder={t("addSound.namePlaceholder")}
+                autoComplete="off"
               />
             </div>
             <div>
-              <label className="block text-xs text-foreground">
+              <label htmlFor="add-sound-url" className="block text-xs text-foreground">
                 {t("addSound.urlLabel")}
               </label>
               <input
+                id="add-sound-url"
                 type="url"
                 value={addUrl}
                 onChange={(e) => {
@@ -178,14 +185,24 @@ export function AddSoundModal({
                 disabled={hasFileInput}
                 className="mt-1 w-full rounded border border-border bg-card px-3 py-2 text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder={t("addSound.urlPlaceholder")}
+                autoComplete="url"
               />
               <p className="mt-1 text-xs text-muted-foreground">
                 {t("addSound.orChooseFile")}
               </p>
+              {!canUploadFile && (
+                <p className="mt-1 text-xs text-accent">
+                  {t("addSound.signInToUpload")}{" "}
+                  <Link href="/login" className="underline hover:no-underline">
+                    {t("nav.signIn")}
+                  </Link>
+                </p>
+              )}
               <input
                 type="file"
                 accept=".mp3,.wav,.ogg,audio/mpeg,audio/wav,audio/ogg"
-                disabled={hasYoutubeInUrl}
+                disabled={hasYoutubeInUrl || !canUploadFile}
+                aria-label={t("addSound.orChooseFile")}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f && !getAllowedAudioExtension(f)) {
@@ -223,7 +240,11 @@ export function AddSoundModal({
                 </p>
               )}
             </div>
-            {addError && <p className="text-sm text-red-400">{addError}</p>}
+            {addError && (
+              <p className="text-sm text-red-400" role="alert">
+                {addError}
+              </p>
+            )}
             <button
               type="submit"
               disabled={adding}
@@ -241,7 +262,8 @@ export function AddSoundModal({
             setAddFile(null);
             onClose();
           }}
-          className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-card"
+          className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-card focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          aria-label={t("common.cancel")}
         >
           {t("common.cancel")}
         </button>

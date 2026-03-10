@@ -3,11 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { clearSupabaseUserIdCache } from "@/lib/storage";
+import { ANONYMOUS_UID } from "@/lib/authConstants";
 
-const DEMO_UID = "demo-user-local";
-
-/** When true, app is freely accessible without login. Set to "false" to require login. */
-const FREE_ACCESS = process.env.NEXT_PUBLIC_FREE_ACCESS !== "false";
+const DEMO_UID = ANONYMOUS_UID;
 
 /** Unified user shape used across the app (compatible with storage userId = user.uid). */
 export interface AuthUser {
@@ -51,7 +49,7 @@ export function isRealUser(user: AuthUser | null): boolean {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  /** True when logged in with Google/Supabase (dashboard etc. require this). */
+  /** True when logged in with Google/Supabase (storage uses Supabase; otherwise localStorage). */
   isAuthenticated: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
@@ -68,20 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) {
-      if (FREE_ACCESS) {
-        queueMicrotask(() => {
-          setUser(getDemoUser());
-          setLoading(false);
-        });
-      } else {
-        const stored =
-          typeof window !== "undefined" &&
-          localStorage.getItem("audio_scenes_demo") === "1";
-        queueMicrotask(() => {
-          setUser(stored ? getDemoUser() : null);
-          setLoading(false);
-        });
-      }
+      queueMicrotask(() => {
+        setUser(getDemoUser());
+        setLoading(false);
+      });
       return;
     }
     const client = supabase;
@@ -90,16 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: { user: supaUser },
       } = await client.auth.getUser();
       const mapped = mapSupabaseUser(supaUser);
-      if (mapped) {
-        setUser(mapped);
-      } else if (FREE_ACCESS) {
-        setUser(getDemoUser());
-      } else {
-        const stored =
-          typeof window !== "undefined" &&
-          localStorage.getItem("audio_scenes_demo") === "1";
-        setUser(stored ? getDemoUser() : null);
-      }
+      setUser(mapped ?? getDemoUser());
       setLoading(false);
     };
     setUserFromSession();
@@ -107,16 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, session) => {
       const mapped = mapSupabaseUser(session?.user ?? null);
-      if (mapped) {
-        setUser(mapped);
-      } else if (FREE_ACCESS) {
-        setUser(getDemoUser());
-      } else {
-        const stored =
-          typeof window !== "undefined" &&
-          localStorage.getItem("audio_scenes_demo") === "1";
-        setUser(stored ? getDemoUser() : null);
-      }
+      setUser(mapped ?? getDemoUser());
       setLoading(false);
     });
     return () => subscription.unsubscribe();
@@ -138,17 +108,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInDemo = () => {
-    if (typeof window !== "undefined")
-      localStorage.setItem("audio_scenes_demo", "1");
     setUser(getDemoUser());
   };
 
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut();
     clearSupabaseUserIdCache();
-    if (typeof window !== "undefined")
-      localStorage.removeItem("audio_scenes_demo");
-    setUser(null);
+    setUser(getDemoUser());
   };
 
   return (

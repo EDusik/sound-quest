@@ -55,12 +55,14 @@ export function ConfirmModal({
       : "rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50";
   const confirmButtonText = loading ? (loadingConfirmLabel ?? `${confirmLabel}…`) : confirmLabel;
 
+  const descriptionId = `${titleId.replace(/-title$/, "")}-desc`;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       onClick={() => !loading && onClose()}
     >
       <div
@@ -75,7 +77,7 @@ export function ConfirmModal({
         >
           {title}
         </h2>
-        <p className="mt-2 text-sm text-muted">{message}</p>
+        <p id={descriptionId} className="mt-2 text-sm text-muted">{message}</p>
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"

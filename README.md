@@ -1,4 +1,4 @@
-<h1 align="center">🎲 SoundTable</h1>
+<h1 align="center">🎲 SoundQuest</h1>
 <p align="center">
   <strong>Create the perfect soundscape for every RPG session.</strong>
 </p>
@@ -6,7 +6,8 @@
   <a href="#-getting-started">Getting started</a> •
   <a href="#-configuration">Configuration</a> •
   <a href="#-tech-stack">Tech stack</a> •
-  <a href="#-features">Features</a>
+  <a href="#-features">Features</a> •
+  <a href="#-project-structure">Structure</a>
 </p>
 
 <p align="center">
@@ -55,7 +56,7 @@ For Google login and cloud data:
    (replace `YOUR_PROJECT_REF` with your Supabase project ref.)
 5. Create the database and storage: in Supabase **SQL Editor**, either run the migrations in `supabase/migrations/` in order (or `supabase db push` if you use the CLI), or run the one-time script `supabase/scripts/run-in-supabase.sql` to create tables, RLS, and the `audios` storage bucket in one go.
 6. (Optional) For the app to create the `audios` bucket automatically if missing, add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (Supabase Dashboard → Settings → API → service_role key). Otherwise ensure the bucket exists via migrations or the script above.
-7. Run again:
+7. Run:
    ```bash
    npm run dev
    ```
@@ -65,14 +66,10 @@ For Google login and cloud data:
 After deploying, if signing in with Google redirects you to `http://localhost:3000/`, adjust in **Supabase**:
 
 1. **Supabase** → **Authentication** → **URL Configuration**.
-2. **Site URL**: change to your app’s production URL, e.g. `https://your-domain.vercel.app` (or the domain you use).
-3. **Redirect URLs**: add the production callback URL, e.g.:
-   ```text
-   https://your-domain.vercel.app/auth/callback
-   ```
-   You can keep `http://localhost:3000/auth/callback` for development as well.
+2. **Site URL**: set to your app’s production URL (e.g. `https://your-domain.vercel.app`).
+3. **Redirect URLs**: add the production callback, e.g. `https://your-domain.vercel.app/auth/callback`. You can keep `http://localhost:3000/auth/callback` for local development.
 
-The app already sends `redirectTo` with `window.location.origin`, so in production Supabase must have the production URL allowed under **Redirect URLs** and, if applicable, **Site URL**.
+The app sends `redirectTo` with `window.location.origin`, so production must have the production URL allowed under **Redirect URLs** and **Site URL**.
 
 ---
 
@@ -80,73 +77,85 @@ The app already sends `redirectTo` with `window.location.origin`, so in producti
 
 ### Environment variables
 
-Copy `.env.example` to `.env` (or `.env.local`) and adjust as needed. **All are optional** to run in “localStorage only” mode.
+Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are optional** to run in “localStorage only” mode.
 
-| Variable                                   | Description                                                                                                             |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`                 | Supabase project URL (e.g. `https://xxx.supabase.co`)                                                                   |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`            | Supabase anonymous key (Authentication + DB)                                                                            |
-| `SUPABASE_SERVICE_ROLE_KEY`                | Supabase service_role key (server-only). Used to create the `audios` storage bucket if missing (e.g. `POST /api/ensure-audios-bucket`). Optional if you create the bucket via SQL/migrations. |
-| `NEXT_PUBLIC_FREESOUND_API_KEY`            | Enables search on [Freesound](https://freesound.org) on the scene page ([get token](https://freesound.org/apiv2/apply)) |
-| `NEXT_PUBLIC_FIREBASE_API_KEY`             | Firebase: API Key (optional)                                                                                            |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`         | Firebase: Auth Domain                                                                                                   |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`          | Firebase: Project ID                                                                                                    |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`      | Firebase: Storage Bucket                                                                                                |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase: Messaging Sender ID                                                                                           |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`              | Firebase: App ID                                                                                                        |
-| `NEXT_PUBLIC_USE_FIRESTORE`                | `"true"` to use Firestore instead of localStorage                                                                       |
-| `NEXT_PUBLIC_FREE_ACCESS`                  | `"false"` to disable access without login (default: allowed)                                                            |
+| Variable | Description |
+| -------- | ----------- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (e.g. `https://xxx.supabase.co`). |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (Auth + DB). |
+| `SUPABASE_SERVICE_ROLE_KEY` | **(Server-only.)** Used to create the `audios` storage bucket if missing (`POST /api/ensure-audios-bucket`). Optional if the bucket is created via SQL/migrations. |
+| `NEXT_PUBLIC_FREESOUND_API_KEY` | Freesound API token. Enables Freesound search on the scene page and is read by server routes such as `/api/freesound-search` and `/api/freesound-configured`. [Get a token](https://freesound.org/apiv2/apply). |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase: API Key (optional). |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase: Auth Domain. |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase: Project ID. |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase: Storage Bucket. |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase: Messaging Sender ID. |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase: App ID. |
+| `NEXT_PUBLIC_USE_FIRESTORE` | `"true"` to use Firestore instead of localStorage. |
+| `NEXT_PUBLIC_PIX_ID` | PIX key for the **Support** page (`/support`): shown for copy and in the “Pay with Pix” section. |
+| `NEXT_PUBLIC_PIX_URL` | Optional: URL for Pix payment (e.g. Nubank “cobrar” link). Used by the QR code and “Pay with Pix” on the support page. |
+| `NEXT_PUBLIC_STRIPE_URL` | Stripe (or other) donation link for the Support page. |
 
 ### Firebase / Firestore (optional)
 
 - Create a project at [Firebase](https://console.firebase.google.com), enable **Authentication** (Google) and optionally **Firestore**.
-- Fill in the `NEXT_PUBLIC_FIREBASE_*` variables in `.env`.
+- Set the `NEXT_PUBLIC_FIREBASE_*` variables in `.env`.
 - For Firestore: create the database and set `NEXT_PUBLIC_USE_FIRESTORE=true`.
-- Deploy the rules in `firestore.rules` (Console → Firestore → Rules). If you use queries by `userId` and `orderBy('createdAt')`, create the composite index when the console/CLI prompts you.
+- Deploy rules in `firestore.rules` (Console → Firestore → Rules). Create the composite index when prompted if you use queries by `userId` and `orderBy('createdAt')`.
 
 ---
 
 ## 🛠 Tech stack
 
-| Layer                     | Technology                                                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Framework**             | [Next.js 16](https://nextjs.org) (App Router)                                                                            |
-| **UI**                    | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com)                                                 |
-| **Language**              | [TypeScript](https://www.typescriptlang.org)                                                                             |
-| **Auth & DB**             | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore |
-| **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs)                                                                                  |
-| **Backend**               | No custom server; client only (Supabase/Firebase SDK and localStorage)                                                   |
+| Layer | Technology |
+| ----- | ---------- |
+| **Framework** | [Next.js 16](https://nextjs.org) (App Router) |
+| **UI** | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com) |
+| **Language** | [TypeScript](https://www.typescriptlang.org) |
+| **Auth & DB** | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore |
+| **Data & API** | [TanStack Query](https://tanstack.com/query) (React Query) for server state; Zod for schemas |
+| **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs) |
+| **Backend** | Next.js API routes (server-only): `ensure-audios-bucket`, `freesound-search`, `freesound-configured`. No separate Node server. |
 
 ---
 
 ## ✨ Features
 
-- **Authentication** — Google login (Supabase) or demo mode with local storage.
-- **Dashboard** — List of scenes with title, description and colored tags; reorder by drag; edit and delete.
-- **Create scene** — Title, description and tags with color picker.
-- **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL or (with API key) Freesound search; YouTube support.
-- **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop control from any page.
-- **Storage** — localStorage (default), Supabase (PostgreSQL) or Firestore (optional).
+- **Authentication** — Google login (Supabase) or continue with local storage (no account).
+- **i18n** — English and Portuguese (locale switch in the UI).
+- **Dashboard** — List of scenes with title, description and colored tags; reorder by drag; create, edit and delete scenes.
+- **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL, file upload (when signed in), or **Freesound search** (when `FREESOUND_API_KEY` is set); YouTube URL support.
+- **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop from any page.
+- **Support page** (`/support`) — Optional donate/support page with PIX (key + QR) and Stripe link. Configure via `NEXT_PUBLIC_PIX_ID`, `NEXT_PUBLIC_PIX_URL`, and `NEXT_PUBLIC_STRIPE_URL`.
+- **Storage** — localStorage (default), Supabase (PostgreSQL + Storage), or Firestore (optional).
 
 ### Audio sources
 
-The app stores only **metadata** (name + URL). You can use:
+The app stores **metadata** (name + URL). Supported sources:
 
 - [Tabletop Audio](https://tabletopaudio.com) (ambiences)
-- [Freesound](https://freesound.org) (with account and direct links or search with API key)
+- [Freesound](https://freesound.org) — search (with `FREESOUND_API_KEY`) or paste direct links
 - **YouTube** — paste a watch URL to use the track as audio
-- Any direct URL to MP3, WAV or OGG (max 25 MB per file for uploads)
+- Any direct URL to MP3, WAV or OGG; file upload (max 25 MB) when signed in with Supabase
+
+### API routes (server)
+
+| Route | Method | Description |
+| ----- | ------ | ----------- |
+| `/api/ensure-audios-bucket` | POST | Creates the Supabase `audios` storage bucket and policies if missing. Requires `Authorization: Bearer <Supabase access_token>` and `SUPABASE_SERVICE_ROLE_KEY`. |
+| `/api/freesound-configured` | GET | Returns `{ configured: boolean }` depending on `NEXT_PUBLIC_FREESOUND_API_KEY`. Used by the client to show or hide Freesound search. |
+| `/api/freesound-search` | GET | Proxies search to Freesound API (query params: `query`, `page`, `pageSize`, `filter`) while keeping the token in `NEXT_PUBLIC_FREESOUND_API_KEY` on the server. |
 
 ---
 
 ## 📜 Scripts
 
-| Command         | Description                                                          |
-| --------------- | -------------------------------------------------------------------- |
-| `npm run dev`   | Development server at [http://localhost:3000](http://localhost:3000) |
-| `npm run build` | Production build                                                     |
-| `npm run start` | Run production build                                                 |
-| `npm run lint`  | Run ESLint                                                           |
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | Development server at [http://localhost:3000](http://localhost:3000) |
+| `npm run build` | Production build |
+| `npm run start` | Run production build |
+| `npm run lint` | Run ESLint |
 
 ---
 
@@ -154,20 +163,26 @@ The app stores only **metadata** (name + URL). You can use:
 
 ```text
 src/
-├── app/              # Routes (App Router)
-│   ├── api/          # API routes (e.g. ensure-audios-bucket)
-│   ├── auth/         # Auth callback
-│   ├── login/        # Login and enroll/verify
-│   ├── dashboard/    # Scene list (create scene via modal)
-│   └── scene/[id]/   # Scene page (audio list, player)
-├── components/       # Reusable UI components
-├── contexts/         # Auth, theme
-├── hooks/            # useFocusTrap, etc.
-├── lib/              # Supabase, Firebase, storage, types, schemas
-├── store/            # Zustand (audio player state)
+├── app/                    # App Router
+│   ├── api/                # API routes
+│   │   ├── ensure-audios-bucket/   # Create Supabase audios bucket
+│   │   ├── freesound-configured/  # Check if Freesound key is set
+│   │   └── freesound-search/       # Proxy Freesound search (key server-side)
+│   ├── auth/               # Auth callback
+│   ├── login/               # Login, enroll, verify
+│   ├── dashboard/           # Scene list (create scene via modal)
+│   ├── scene/[sceneId]/     # Scene page (audio list, player)
+│   └── support/             # Support/donate page (PIX, Stripe)
+├── components/              # Reusable UI (layout, editor, audio, auth, etc.)
+├── contexts/                # Auth, theme, i18n
+├── hooks/                   # React hooks (including hooks/api for TanStack Query)
+├── lib/                     # Supabase, Firebase, storage, freesound, i18n, schemas
+├── locales/                  # en.json, pt.json
+└── store/                   # Zustand (audio player state)
+
 supabase/
-├── migrations/       # DB and storage migrations (run in order)
-└── scripts/         # One-time SQL (e.g. run-in-supabase.sql)
+├── migrations/              # DB and storage migrations (run in order)
+└── scripts/                 # One-time SQL (e.g. run-in-supabase.sql)
 ```
 
 ---

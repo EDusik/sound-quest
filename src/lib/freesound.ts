@@ -1,10 +1,9 @@
 /**
  * Freesound API v2 client (search + previews).
+ * Search is proxied via /api/freesound-search so the API key stays server-side.
  * @see https://freesound.org/docs/api/
- * Token: https://freesound.org/apiv2/apply
+ * Token: https://freesound.org/apiv2/apply → set FREESOUND_API_KEY in .env
  */
-
-const BASE = "https://freesound.org/apiv2";
 
 export interface FreesoundPreviews {
   "preview-hq-mp3"?: string;
@@ -27,11 +26,6 @@ export interface FreesoundSearchResponse {
   results: FreesoundSound[];
 }
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return process.env.NEXT_PUBLIC_FREESOUND_API_KEY ?? null;
-}
-
 /** Prefer HQ MP3 for playback; fallback to LQ MP3 or first available. */
 export function getPreviewUrl(previews: FreesoundPreviews): string | null {
   if (!previews) return null;
@@ -45,34 +39,27 @@ export function getPreviewUrl(previews: FreesoundPreviews): string | null {
   return `https://freesound.org${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
+/** Calls our API route so the Freesound API key is never exposed to the client. */
 export async function searchFreesound(
   query: string,
   page = 1,
   pageSize = 15,
   filter?: string,
 ): Promise<FreesoundSearchResponse> {
-  const token = getToken();
-  if (!token) {
+  const params = new URLSearchParams({
+    query: query.trim(),
+    page: String(page),
+    pageSize: String(Math.min(pageSize, 30)),
+  });
+  if (filter?.trim()) {
+    params.set("filter", filter.trim());
+  }
+  const res = await fetch(`/api/freesound-search?${params.toString()}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
     throw new Error(
-      "Freesound API key not configured. Add NEXT_PUBLIC_FREESOUND_API_KEY.",
+      (body as { error?: string }).error ?? `Freesound API error: ${res.status}`,
     );
   }
-  const q = encodeURIComponent(query.trim());
-  const fields = "id,name,previews,duration";
-  let url = `${BASE}/search/?query=${q}&token=${token}&fields=${fields}&page=${page}&page_size=${Math.min(pageSize, 30)}`;
-  if (filter?.trim()) {
-    url += `&filter=${encodeURIComponent(filter.trim())}`;
-  }
-  const res = await fetch(url);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? `Freesound API error: ${res.status}`);
-  }
   return res.json() as Promise<FreesoundSearchResponse>;
-}
-
-export function isFreesoundConfigured(): boolean {
-  return Boolean(
-    typeof window !== "undefined" && process.env.NEXT_PUBLIC_FREESOUND_API_KEY,
-  );
 }

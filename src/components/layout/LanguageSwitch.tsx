@@ -15,7 +15,7 @@ export function LanguageSwitch() {
       type="button"
       onClick={() => setLocale(nextLocale)}
       className="rounded-lg border border-border bg-card p-2 text-sm font-semibold text-foreground transition hover:bg-border focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-      aria-label={t("language.switch")}
+      aria-label={`${locale === "en" ? "EN" : "PT"}, ${t("language.switch")}`}
       title={locale === "pt" ? t("language.portuguese") : t("language.english")}
     >
       {locale === "en" ? "EN" : "PT"}

@@ -12,7 +12,7 @@ import {
 import type { AudioItem } from "@/lib/types";
 import { useTranslations } from "@/contexts/I18nContext";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
-import { SoundTableLogo } from "@/components/branding/SoundTableLogo";
+import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -37,7 +37,7 @@ export default function ScenePage() {
     error: sceneError,
   } = useSceneQuery(sceneId);
   const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
-  const loading = sceneLoading || (!!sceneId && audiosLoading);
+  const loading = sceneLoading;
   const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
@@ -180,8 +180,14 @@ export default function ScenePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div
+        className="flex min-h-screen items-center justify-center bg-background"
+        role="status"
+        aria-live="polite"
+        aria-label={t("common.loading")}
+      >
         <Spinner />
+        <span className="sr-only">{t("common.loading")}</span>
       </div>
     );
   }
@@ -215,7 +221,7 @@ export default function ScenePage() {
         sceneId={sceneId}
         onAdded={handleAddSoundAdded}
       />
-      <Navbar logo={<SoundTableLogo />} logoHref="/dashboard" />
+      <Navbar logo={<SoundQuestLogo />} logoHref="/dashboard" logoAriaLabel="SoundQuest" />
 
       <div className="mx-auto max-w-6xl px-4">
         <SceneTitleBlock scene={scene} />
@@ -261,24 +267,37 @@ export default function ScenePage() {
           </div>
         </div>
 
-        <AudiosBlock
-          activeAudios={activeAudios}
-          inactiveAudios={inactiveAudios}
-          filteredAudios={filteredAudios}
-          sceneId={sceneId}
-          draggedId={draggedId}
-              reordering={reorderAudiosMutation.isPending}
-          hasAnyAudios={audios.length > 0}
-          emptyMessage={t("scene.noAudios")}
-          emptySearchMessage={t("scene.noAudiosMatch")}
-          onToggleActive={toggleAudioActive}
-          onDelete={setAudioToDelete}
-          onRename={handleRename}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        />
+        {audiosLoading ? (
+          <ul className="space-y-3">
+            <li
+              className="flex items-center justify-center rounded-lg border border-dashed border-border bg-card/50 p-8 text-muted"
+              role="status"
+              aria-label={t("common.loading")}
+            >
+              <Spinner />
+              <span className="ml-2">{t("common.loading")}</span>
+            </li>
+          </ul>
+        ) : (
+          <AudiosBlock
+            activeAudios={activeAudios}
+            inactiveAudios={inactiveAudios}
+            filteredAudios={filteredAudios}
+            sceneId={sceneId}
+            draggedId={draggedId}
+            reordering={reorderAudiosMutation.isPending}
+            hasAnyAudios={audios.length > 0}
+            emptyMessage={t("scene.noAudios")}
+            emptySearchMessage={t("scene.noAudiosMatch")}
+            onToggleActive={toggleAudioActive}
+            onDelete={setAudioToDelete}
+            onRename={handleRename}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          />
+        )}
       </section>
     </div>
   );

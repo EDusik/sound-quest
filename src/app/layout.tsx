@@ -40,8 +40,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {supabaseUrl && (
+          <link rel="preconnect" href={supabaseUrl} />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} flex min-h-dvh flex-col antialiased`}
       >

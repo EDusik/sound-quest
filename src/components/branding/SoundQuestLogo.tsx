@@ -2,20 +2,20 @@
 
 import { useTheme } from "@/contexts/ThemeContext";
 
-type SoundTableLogoProps = {
+type SoundQuestLogoProps = {
   /** Optional class for the wrapper. */
   className?: string;
   /** Logo size in pixels (SVG width/height). Default 32. */
   size?: number;
-  /** If true, only the d20 icon is shown (no "SoundTable" text). */
+  /** If true, only the d20 icon is shown (no "SoundQuest" text). */
   iconOnly?: boolean;
 };
 
-export function SoundTableLogo({
+export function SoundQuestLogo({
   className,
   size = 32,
   iconOnly = false,
-}: SoundTableLogoProps) {
+}: SoundQuestLogoProps) {
   const { spinKey } = useTheme();
 
   const d20 = (
@@ -55,7 +55,8 @@ export function SoundTableLogo({
   return (
     <span className={`inline-flex items-center gap-1.5 ${className ?? ""}`}>
       {d20}
-      <span className="inline font-cinzel font-semibold tracking-wide">SoundTable</span>
+      <span className="inline font-cinzel font-semibold tracking-wide">SoundQuest</span>
     </span>
   );
 }
+

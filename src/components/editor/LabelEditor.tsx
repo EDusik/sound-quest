@@ -4,15 +4,16 @@ import type { Label } from "@/lib/types";
 import { LABEL_TEXT_MAX, LABELS_MAX } from "@/lib/sceneSchema";
 import { useTranslations } from "@/contexts/I18nContext";
 
+/** WCAG AA compliant with white text (contrast ≥ 4.5:1) */
 const DEFAULT_COLORS = [
-  "#f43f5e",
-  "#f59e0b",
-  "#84cc16",
-  "#10b981",
-  "#06b6d4",
-  "#3b82f6",
-  "#8b5cf6",
-  "#d946ef",
+  "#b91c1c",
+  "#b45309",
+  "#4d7c0b",
+  "#047857",
+  "#0e7490",
+  "#1d4ed8",
+  "#6d28d9",
+  "#a21caf",
 ];
 
 export function generateId() {

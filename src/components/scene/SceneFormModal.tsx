@@ -188,7 +188,7 @@ export function SceneFormModal({
               className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none"
               aria-busy={saving}
             >
-              {saving ? (loadingLabel ?? "…") : submitLabel}
+              {saving ? (loadingLabel ?? t("common.loading")) : submitLabel}
             </button>
           </div>
         </div>

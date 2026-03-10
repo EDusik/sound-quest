@@ -67,6 +67,8 @@ function YouTubeAudioRow({
   const setYoutubeControl = useAudioStore((s) => s.setYoutubeControl);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const [isInView, setIsInView] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(audio.name);
@@ -124,6 +126,20 @@ function YouTubeAudioRow({
   }, [audio.id, audio.name, sceneId, watchUrl, register, unregister]);
 
   useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setIsInView(true);
+      },
+      { rootMargin: "100px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isInView) return;
     let cancelled = false;
     if (typeof window === "undefined") return;
     loadYouTubeIframeAPI().then((YTLoaded) => {
@@ -226,7 +242,7 @@ function YouTubeAudioRow({
         playerRef.current = null;
       }
     };
-  }, [videoId, audio.id, setState, setYoutubeControl]);
+  }, [isInView, videoId, audio.id, setState, setYoutubeControl]);
 
   const handlePlay = () => {
     if (isInactive || !playerRef.current) return;

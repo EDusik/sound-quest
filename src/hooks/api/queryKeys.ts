@@ -6,6 +6,7 @@ export const queryKeys = {
   scene: (sceneId: string) => ["scene", sceneId] as const,
   audios: (sceneId: string) => ["audios", sceneId] as const,
   freesound: {
+    configured: ["freesound", "configured"] as const,
     search: (query: string, filter?: string, page?: number) =>
       ["freesound", "search", query, filter ?? "", page ?? 1] as const,
   },

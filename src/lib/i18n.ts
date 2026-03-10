@@ -3,7 +3,7 @@
  * Locale is stored in localStorage and applied on load; default is English.
  */
 
-export const LOCALE_STORAGE_KEY = "soundtable-locale";
+export const LOCALE_STORAGE_KEY = "soundquest-locale";
 
 export type Locale = "en" | "pt";
 
