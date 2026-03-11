@@ -124,7 +124,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 - **Authentication** — Google login (Supabase) or continue with local storage (no account).
 - **i18n** — English and Portuguese (locale switch in the UI).
 - **Dashboard** — List of scenes with title, description and colored tags; reorder by drag; create, edit and delete scenes.
-- **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL, file upload (when signed in), or **Freesound search** (when `NEXT_PUBLIC_FREESOUND_API_KEY` is set); YouTube URL support.
+- **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL, file upload (when signed in), **Freesound search** (when `NEXT_PUBLIC_FREESOUND_API_KEY` is set), **Spotify** (track/album/playlist URLs), or YouTube URL support.
 - **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop from any page.
 - **Support page** (`/support`) — Optional donate/support page with PIX (key + QR) and Stripe link. Configure via `NEXT_PUBLIC_PIX_ID`, `NEXT_PUBLIC_PIX_URL`, and `NEXT_PUBLIC_STRIPE_URL`.
 - **Storage** — localStorage (default), Supabase (PostgreSQL + Storage), or Firestore (optional).
@@ -135,6 +135,7 @@ The app stores **metadata** (name + URL). Supported sources:
 
 - [Tabletop Audio](https://tabletopaudio.com) (ambiences)
 - [Freesound](https://freesound.org) — search (with `NEXT_PUBLIC_FREESOUND_API_KEY`) or paste direct links
+- **Spotify** — paste a track, album, or playlist URL; embedded player with play/pause
 - **YouTube** — paste a watch URL to use the track as audio
 - Any direct URL to MP3, WAV or OGG; file upload (max 25 MB) when signed in with Supabase
 

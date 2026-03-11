@@ -118,3 +118,93 @@ export function TrashIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+      />
+    </svg>
+  );
+}
+
+export function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+export function PauseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+    </svg>
+  );
+}
+
+export function StopIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <rect x="6" y="6" width="12" height="12" />
+    </svg>
+  );
+}
+
+export function LoopIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  );
+}

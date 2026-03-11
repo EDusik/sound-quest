@@ -38,29 +38,3 @@ export function getPreviewUrl(previews: FreesoundPreviews): string | null {
   if (url.startsWith("http")) return url;
   return `https://freesound.org${url.startsWith("/") ? "" : "/"}${url}`;
 }
-
-/** Calls our API route so the Freesound API key is never exposed to the client. */
-export async function searchFreesound(
-  query: string,
-  page = 1,
-  pageSize = 15,
-  filter?: string,
-): Promise<FreesoundSearchResponse> {
-  const params = new URLSearchParams({
-    query: query.trim(),
-    page: String(page),
-    pageSize: String(Math.min(pageSize, 30)),
-  });
-  if (filter?.trim()) {
-    params.set("filter", filter.trim());
-  }
-  const res = await fetch(`/api/freesound-search?${params.toString()}`);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(
-      (body as { error?: string }).error ??
-        `Freesound API error: ${res.status}`,
-    );
-  }
-  return res.json() as Promise<FreesoundSearchResponse>;
-}

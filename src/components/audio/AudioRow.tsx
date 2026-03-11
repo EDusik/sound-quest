@@ -4,6 +4,12 @@ import { useRef, useEffect, useState } from "react";
 import type { AudioItem } from "@/lib/types";
 import { useAudioStore } from "@/store/audioStore";
 import { useTranslations } from "@/contexts/I18nContext";
+import { SpotifyAudioRow } from "@/components/audio/SpotifyAudioRow";
+import { AudioRowHeader } from "@/components/audio/AudioRowHeader";
+import { PlaybackControls } from "@/components/audio/PlaybackControls";
+import { VolumeSlider } from "@/components/audio/VolumeSlider";
+import { EditIcon, TrashIcon } from "@/components/icons";
+import { loadYouTubeIframeAPI } from "@/lib/youtube-embed";
 
 interface AudioRowProps {
   audio: AudioItem;
@@ -14,38 +20,6 @@ interface AudioRowProps {
   onRename?: (audio: AudioItem, newName: string) => void;
   /** Optional class for the root card (e.g. rounded-tr-lg rounded-bl-lg when next to drag handle). */
   className?: string;
-}
-
-let youtubeApiPromise: Promise<unknown> | null = null;
-
-function loadYouTubeIframeAPI(): Promise<unknown> {
-  if (youtubeApiPromise) return youtubeApiPromise;
-  youtubeApiPromise = new Promise((resolve) => {
-    if (typeof window === "undefined") {
-      resolve(null);
-      return;
-    }
-    const w = window as typeof window & {
-      YT?: {
-        Player: new (el: HTMLElement, opts: unknown) => unknown;
-        PlayerState?: { PLAYING: number; PAUSED: number; ENDED: number };
-      };
-      onYouTubeIframeAPIReady?: () => void;
-    };
-    if (w.YT?.Player) {
-      resolve(w.YT);
-      return;
-    }
-    const prev = w.onYouTubeIframeAPIReady;
-    w.onYouTubeIframeAPIReady = () => {
-      prev?.();
-      resolve(w.YT);
-    };
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-  });
-  return youtubeApiPromise;
 }
 
 function YouTubeAudioRow({
@@ -268,19 +242,60 @@ function YouTubeAudioRow({
     setIsPlaying(false);
   };
 
-  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isInactive) return;
-    const v = Number(e.target.value);
-    setVolume(v);
-    if (playerRef.current) {
-      playerRef.current.setVolume(v * 100);
-    }
-  };
-
   const handleLoop = () => {
     if (isInactive) return;
     setLoop((prev) => !prev);
   };
+
+  const rightSlot = (
+    <>
+      <PlaybackControls
+        isPlaying={isPlaying}
+        loop={loop}
+        disabled={isInactive}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onLoop={handleLoop}
+      />
+      {onRename && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          title={t("common.editSoundName")}
+          aria-label={t("common.editSoundName")}
+        >
+          <EditIcon className="h-4 w-4" />
+        </button>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(audio)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          title={t("common.deleteSound")}
+          aria-label={t("common.deleteSound")}
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      )}
+      <VolumeSlider
+        value={volume}
+        onChange={(v) => {
+          setVolume(v);
+          if (playerRef.current) {
+            playerRef.current.setVolume(v * 100);
+          }
+          useAudioStore.getState().setVolume(audio.id, v);
+        }}
+        disabled={isInactive}
+      />
+    </>
+  );
 
   return (
     <div
@@ -289,177 +304,24 @@ function YouTubeAudioRow({
         isPlaying ? "border-2 border-accent" : "border-border/50"
       } ${className ?? ""}`}
     >
-      <div className="flex items-center gap-3 sm:flex-1">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={!isInactive}
-            onChange={() => onToggleActive?.(audio)}
-            className="h-4 w-4 cursor-pointer accent-accent"
-            aria-label={isInactive ? t("common.reEnableAudio") : t("common.disableAudio")}
-          />
-        </label>
-        <div
-          className={`min-w-0 flex-1 ${isInactive ? "opacity-40" : ""}`}
-          aria-hidden={isInactive}
-        >
-          {isEditingName ? (
-            <input
-              ref={nameInputRef}
-              type="text"
-              value={editNameValue}
-              onChange={(e) => setEditNameValue(e.target.value)}
-              onBlur={saveRename}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveRename();
-                if (e.key === "Escape") cancelRename();
-              }}
-              className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
-              aria-label={t("common.editSoundName")}
-            />
-          ) : (
-            <a
-              href={watchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate block font-medium text-accent hover:underline"
-            >
-              {audio.name}
-            </a>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center gap-2 ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
-          >
-            {!isPlaying ? (
-              <button
-                type="button"
-                onClick={handlePlay}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title={t("common.play")}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handlePause}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title={t("common.pause")}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleStop}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
-              title={t("common.stop")}
-            >
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <rect x="6" y="6" width="12" height="12" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleLoop}
-              title={loop ? t("common.loopOn") : t("common.loopOff")}
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                loop
-                  ? "bg-accent text-foreground hover:bg-accent-hover"
-                  : "bg-border text-foreground hover:bg-border/80"
-              }`}
-              aria-pressed={loop}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-              </svg>
-            </button>
-          </div>
-          {onRename ? (
-            <button
-              type="button"
-              onClick={() => {
-                setEditNameValue(audio.name);
-                setIsEditingName(true);
-              }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-              title={t("common.editSoundName")}
-              aria-label={t("common.editSoundName")}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </button>
-          ) : null}
-          {onDelete ? (
-            <button
-              type="button"
-              onClick={() => onDelete(audio)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
-              title={t("common.deleteSound")}
-              aria-label={t("common.deleteSound")}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          ) : null}
-        </div>
-        <label
-          className={`flex w-full items-center gap-1 text-xs text-muted sm:w-auto ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
-        >
-          <span>{t("common.vol")}</span>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={volume}
-            onChange={handleVolume}
-            className="w-20 flex-1 min-w-0 sm:flex-initial accent-accent border-0 outline-none"
-          />
-        </label>
+      <div className="min-w-0 flex-1">
+        <AudioRowHeader
+        isInactive={isInactive}
+        isEditingName={isEditingName}
+        editNameValue={editNameValue}
+        displayName={audio.name}
+        linkUrl={watchUrl}
+        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
+        onStartEditName={() => {
+          setEditNameValue(audio.name);
+          setIsEditingName(true);
+        }}
+        onNameChange={setEditNameValue}
+        onSaveRename={saveRename}
+        onCancelRename={cancelRename}
+        nameInputRef={nameInputRef}
+        rightSlot={rightSlot}
+      />
       </div>
       <div className="hidden">
         <div ref={containerRef} />
@@ -572,12 +434,6 @@ function HtmlAudioRow({
     ref.current.currentTime = 0;
     setState(audio.id, "stopped");
   };
-  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isInactive) return;
-    const v = Number(e.target.value);
-    if (ref.current) ref.current.volume = v;
-    setVolume(audio.id, v);
-  };
   const handleLoop = () => {
     if (isInactive) return;
     const el = ref.current;
@@ -590,12 +446,60 @@ function HtmlAudioRow({
   const isPlaying = player?.state === "playing";
   const volume = player?.volume ?? 1;
 
+  const rightSlot = (
+    <>
+      <PlaybackControls
+        isPlaying={!!isPlaying}
+        loop={player?.loop ?? false}
+        disabled={isInactive}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onLoop={handleLoop}
+      />
+      {onRename && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          title={t("common.editSoundName")}
+          aria-label={t("common.editSoundName")}
+        >
+          <EditIcon className="h-4 w-4" />
+        </button>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(audio)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          title={t("common.deleteSound")}
+          aria-label={t("common.deleteSound")}
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      )}
+      <VolumeSlider
+        value={volume}
+        onChange={(v) => {
+          if (ref.current) ref.current.volume = v;
+          setVolume(audio.id, v);
+        }}
+        disabled={isInactive}
+      />
+    </>
+  );
+
   return (
     <div
       className={`flex flex-col gap-2 rounded-lg border bg-card/50 px-4 py-2 sm:flex-row sm:items-center sm:gap-4 ${
         isPlaying ? "border-2 border-accent" : "border-border/50"
       } ${className ?? ""}`}
     >
+      <div className="min-w-0 flex-1">
       <audio
         ref={(el) => {
           (ref as React.MutableRefObject<HTMLAudioElement | null>).current = el;
@@ -606,177 +510,23 @@ function HtmlAudioRow({
         loop={player?.loop ?? false}
         className="hidden"
       />
-      <div className="flex items-center gap-3 sm:flex-1">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={!isInactive}
-            onChange={() => onToggleActive?.(audio)}
-            className="h-4 w-4 cursor-pointer accent-accent"
-            aria-label={isInactive ? t("common.reEnableAudio") : t("common.disableAudio")}
-          />
-        </label>
-        <div
-          className={`min-w-0 flex-1 ${isInactive ? "opacity-40" : ""}`}
-          aria-hidden={isInactive}
-        >
-          {isEditingName ? (
-            <input
-              ref={nameInputRef}
-              type="text"
-              value={editNameValue}
-              onChange={(e) => setEditNameValue(e.target.value)}
-              onBlur={saveRename}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveRename();
-                if (e.key === "Escape") cancelRename();
-              }}
-              className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
-              aria-label={t("common.editSoundName")}
-            />
-          ) : (
-            <a
-              href={audio.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate block font-medium text-accent hover:underline"
-            >
-              {audio.name}
-            </a>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center gap-2 ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
-          >
-            {!isPlaying ? (
-              <button
-                type="button"
-                onClick={handlePlay}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title={t("common.play")}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handlePause}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-background hover:bg-accent-hover"
-                title={t("common.pause")}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleStop}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
-              title={t("common.stop")}
-            >
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <rect x="6" y="6" width="12" height="12" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleLoop}
-              title={player?.loop ? t("common.loopOn") : t("common.loopOff")}
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                player?.loop
-                  ? "bg-accent text-foreground hover:bg-accent-hover"
-                  : "bg-border text-foreground hover:bg-border/80"
-              }`}
-              aria-pressed={player?.loop}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-              </svg>
-            </button>
-          </div>
-          {onRename ? (
-            <button
-              type="button"
-              onClick={() => {
-                setEditNameValue(audio.name);
-                setIsEditingName(true);
-              }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-              title={t("common.editSoundName")}
-              aria-label={t("common.editSoundName")}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </button>
-          ) : null}
-          {onDelete ? (
-            <button
-              type="button"
-              onClick={() => onDelete(audio)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
-              title={t("common.deleteSound")}
-              aria-label={t("common.deleteSound")}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          ) : null}
-        </div>
-        <label
-          className={`flex w-full items-center gap-1 text-xs text-muted sm:w-auto ${isInactive ? "opacity-40 pointer-events-none" : ""}`}
-        >
-          <span>{t("common.vol")}</span>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={volume}
-            onChange={handleVolume}
-            className="w-20 flex-1 min-w-0 sm:flex-initial accent-accent border-0 outline-none"
-          />
-        </label>
+      <AudioRowHeader
+        isInactive={isInactive}
+        isEditingName={isEditingName}
+        editNameValue={editNameValue}
+        displayName={audio.name}
+        linkUrl={audio.sourceUrl}
+        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
+        onStartEditName={() => {
+          setEditNameValue(audio.name);
+          setIsEditingName(true);
+        }}
+        onNameChange={setEditNameValue}
+        onSaveRename={saveRename}
+        onCancelRename={cancelRename}
+        nameInputRef={nameInputRef}
+        rightSlot={rightSlot}
+      />
       </div>
     </div>
   );
@@ -785,6 +535,35 @@ function HtmlAudioRow({
 export function AudioRow(props: AudioRowProps) {
   if (props.audio.kind === "youtube") {
     return <YouTubeAudioRow {...props} />;
+  }
+  if (props.audio.kind === "spotify") {
+    return (
+      <SpotifyAudioRow
+        track={{
+          id: props.audio.id,
+          name: props.audio.name,
+          spotifyUri: props.audio.sourceUrl,
+        }}
+        sceneId={props.sceneId}
+        isInactive={props.isInactive}
+        onToggleActive={
+          props.onToggleActive
+            ? () => props.onToggleActive?.(props.audio)
+            : undefined
+        }
+        onRemove={
+          props.onDelete
+            ? () => props.onDelete?.(props.audio)
+            : undefined
+        }
+        onRename={
+          props.onRename
+            ? (newName) => props.onRename?.(props.audio, newName)
+            : undefined
+        }
+        className={props.className}
+      />
+    );
   }
   return <HtmlAudioRow {...props} />;
 }
