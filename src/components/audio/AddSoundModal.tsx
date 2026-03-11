@@ -10,8 +10,11 @@ import {
   ALLOWED_AUDIO_EXTENSIONS,
 } from "@/lib/storage";
 import { FreesoundSearch } from "@/components/audio/FreesoundSearch";
+import { SpotifyAddForm } from "@/components/audio/SpotifyAddForm";
 import { Modal } from "@/components/ui/Modal";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { extractYouTubeId } from "@/lib/youtube";
+import { extractSpotifyId, toSpotifyUri } from "@/lib/spotify";
 import { getErrorMessage } from "@/lib/errors";
 import {
   useUploadAudioFileMutation,
@@ -40,7 +43,9 @@ export function AddSoundModal({
   const [addName, setAddName] = useState("");
   const [addUrl, setAddUrl] = useState("");
   const [addFile, setAddFile] = useState<File | null>(null);
+  const [spotifyUrl, setSpotifyUrl] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [spotifyError, setSpotifyError] = useState<string | null>(null);
 
   const youtubeId = extractYouTubeId(addUrl.trim());
   const canUploadFile = isAuthenticated;
@@ -55,7 +60,9 @@ export function AddSoundModal({
         setAddName("");
         setAddUrl("");
         setAddFile(null);
+        setSpotifyUrl("");
         setAddError(null);
+        setSpotifyError(null);
       }, 0);
     }
   }, [open]);
@@ -63,6 +70,27 @@ export function AddSoundModal({
   const hasYoutubeInUrl =
     addUrl.trim() !== "" && !!extractYouTubeId(addUrl.trim());
   const hasFileInput = addFile !== null;
+  const hasUrlOrFile = addUrl.trim() !== "" || hasFileInput;
+  const hasSpotifyUrl = spotifyUrl.trim() !== "";
+
+  const handleAddSpotify = async (track: { name: string; spotifyUri: string }) => {
+    setSpotifyError(null);
+    try {
+      await addAudioMutation.mutateAsync({
+        name: track.name,
+        sourceUrl: track.spotifyUri,
+        kind: "spotify",
+      });
+      await onAdded();
+      setAddName("");
+      setAddUrl("");
+      setAddFile(null);
+    } catch (err) {
+      const msg = getErrorMessage(err, t("addSound.failedToAdd"));
+      setSpotifyError(msg);
+      toast.warning(msg);
+    }
+  };
 
   const handleAddAudio = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,12 +156,41 @@ export function AddSoundModal({
         }
       }
       await onAdded();
+      setAddName("");
+      setAddUrl("");
+      setAddFile(null);
+      setSpotifyUrl("");
     } catch (err) {
       const msg = getErrorMessage(err, t("addSound.failedToAdd"));
       setAddError(msg);
       toast.warning(msg);
     }
   };
+
+  const handleUnifiedSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = extractSpotifyId(spotifyUrl.trim());
+    if (hasSpotifyUrl && parsed) {
+      setAddError(null);
+      setSpotifyError(null);
+      const spotifyUri = toSpotifyUri(parsed.id, parsed.type);
+      const name = addName.trim() || `${parsed.type} ${parsed.id}`;
+      await handleAddSpotify({ name, spotifyUri });
+      setSpotifyUrl("");
+      return;
+    }
+    if (hasSpotifyUrl && !parsed) {
+      setAddError(null);
+      setSpotifyError(t("addSound.spotifyUrlInvalid"));
+      return;
+    }
+    setSpotifyError(null);
+    await handleAddAudio({ preventDefault: () => {} } as React.FormEvent);
+  };
+
+  const canAddSpotify = hasSpotifyUrl && !!extractSpotifyId(spotifyUrl.trim());
+  const canAddUrlOrFile = hasUrlOrFile;
+  const canAdd = canAddSpotify || canAddUrlOrFile;
 
   return (
     <Modal
@@ -153,14 +210,8 @@ export function AddSoundModal({
         <div>
           <FreesoundSearch sceneId={sceneId} onAdded={onAdded} />
         </div>
-        <details className="rounded-lg border border-border bg-card/50">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">
-            {t("addSound.addAudio")}
-          </summary>
-          <form
-            onSubmit={handleAddAudio}
-            className="space-y-3 border-t border-border p-4"
-          >
+        <CollapsibleSection summary={t("addSound.addAudio")}>
+          <form onSubmit={handleUnifiedSubmit} className="space-y-6 border-t border-border p-4">
             <div>
               <label htmlFor="add-sound-name" className="block text-xs text-foreground">{t("addSound.name")}</label>
               <input
@@ -173,6 +224,9 @@ export function AddSoundModal({
                 autoComplete="off"
               />
             </div>
+            <hr className="border-border" />
+            <div className="space-y-6">
+            <div className="space-y-6 border-l pl-4 border-[var(--accent)]">
             <div>
               <label htmlFor="add-sound-url" className="block text-xs text-foreground">
                 {t("addSound.urlLabel")}
@@ -185,12 +239,29 @@ export function AddSoundModal({
                   setAddUrl(e.target.value);
                   if (addFile) setAddFile(null);
                 }}
-                disabled={hasFileInput}
+                disabled={hasFileInput || hasSpotifyUrl}
                 className="mt-1 w-full rounded border border-border bg-card px-3 py-2 text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder={t("addSound.urlPlaceholder")}
                 autoComplete="url"
               />
-              <p className="mt-1 text-xs text-muted-foreground">
+            </div>
+            {(addError || spotifyError) && (
+              <p className="text-sm text-red-400" role="alert">
+                {addError || spotifyError}
+              </p>
+            )}
+            <SpotifyAddForm
+              sharedName={addName}
+              spotifyUrl={spotifyUrl}
+              onSpotifyUrlChange={setSpotifyUrl}
+              disabled={hasUrlOrFile}
+              hideSubmitButton
+              onAdd={handleAddSpotify}
+              error={spotifyError}
+              isAdding={addAudioMutation.isPending}
+            />
+            <div>
+              <p className="mt-2 text-xs text-muted-foreground">
                 {t("addSound.orChooseFile")}
               </p>
               {!canUploadFile && (
@@ -204,7 +275,7 @@ export function AddSoundModal({
               <input
                 type="file"
                 accept=".mp3,.wav,.ogg,audio/mpeg,audio/wav,audio/ogg"
-                disabled={hasYoutubeInUrl || !canUploadFile}
+                disabled={addUrl.trim() !== "" || hasSpotifyUrl || !canUploadFile}
                 aria-label={t("addSound.orChooseFile")}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -230,10 +301,13 @@ export function AddSoundModal({
                     {addFile.name} ({(addFile.size / 1024 / 1024).toFixed(2)}{" "}
                     MB)
                     {addFile.size > AUDIO_UPLOAD_MAX_BYTES && (
-                      <span className="text-red-400"> — over 25 MB limit</span>
+                      <span className="text-red-400">
+                        {" "}
+                        — {t("addSound.fileOverLimit")}
+                      </span>
                     )}
                   </span>
-                    <button
+                  <button
                     type="button"
                     onClick={() => setAddFile(null)}
                     className="text-accent hover:underline"
@@ -243,20 +317,17 @@ export function AddSoundModal({
                 </p>
               )}
             </div>
-            {addError && (
-              <p className="text-sm text-red-400" role="alert">
-                {addError}
-              </p>
-            )}
+            </div>
             <button
               type="submit"
-              disabled={adding}
+              disabled={adding || !canAdd}
               className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
             >
               {adding ? t("addSound.adding") : t("addSound.addAudioButton")}
             </button>
+            </div>
           </form>
-        </details>
+        </CollapsibleSection>
       </div>
       <div className="border-t border-border px-6 py-4 flex justify-end">
         <button

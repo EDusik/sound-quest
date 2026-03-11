@@ -15,7 +15,13 @@ export interface Scene {
   order?: number;
 }
 
-export type AudioKind = "file" | "freesound" | "youtube";
+export type AudioKind = "file" | "freesound" | "youtube" | "spotify";
+
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  spotifyUri: string;
+}
 
 export interface AudioItem {
   id: string;

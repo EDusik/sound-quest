@@ -48,3 +48,14 @@ export function extractSpotifyId(
 export function toSpotifyUri(id: string, type: SpotifyUriType): string {
   return `spotify:${type}:${id}`;
 }
+
+/**
+ * Converts a Spotify URI to an open.spotify.com URL.
+ */
+export function spotifyUriToOpenUrl(uri: string): string {
+  const match = uri.match(
+    /^spotify:(track|album|playlist|episode):([a-zA-Z0-9]+)$/,
+  );
+  if (!match) return "https://open.spotify.com";
+  return `https://open.spotify.com/${match[1]}/${match[2]}`;
+}

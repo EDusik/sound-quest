@@ -15,6 +15,8 @@ import {
 import { getErrorMessage, getTranslatedFreesoundError } from "@/lib/errors";
 import { useTranslations } from "@/contexts/I18nContext";
 import { Spinner } from "@/components/ui/Spinner";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { FreesoundResultItem } from "./FreesoundResultItem";
 
 interface FreesoundSearchProps {
   sceneId: string;
@@ -61,7 +63,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
     typeof searchData?.count === "number" &&
     searchData.count > currentPage * pageSize;
   const hasPreviousPage = currentPage > 1;
-  const loading = searchQuery.isPending;
+  const loading = searchParams !== null && searchQuery.isPending;
   const searchError = searchQuery.error
     ? getTranslatedFreesoundError(searchQuery.error, t, "freesound.searchFailed")
     : null;
@@ -145,51 +147,9 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
     if (addError) toast.warning(addError);
   }, [addError]);
 
-  if (configuredLoading) {
+  if (!configuredLoading && !configured) {
     return (
-      <details className="group rounded-lg border border-border bg-card/50">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-card/80 [&::-webkit-details-marker]:hidden">
-          <span>{t("freesound.title")}</span>
-          <span className="text-xs text-muted">{t("freesound.searching")}</span>
-          <svg
-            className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </summary>
-      </details>
-    );
-  }
-
-  if (!configured) {
-    return (
-      <details className="group rounded-lg border border-border bg-card/50">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-card/80 [&::-webkit-details-marker]:hidden">
-          <span>{t("freesound.title")}</span>
-          <svg
-            className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </summary>
+      <CollapsibleSection summary={<span>{t("freesound.title")}</span>}>
         <div className="border-t border-border p-4">
           <p className="text-sm text-muted">
             {t("freesound.notConfiguredPrefix")}
@@ -215,36 +175,25 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
             .
           </p>
         </div>
-      </details>
+      </CollapsibleSection>
     );
   }
 
+  const summary = (
+    <>
+      <span>{t("freesound.title")}</span>
+      {results.length > 0 && (
+        <span className="text-xs font-normal text-muted">
+          {results.length === 1
+            ? t("freesound.resultCount", { count: 1 })
+            : t("freesound.resultCountPlural", { count: results.length })}
+        </span>
+      )}
+    </>
+  );
+
   return (
-    <details className="group rounded-lg border border-border bg-card/50">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-card/80 [&::-webkit-details-marker]:hidden">
-        <span>{t("freesound.title")}</span>
-        {results.length > 0 && (
-          <span className="text-xs font-normal text-muted">
-            {results.length === 1
-              ? t("freesound.resultCount", { count: 1 })
-              : t("freesound.resultCountPlural", { count: results.length })}
-          </span>
-        )}
-        <svg
-          className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-180"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </summary>
+    <CollapsibleSection summary={summary}>
       <div className="border-t border-border p-4">
         <p className="mb-2 text-xs text-muted">
           {t("freesound.queryHelp")}
@@ -295,58 +244,16 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
         {!loading && results.length > 0 && (
           <div className="space-y-3">
             <ul className="space-y-2">
-              {results.map((sound) => {
-                const previewUrl = getPreviewUrl(sound.previews);
-                const isPlaying = playingId === sound.id;
-                const isAdding = addingId === sound.id;
-                return (
-                  <li
-                    key={sound.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/50 bg-card/50 p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground">
-                        {sound.name}
-                      </p>
-                      {sound.duration != null && (
-                        <p className="text-xs text-muted">
-                          {Math.round(sound.duration)}s
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handlePlay(sound)}
-                        disabled={!previewUrl}
-                        className="rounded bg-border p-2 text-foreground hover:bg-border/80 disabled:opacity-50"
-                        title={isPlaying ? t("common.stop") : t("common.playPreview")}
-                        aria-label={isPlaying ? t("common.stop") : t("common.playPreview")}
-                      >
-                        {isPlaying ? (
-                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAdd(sound)}
-                        disabled={!previewUrl || isAdding}
-                        className="rounded bg-accent px-3 py-2 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50"
-                        aria-label={isAdding ? t("freesound.adding") : t("freesound.addToScene")}
-                        aria-busy={isAdding}
-                      >
-                        {isAdding ? t("freesound.adding") : t("freesound.addToScene")}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
+              {results.map((sound) => (
+                <FreesoundResultItem
+                  key={sound.id}
+                  sound={sound}
+                  isPlaying={playingId === sound.id}
+                  isAdding={addingId === sound.id}
+                  onPlay={() => handlePlay(sound)}
+                  onAdd={() => handleAdd(sound)}
+                />
+              ))}
             </ul>
             <div className="flex items-center justify-between gap-2 pt-1 text-xs text-muted">
               <span>
@@ -404,6 +311,6 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
           </div>
         )}
       </div>
-    </details>
+    </CollapsibleSection>
   );
 }
