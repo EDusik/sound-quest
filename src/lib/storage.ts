@@ -6,6 +6,7 @@
  * Callers use getScenes(userId), createScene(userId, ...), etc.; the layer chooses the backend
  * based on auth (getSupabaseUserId()) and configuration.
  */
+import axios from "axios";
 import type { Scene, AudioItem, AudioKind } from "./types";
 import { getFirebaseDb, isFirestoreEnabled } from "./firebase";
 import { supabase, isSupabaseConfigured } from "./supabase";
@@ -146,29 +147,29 @@ export async function uploadAudioFile(
     const isBucketMissing =
       msg.includes("bucket") &&
       (msg.includes("not found") || msg.includes("does not exist"));
-    if (isBucketMissing && typeof fetch !== "undefined") {
+    if (isBucketMissing) {
       const {
         data: { session },
       } = await client!.auth.getSession();
-      const ensureRes = await fetch("/api/ensure-audios-bucket", {
-        method: "POST",
-        headers:
-          session?.access_token != null
-            ? { Authorization: `Bearer ${session.access_token}` }
-            : undefined,
-      });
-      if (ensureRes.status === 401) {
-        throw new Error(
-          "Sessão expirada. Faça login novamente e tente o upload.",
-        );
-      }
-      if (ensureRes.ok) {
+      try {
+        await axios.post("/api/ensure-audios-bucket", undefined, {
+          headers:
+            session?.access_token != null
+              ? { Authorization: `Bearer ${session.access_token}` }
+              : undefined,
+        });
         result = await doUpload();
         if (!result.error) {
           const {
             data: { publicUrl },
           } = client!.storage.from("audios").getPublicUrl(path);
           return publicUrl;
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          throw new Error(
+            "Sessão expirada. Faça login novamente e tente o upload.",
+          );
         }
       }
     }

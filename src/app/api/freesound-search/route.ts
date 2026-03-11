@@ -9,26 +9,25 @@ const UPSTREAM_TIMEOUT_MS = 8_000;
 /**
  * GET /api/freesound-search?query=...&page=1&pageSize=20&filter=...
  * Proxies search to Freesound API so the API key stays server-side.
+ * Returns errorCode for translatable errors (frontend maps to i18n keys).
  */
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("query")?.trim();
+
+  if (!query) {
+    return NextResponse.json(
+      { errorCode: "freesound.errorQueryMissing" },
+      { status: 400 },
+    );
+  }
+
   const token = getFreesoundApiKey();
 
   if (!token) {
     return NextResponse.json(
-      {
-        error:
-          "Freesound API key not configured. Add NEXT_PUBLIC_FREESOUND_API_KEY to .env.",
-      },
+      { errorCode: "freesound.errorApiKeyNotConfigured" },
       { status: 503 },
-    );
-  }
-
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("query")?.trim();
-  if (!query) {
-    return NextResponse.json(
-      { error: "Missing query parameter." },
-      { status: 400 },
     );
   }
 
@@ -54,12 +53,12 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") {
       return NextResponse.json(
-        { error: "Freesound API timed out. Please try again." },
+        { errorCode: "freesound.errorTimeout" },
         { status: 504 },
       );
     }
     return NextResponse.json(
-      { error: "Failed to reach Freesound API." },
+      { errorCode: "freesound.errorNetwork" },
       { status: 502 },
     );
   } finally {
@@ -67,13 +66,8 @@ export async function GET(request: NextRequest) {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
     return NextResponse.json(
-      {
-        error:
-          (err as { detail?: string }).detail ??
-          `Freesound API error: ${res.status}`,
-      },
+      { errorCode: "freesound.errorApi" },
       { status: res.status },
     );
   }

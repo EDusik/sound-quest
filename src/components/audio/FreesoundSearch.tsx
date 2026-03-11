@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import {
   getPreviewUrl,
   type FreesoundSound,
@@ -8,10 +9,10 @@ import {
 } from "@/lib/freesound";
 import {
   useFreesoundConfiguredQuery,
-  useFreesoundSearchMutation,
+  useFreesoundSearchQuery,
   useAddAudioMutation,
 } from "@/hooks/api";
-import { getErrorMessage } from "@/lib/errors";
+import { getErrorMessage, getTranslatedFreesoundError } from "@/lib/errors";
 import { useTranslations } from "@/contexts/I18nContext";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -20,71 +21,69 @@ interface FreesoundSearchProps {
   onAdded: () => void;
 }
 
+const PAGE_SIZE = 15;
+
+function buildFilterParam(rawFilter: string): string | undefined {
+  if (!rawFilter.trim()) return undefined;
+  const trimmed = rawFilter.trim();
+  return trimmed.includes(":")
+    ? trimmed
+    : trimmed
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((t) => `tag:${t}`)
+        .join(" ");
+}
+
 export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
   const t = useTranslations();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("");
+  const [searchParams, setSearchParams] = useState<{
+    query: string;
+    filter?: string;
+    page: number;
+    pageSize: number;
+  } | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [playingId, setPlayingId] = useState<number | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: configured = false, isLoading: configuredLoading } = useFreesoundConfiguredQuery();
-  const searchMutation = useFreesoundSearchMutation();
+  const searchQuery = useFreesoundSearchQuery(searchParams);
   const addAudioMutation = useAddAudioMutation(sceneId);
 
-  const results: FreesoundSound[] = searchMutation.data?.results ?? [];
-  const searchData: FreesoundSearchResponse | undefined = searchMutation.data;
-  const currentPage = searchMutation.variables?.page ?? 1;
-  const pageSize = searchMutation.variables?.pageSize ?? 15;
+  const results: FreesoundSound[] = searchQuery.data?.results ?? [];
+  const searchData: FreesoundSearchResponse | undefined = searchQuery.data;
+  const currentPage = searchParams?.page ?? 1;
+  const pageSize = searchParams?.pageSize ?? PAGE_SIZE;
   const hasNextPage =
     typeof searchData?.count === "number" &&
     searchData.count > currentPage * pageSize;
   const hasPreviousPage = currentPage > 1;
-  const loading = searchMutation.isPending;
-  const searchError = searchMutation.error
-    ? getErrorMessage(searchMutation.error, t("freesound.searchFailed"))
+  const loading = searchQuery.isPending;
+  const searchError = searchQuery.error
+    ? getTranslatedFreesoundError(searchQuery.error, t, "freesound.searchFailed")
     : null;
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
-    const rawFilter = filter.trim();
-    const filterParam =
-      rawFilter &&
-      (rawFilter.includes(":")
-        ? rawFilter
-        : rawFilter
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((t) => `tag:${t}`)
-            .join(" "));
-    searchMutation.mutate({
+    setSearchParams({
       query: q,
-      filter: filterParam || undefined,
+      filter: buildFilterParam(filter),
       page: 1,
-      pageSize,
+      pageSize: PAGE_SIZE,
     });
   };
 
   const handlePageChange = (page: number) => {
     const q = query.trim();
-    if (!q) return;
-    const rawFilter = filter.trim();
-    const filterParam =
-      rawFilter &&
-      (rawFilter.includes(":")
-        ? rawFilter
-        : rawFilter
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((t) => `tag:${t}`)
-            .join(" "));
-    searchMutation.mutate({
-      query: q,
-      filter: filterParam || undefined,
+    if (!q || !searchParams) return;
+    setSearchParams({
+      ...searchParams,
       page,
-      pageSize,
     });
   };
 
@@ -126,8 +125,8 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
         kind: "freesound",
       });
       onAdded();
-    } catch {
-      // Error shown via addAudioMutation.error - could add toast/display
+    } catch (err) {
+      toast.warning(getErrorMessage(err, t("freesound.addFailed")));
     } finally {
       setAddingId(null);
     }
@@ -137,6 +136,14 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
     ? getErrorMessage(addAudioMutation.error, t("freesound.addFailed"))
     : null;
   const error = addError ?? searchError;
+
+  useEffect(() => {
+    if (searchError) toast.warning(searchError);
+  }, [searchError]);
+
+  useEffect(() => {
+    if (addError) toast.warning(addError);
+  }, [addError]);
 
   if (configuredLoading) {
     return (
@@ -251,7 +258,7 @@ export function FreesoundSearch({ sceneId, onAdded }: FreesoundSearchProps) {
                 const v = e.target.value;
                 setQuery(v);
                 if (!v.trim()) {
-                  searchMutation.reset();
+                  setSearchParams(null);
                 }
               }}
               placeholder={t("freesound.queryPlaceholder")}
