@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -49,6 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <AuthShell>{children}</AuthShell>
           </AuthProvider>
         </I18nProvider>
+        <Toaster richColors position="top-right" closeButton />
       </ThemeProvider>
     </QueryClientProvider>
   );

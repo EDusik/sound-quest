@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   AUDIO_UPLOAD_MAX_BYTES,
@@ -128,7 +129,9 @@ export function AddSoundModal({
       }
       await onAdded();
     } catch (err) {
-      setAddError(getErrorMessage(err, t("addSound.failedToAdd")));
+      const msg = getErrorMessage(err, t("addSound.failedToAdd"));
+      setAddError(msg);
+      toast.warning(msg);
     }
   };
 
