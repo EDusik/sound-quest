@@ -51,7 +51,7 @@ export function ConfirmModal({
 
   const confirmClass =
     confirmVariant === "danger"
-      ? "rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-foreground hover:bg-red-500 disabled:opacity-50"
+      ? "rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
       : "rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50";
   const confirmButtonText = loading ? (loadingConfirmLabel ?? `${confirmLabel}…`) : confirmLabel;
 

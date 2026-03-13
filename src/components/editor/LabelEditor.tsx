@@ -6,8 +6,9 @@ import { useTranslations } from "@/contexts/I18nContext";
 
 /** WCAG AA compliant with white text (contrast ≥ 4.5:1) */
 const DEFAULT_COLORS = [
-  "#dc2626",
+  "#f59e0b",
   "#ea580c",
+  "#dc2626",
   "#16a34a",
   "#0d9488",
   "#0891b2",
