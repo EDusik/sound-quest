@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
 import {
@@ -47,7 +46,9 @@ export default function DashboardPage() {
   const [newLabelText, setNewLabelText] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(LABEL_DEFAULT_COLORS[0]);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
+  const [editFieldErrors, setEditFieldErrors] = useState<
+    Record<string, string>
+  >({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,12 +57,18 @@ export default function DashboardPage() {
   const [createDescription, setCreateDescription] = useState("");
   const [createLabels, setCreateLabels] = useState<Label[]>([]);
   const [createNewLabelText, setCreateNewLabelText] = useState("");
-  const [createNewLabelColor, setCreateNewLabelColor] = useState(LABEL_DEFAULT_COLORS[0]);
-  const [createFieldErrors, setCreateFieldErrors] = useState<Record<string, string>>({});
+  const [createNewLabelColor, setCreateNewLabelColor] = useState(
+    LABEL_DEFAULT_COLORS[0],
+  );
+  const [createFieldErrors, setCreateFieldErrors] = useState<
+    Record<string, string>
+  >({});
   const showFocusEntry = useFocusEntryOnce("dashboard");
   const t = useTranslations();
 
-  const error = queryError ? getErrorMessage(queryError, t("errors.loadScenes")) : null;
+  const error = queryError
+    ? getErrorMessage(queryError, t("errors.loadScenes"))
+    : null;
 
   const closeEditModal = useCallback(() => {
     setEditingScene(null);
@@ -267,12 +274,16 @@ export default function DashboardPage() {
 
       <ConfirmModal
         open={showDeleteConfirm && !!editingScene}
-        onClose={() => !deleteSceneMutation.isPending && setShowDeleteConfirm(false)}
+        onClose={() =>
+          !deleteSceneMutation.isPending && setShowDeleteConfirm(false)
+        }
         title={t("dashboard.deleteScene")}
         titleId="delete-scene-modal-title"
         message={
           <>
-            {t("dashboard.deleteSceneConfirm", { title: editingScene?.title ?? "" })}
+            {t("dashboard.deleteSceneConfirm", {
+              title: editingScene?.title ?? "",
+            })}
           </>
         }
         confirmLabel={t("common.delete")}
@@ -281,7 +292,11 @@ export default function DashboardPage() {
         onConfirm={handleDeleteScene}
       />
 
-      <Navbar logo={<SoundQuestLogo />} logoHref="/dashboard" logoAriaLabel="SoundQuest" />
+      <Navbar
+        logo={<SoundQuestLogo />}
+        logoHref="/dashboard"
+        logoAriaLabel="SoundQuest"
+      />
 
       <section
         className={`mx-auto max-w-6xl px-4 py-4 pb-24 bg-background ${loading ? "min-h-[60vh]" : ""}`}
@@ -289,12 +304,25 @@ export default function DashboardPage() {
         aria-busy={loading}
       >
         {loading && (
-          <div role="status" aria-live="polite" aria-label={t("common.loading")}>
+          <div
+            role="status"
+            aria-live="polite"
+            aria-label={t("common.loading")}
+          >
             <div className="mb-2 flex items-center justify-between gap-4">
-              <div className="h-7 w-24 rounded bg-border/40 animate-pulse" aria-hidden />
+              <div
+                className="h-7 w-24 rounded bg-border/40 animate-pulse"
+                aria-hidden
+              />
               <div className="flex items-center gap-1">
-                <div className="h-9 w-32 rounded bg-border/30 animate-pulse" aria-hidden />
-                <div className="h-9 w-9 rounded bg-border/30 animate-pulse" aria-hidden />
+                <div
+                  className="h-9 w-32 rounded bg-border/30 animate-pulse"
+                  aria-hidden
+                />
+                <div
+                  className="h-9 w-9 rounded bg-border/30 animate-pulse"
+                  aria-hidden
+                />
               </div>
             </div>
             <DashboardSkeleton />
@@ -318,10 +346,15 @@ export default function DashboardPage() {
         {!loading && !error && scenes.length > 0 && (
           <>
             <div className="mb-2 flex items-center justify-between gap-4">
-              <h1 className="text-xl font-semibold text-accent" aria-label={t("dashboard.scenes")}>
-              <span className="sm:hidden">🎬</span>
-              <span className="hidden sm:inline">{t("dashboard.scenes")}</span>
-            </h1>
+              <h1
+                className="text-xl font-semibold text-accent"
+                aria-label={t("dashboard.scenes")}
+              >
+                <span className="sm:hidden">🎬</span>
+                <span className="hidden sm:inline">
+                  {t("dashboard.scenes")}
+                </span>
+              </h1>
               <div className="flex items-center gap-1">
                 <SearchBar
                   open={searchOpen}
