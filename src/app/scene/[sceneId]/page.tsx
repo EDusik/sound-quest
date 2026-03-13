@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   useSceneQuery,
   useAudiosQuery,
@@ -10,6 +10,7 @@ import {
   useUpdateAudioMutation,
 } from "@/hooks/api";
 import type { AudioItem } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
@@ -28,23 +29,26 @@ import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 
 export default function ScenePage() {
   const params = useParams();
-  const sceneId = Array.isArray(params.sceneId)
+  const router = useRouter();
+  const { user } = useAuth();
+  const sceneIdOrSlug = Array.isArray(params.sceneId)
     ? params.sceneId[0] ?? ""
     : (params.sceneId ?? "");
   const {
     data: sceneData,
     isLoading: sceneLoading,
     error: sceneError,
-  } = useSceneQuery(sceneId);
+  } = useSceneQuery(sceneIdOrSlug, user?.uid);
+  const scene = sceneData ?? null;
+  const sceneId = scene?.id ?? "";
   const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
   const loading = sceneLoading;
   const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
-  const scene = sceneData ?? null;
   const t = useTranslations();
   const error =
-    !sceneId
+    !sceneIdOrSlug
       ? t("scene.sceneNotFound")
       : sceneError
         ? getErrorMessage(sceneError, t("scene.failedToLoad"))
@@ -177,6 +181,14 @@ export default function ScenePage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [audioToDelete, closeDeleteModal]);
+
+  // When opening by id, replace URL with slug so the bar shows the scene name
+  useEffect(() => {
+    if (!scene?.slug || sceneIdOrSlug === scene.slug) return;
+    if (sceneIdOrSlug === scene.id) {
+      router.replace(`/scene/${scene.slug}`, { scroll: false });
+    }
+  }, [scene?.id, scene?.slug, sceneIdOrSlug, router]);
 
   if (loading) {
     return (

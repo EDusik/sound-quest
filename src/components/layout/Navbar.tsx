@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
 import { GuestSignInHintTooltip, useGuestHintSeen } from "@/components/layout/GuestSignInHint";
-import { SignOutIcon, HeartIcon } from "@/components/icons";
+import { UserMenu } from "@/components/layout/UserMenu";
+import { SignOutIcon } from "@/components/icons";
 
 interface NavbarProps {
   /** Logo content (e.g. <SoundQuestLogo />). If logoHref is set, logo is wrapped in a link. */
@@ -26,10 +26,6 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
   const t = useTranslations();
   const [hasSeenGuestHint, markGuestHintSeen] = useGuestHintSeen();
   const [showGuestHint, setShowGuestHint] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const userMenuListRef = useRef<HTMLDivElement>(null);
-  const signOutButtonRef = useRef<HTMLButtonElement>(null);
 
   const isGuest = !isAuthenticated;
 
@@ -38,29 +34,6 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
     const id = window.setTimeout(() => setShowGuestHint(true), GUEST_HINT_DELAY_MS);
     return () => clearTimeout(id);
   }, [isGuest, hasSeenGuestHint]);
-
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    signOutButtonRef.current?.focus();
-  }, [userMenuOpen]);
-
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setUserMenuOpen(false);
-    };
-    document.addEventListener("click", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [userMenuOpen]);
 
   const handleDismissGuestHint = () => {
     markGuestHintSeen();
@@ -92,74 +65,18 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
             <LanguageSwitch />
             <ThemeToggle />
             {isAuthenticated && user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((o) => !o)}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-card/80 px-1.5 py-1.5 sm:px-3 sm:py-1.5 text-sm text-foreground min-w-0 hover:bg-card transition-colors"
-                  aria-label={`${user.displayName ?? user.email ?? t("nav.userFallback")}, ${t("nav.userMenu")}`}
-                  aria-expanded={userMenuOpen}
-                  aria-haspopup="menu"
-                  aria-controls="user-menu"
-                >
-                  {user.photoURL ? (
-                    <Image
-                      src={user.photoURL}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 rounded-full object-cover shrink-0"
-                    />
-                  ) : (
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft/50 text-xs font-medium text-accent">
-                      {(user.displayName ?? user.email ?? "?")[0].toUpperCase()}
-                    </span>
-                  )}
-                  <span className="max-w-[140px] truncate hidden sm:inline">
-                    {user.displayName ?? user.email ?? t("nav.userFallback")}
-                  </span>
-                </button>
-                {userMenuOpen && (
-                  <div
-                    id="user-menu"
-                    ref={userMenuListRef}
-                    className="absolute right-0 top-full z-20 mt-1.5 min-w-[180px] rounded-lg border border-border bg-background py-1 shadow-lg"
-                    role="menu"
-                  >
-                    <div className="border-b border-border px-3 py-2 text-sm text-muted-foreground" role="none">
-                      <p className="truncate font-medium text-foreground">
-                        {user.displayName ?? user.email ?? t("nav.userFallback")}
-                      </p>
-                      {user.email && user.displayName && (
-                        <p className="truncate text-xs">{user.email}</p>
-                      )}
-                    </div>
-                    <Link
-                      href="/support"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-card transition-colors"
-                      role="menuitem"
-                      title={t("nav.supportSoundQuestTooltip")}
-                    >
-                      <HeartIcon className="h-4 w-4 shrink-0" />
-                      {t("nav.supportSoundQuest")}
-                    </Link>
-                    <button
-                      ref={signOutButtonRef}
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        signOut();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-card transition-colors"
-                      role="menuitem"
-                    >
-                      <SignOutIcon className="h-4 w-4 shrink-0" />
-                      {t("nav.signOut")}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <UserMenu
+                user={user}
+                onSignOut={signOut}
+                menuId="user-menu"
+                labels={{
+                  triggerAriaLabel: `${user.displayName ?? user.email ?? t("nav.userFallback")}, ${t("nav.userMenu")}`,
+                  userFallback: t("nav.userFallback"),
+                  supportLinkText: t("nav.supportSoundQuest"),
+                  supportLinkTitle: t("nav.supportSoundQuestTooltip"),
+                  signOutText: t("nav.signOut"),
+                }}
+              />
             ) : (
               <div className="relative">
                 <Link

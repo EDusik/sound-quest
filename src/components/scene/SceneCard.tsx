@@ -31,7 +31,7 @@ export function SceneCard({
 
   return (
     <Link
-      href={`/scene/${scene.id}`}
+      href={`/scene/${scene.slug ?? scene.id}`}
       className="relative h-[150px] block rounded-tr-xl rounded-br-xl ring-1 ring-inset ring-border/50 bg-card/50 p-5 pr-12 transition hover:ring-accent/50 hover:bg-card overflow-hidden"
     >
       {onEdit && (

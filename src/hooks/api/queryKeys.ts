@@ -3,7 +3,8 @@ export const queryKeys = {
     all: ["scenes"] as const,
     list: (userId: string) => ["scenes", userId] as const,
   },
-  scene: (sceneId: string) => ["scene", sceneId] as const,
+  scene: (sceneIdOrSlug: string, userId?: string) =>
+    ["scene", sceneIdOrSlug, userId ?? ""] as const,
   audios: (sceneId: string) => ["audios", sceneId] as const,
   freesound: {
     configured: ["freesound", "configured"] as const,

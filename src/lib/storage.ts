@@ -8,6 +8,7 @@
  */
 import axios from "axios";
 import type { Scene, AudioItem, AudioKind } from "./types";
+import { slugify, ensureUniqueSlug } from "./slug";
 import { getFirebaseDb, isFirestoreEnabled } from "./firebase";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { ANONYMOUS_UID } from "./authConstants";
@@ -205,12 +206,20 @@ function getLocalScenes(userId: string): Scene[] {
   }
 }
 
-function getLocalScene(sceneId: string): Scene | null {
+function getLocalScene(sceneId: string, userId?: string): Scene | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(SCENES_KEY);
     const all: Scene[] = raw ? JSON.parse(raw) : [];
-    return all.find((r) => r.id === sceneId) ?? null;
+    const byId = all.find((r) => r.id === sceneId);
+    if (byId) return byId;
+    if (userId) {
+      const bySlug = all.find(
+        (r) => r.userId === userId && r.slug === sceneId,
+      );
+      if (bySlug) return bySlug;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -311,6 +320,7 @@ function sceneFromRow(row: {
   labels: unknown;
   created_at: string;
   order: number | null;
+  slug?: string | null;
 }): Scene {
   const labels = Array.isArray(row.labels)
     ? (row.labels as Scene["labels"])
@@ -323,6 +333,7 @@ function sceneFromRow(row: {
     labels,
     createdAt: new Date(row.created_at).getTime(),
     order: row.order ?? undefined,
+    slug: row.slug ?? undefined,
   };
 }
 
@@ -362,15 +373,27 @@ async function getSupabaseScenes(userId: string): Promise<Scene[]> {
   });
 }
 
-async function getSupabaseScene(sceneId: string): Promise<Scene | null> {
+async function getSupabaseScene(
+  sceneId: string,
+  userId?: string,
+): Promise<Scene | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from("scenes")
     .select("*")
     .eq("id", sceneId)
     .single();
-  if (error || !data) return null;
-  return sceneFromRow(data);
+  if (!error && data) return sceneFromRow(data);
+  if (userId) {
+    const { data: bySlug, error: slugError } = await supabase
+      .from("scenes")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("slug", sceneId)
+      .maybeSingle();
+    if (!slugError && bySlug) return sceneFromRow(bySlug);
+  }
+  return null;
 }
 
 async function setSupabaseScene(scene: Scene): Promise<void> {
@@ -383,6 +406,7 @@ async function setSupabaseScene(scene: Scene): Promise<void> {
     labels: scene.labels ?? [],
     created_at: new Date(scene.createdAt ?? Date.now()).toISOString(),
     order: scene.order ?? null,
+    slug: scene.slug ?? null,
   };
   const { error } = await supabase.from("scenes").upsert(payload, {
     onConflict: "id",
@@ -459,14 +483,24 @@ async function getFirestoreScenes(userId: string): Promise<Scene[]> {
   });
 }
 
-async function getFirestoreScene(sceneId: string): Promise<Scene | null> {
+async function getFirestoreScene(
+  sceneId: string,
+  userId?: string,
+): Promise<Scene | null> {
   const database = getFirebaseDb();
-  if (!database) return getLocalScene(sceneId);
+  if (!database) return getLocalScene(sceneId, userId);
   const d = await getDoc(doc(database, "scenes", sceneId));
-  if (!d.exists()) return null;
-  const data = d.data();
-  const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? 0;
-  return { id: d.id, ...data, createdAt } as Scene;
+  if (d.exists()) {
+    const data = d.data();
+    const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? 0;
+    return { id: d.id, ...data, createdAt } as Scene;
+  }
+  if (userId) {
+    const list = await getFirestoreScenes(userId);
+    const bySlug = list.find((s) => s.slug === sceneId);
+    if (bySlug) return bySlug;
+  }
+  return null;
 }
 
 async function setFirestoreScene(scene: Scene): Promise<void> {
@@ -557,13 +591,17 @@ export async function getScenes(userId: string): Promise<Scene[]> {
   return Promise.resolve(getLocalScenes(userId));
 }
 
-export async function getScene(sceneId: string): Promise<Scene | null> {
-  if (isFirestoreEnabled()) return getFirestoreScene(sceneId);
+export async function getScene(
+  sceneId: string,
+  userId?: string,
+): Promise<Scene | null> {
+  const uid = userId ?? (isSupabaseStorageEnabled() ? await getSupabaseUserId() : null) ?? undefined;
+  if (isFirestoreEnabled()) return getFirestoreScene(sceneId, uid ?? undefined);
   if (isSupabaseStorageEnabled()) {
-    const uid = await getSupabaseUserId();
-    if (uid) return getSupabaseScene(sceneId);
+    const supabaseUid = uid ?? (await getSupabaseUserId());
+    if (supabaseUid) return getSupabaseScene(sceneId, supabaseUid);
   }
-  return Promise.resolve(getLocalScene(sceneId));
+  return Promise.resolve(getLocalScene(sceneId, uid));
 }
 
 export async function createScene(
@@ -577,8 +615,13 @@ export async function createScene(
     if (sessionUserId) effectiveUserId = sessionUserId;
   }
   const existing = await getScenes(effectiveUserId);
+  const existingSlugs = existing
+    .map((s) => s.slug)
+    .filter((x): x is string => !!x);
+  const slug = ensureUniqueSlug(slugify(data.title), existingSlugs);
   const scene: Scene = {
     id,
+    slug,
     title: data.title,
     description: data.description,
     labels: data.labels,
@@ -598,13 +641,23 @@ export async function createScene(
 }
 
 export async function updateScene(scene: Scene): Promise<void> {
+  const existing = await getScenes(scene.userId);
+  const existingSlugs = existing
+    .map((s) => s.slug)
+    .filter((x): x is string => !!x);
+  const newSlug = ensureUniqueSlug(
+    slugify(scene.title),
+    existingSlugs,
+    scene.slug,
+  );
+  const sceneWithSlug: Scene = { ...scene, slug: newSlug };
   if (isFirestoreEnabled()) {
-    await setFirestoreScene(scene);
+    await setFirestoreScene(sceneWithSlug);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await setSupabaseScene(scene);
-    mirrorSceneToAnonymousLocal(scene);
+    await setSupabaseScene(sceneWithSlug);
+    mirrorSceneToAnonymousLocal(sceneWithSlug);
   } else {
-    setLocalScene(scene);
+    setLocalScene(sceneWithSlug);
   }
 }
 

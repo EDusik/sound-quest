@@ -134,7 +134,7 @@ export default function DashboardPage() {
         labels: validation.data.labels,
       });
       closeCreateModal();
-      router.push(`/scene/${scene.id}`);
+      router.push(`/scene/${scene.slug ?? scene.id}`);
     } catch {
       // Error handled via createSceneMutation.error
     }

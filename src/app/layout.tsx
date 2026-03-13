@@ -2,7 +2,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Cinzel } from "next/font/google";
 import "./globals.css";
-import { Footer } from "@/components/layout/Footer";
+import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { SkipToContent } from "@/components/a11y/SkipToContent";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Providers } from "@/components/layout/Providers";
@@ -67,7 +67,7 @@ export default function RootLayout({
           >
             {children}
           </main>
-          <Footer />
+          <ConditionalFooter />
         </Providers>
       </body>
     </html>

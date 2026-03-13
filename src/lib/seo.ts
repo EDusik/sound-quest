@@ -5,6 +5,29 @@ export const siteUrl = "https://sound-table.vercel.app";
 const defaultDescription =
   "Create immersive RPG sessions with ambient sounds, music and sound effects. Build scenes for your tabletop campaigns. Free soundboard for dungeon masters. Crie sessões de RPG imersivas com sons ambiente, música e efeitos sonoros. Monte cenas para suas campanhas de mesa. Soundboard gratuito para mestres.";
 
+/** Home page SEO: focused on landing message and primary keywords. */
+export const homeMetadata: Metadata = {
+  title: "SoundQuest – RPG Soundboard for Tabletop Games",
+  description:
+    "Bring your RPG sessions to life with sound. SoundQuest is a free soundboard for tabletop RPG: play ambience, music, and sound effects instantly. Built for Game Masters and players.",
+  openGraph: {
+    title: "SoundQuest – RPG Soundboard for Tabletop Games",
+    description:
+      "Bring your RPG sessions to life with sound. Free soundboard for tabletop RPG: ambience, music, and sound effects for Game Masters and players.",
+    url: siteUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SoundQuest – RPG Soundboard for Tabletop Games",
+    description:
+      "Bring your RPG sessions to life with sound. Free soundboard for tabletop RPG.",
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
+};
+
 export const siteMetadata: Metadata = {
   metadataBase: new URL(siteUrl),
   referrer: "origin-when-cross-origin",

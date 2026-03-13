@@ -1,6 +1,30 @@
 "use client";
 
+import { Fragment, type ReactNode } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+
+const BRAND_NAME = "SoundQuest";
+
+/** Renders the word "SoundQuest" in the logo font. Pass className for size (e.g. text-lg, text-xl). */
+export function SoundQuestBrand({ className }: { className?: string }) {
+  return (
+    <span className={`font-cinzel font-semibold tracking-wide ${className ?? ""}`}>
+      {BRAND_NAME}
+    </span>
+  );
+}
+
+/** Splits text by "SoundQuest" and renders the brand name in logo font. Use for i18n strings. */
+export function textWithBrand(text: string, brandClassName?: string): ReactNode {
+  const parts = text.split(BRAND_NAME);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 ? <SoundQuestBrand className={brandClassName} /> : null}
+    </Fragment>
+  ));
+}
 
 type SoundQuestLogoProps = {
   /** Optional class for the wrapper. */
@@ -55,7 +79,7 @@ export function SoundQuestLogo({
   return (
     <span className={`inline-flex items-center gap-1.5 ${className ?? ""}`}>
       {d20}
-      <span className="inline font-cinzel font-semibold tracking-wide">SoundQuest</span>
+      <SoundQuestBrand className="inline" />
     </span>
   );
 }

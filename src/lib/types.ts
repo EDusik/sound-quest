@@ -6,6 +6,8 @@ export interface Label {
 
 export interface Scene {
   id: string;
+  /** URL-friendly identifier derived from title (e.g. "My Scene" → "my-scene"). Used in routes. */
+  slug?: string;
   title: string;
   description: string;
   labels: Label[];
