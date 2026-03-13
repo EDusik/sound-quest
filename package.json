@@ -28,6 +28,7 @@
     "@commitlint/cli": "^20.4.3",
     "@commitlint/config-conventional": "^20.4.3",
     "@tailwindcss/postcss": "^4",
+    "@types/three": "^0.183.0",
     "@types/node": "^20.19.35",
     "@types/react": "^19",
     "@types/react-dom": "^19",
