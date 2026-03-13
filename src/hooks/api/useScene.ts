@@ -11,6 +11,8 @@ export function useSceneQuery(
   return useQuery({
     queryKey: queryKeys.scene(sceneIdOrSlug ?? "", userId ?? ""),
     queryFn: () => getScene(sceneIdOrSlug!, userId),
-    enabled: !!sceneIdOrSlug,
+    // Only run once we know which user we're querying for, so we don't
+    // prematurely return "not found" before auth (demo or Supabase) settles.
+    enabled: !!sceneIdOrSlug && !!userId,
   });
 }

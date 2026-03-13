@@ -595,13 +595,26 @@ export async function getScene(
   sceneId: string,
   userId?: string,
 ): Promise<Scene | null> {
-  const uid = userId ?? (isSupabaseStorageEnabled() ? await getSupabaseUserId() : null) ?? undefined;
-  if (isFirestoreEnabled()) return getFirestoreScene(sceneId, uid ?? undefined);
+  // Logical user id used for local/Firestore lookups (can be anonymous/demo).
+  const logicalUserId =
+    userId ??
+    (isSupabaseStorageEnabled() ? await getSupabaseUserId() : null) ??
+    undefined;
+
+  if (isFirestoreEnabled()) {
+    return getFirestoreScene(sceneId, logicalUserId);
+  }
+
+  // For Supabase, always rely on the authenticated Supabase user id.
+  // Never use the logical user id here, as it may be an anonymous/demo id
+  // (e.g. "demo-user-local") which is not a valid UUID and would break
+  // queries against uuid-typed columns.
   if (isSupabaseStorageEnabled()) {
-    const supabaseUid = uid ?? (await getSupabaseUserId());
+    const supabaseUid = await getSupabaseUserId();
     if (supabaseUid) return getSupabaseScene(sceneId, supabaseUid);
   }
-  return Promise.resolve(getLocalScene(sceneId, uid));
+
+  return Promise.resolve(getLocalScene(sceneId, logicalUserId));
 }
 
 export async function createScene(

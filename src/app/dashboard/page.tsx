@@ -29,7 +29,6 @@ import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const {
     data: scenes = [],
     isLoading: loading,
@@ -128,13 +127,12 @@ export default function DashboardPage() {
       return;
     }
     try {
-      const scene = await createSceneMutation.mutateAsync({
+      await createSceneMutation.mutateAsync({
         title: validation.data.title,
         description: validation.data.description,
         labels: validation.data.labels,
       });
       closeCreateModal();
-      router.push(`/scene/${scene.slug ?? scene.id}`);
     } catch {
       // Error handled via createSceneMutation.error
     }

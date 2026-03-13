@@ -30,7 +30,7 @@ import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 export default function ScenePage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const sceneIdOrSlug = Array.isArray(params.sceneId)
     ? params.sceneId[0] ?? ""
     : (params.sceneId ?? "");
@@ -42,7 +42,7 @@ export default function ScenePage() {
   const scene = sceneData ?? null;
   const sceneId = scene?.id ?? "";
   const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
-  const loading = sceneLoading;
+  const loading = authLoading || sceneLoading;
   const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
