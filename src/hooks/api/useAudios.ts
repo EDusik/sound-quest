@@ -33,6 +33,30 @@ export function useAddAudioMutation(sceneId: string) {
   });
 }
 
+/** Add the same audio (name, sourceUrl, kind) to multiple scenes. */
+export function useAddAudioToScenesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      sceneIds,
+      data,
+    }: {
+      sceneIds: string[];
+      data: { name: string; sourceUrl: string; kind?: AudioKind };
+    }) => {
+      const results = await Promise.all(
+        sceneIds.map((sceneId) => addAudio(sceneId, data)),
+      );
+      return results;
+    },
+    onSuccess: (_data, variables) => {
+      variables.sceneIds.forEach((sceneId) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.audios(sceneId) });
+      });
+    },
+  });
+}
+
 export function useUpdateAudioMutation(sceneId: string) {
   const queryClient = useQueryClient();
   return useMutation({

@@ -15,6 +15,7 @@ interface SpotifyAudioRowProps {
   onToggleActive?: () => void;
   onRemove?: () => void;
   onRename?: (newName: string) => void;
+  onAddToScene?: () => void;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ export function SpotifyAudioRow({
   onToggleActive,
   onRemove,
   onRename,
+  onAddToScene,
   className,
 }: SpotifyAudioRowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,7 @@ export function SpotifyAudioRow({
         showEditButton={!!onRename}
         showDeleteButton={!!onRemove}
         onDelete={onRemove}
+        onAddToScene={onAddToScene}
       />
       </div>
       <div ref={containerRef} className="h-[152px] w-full min-w-0 overflow-hidden rounded" />

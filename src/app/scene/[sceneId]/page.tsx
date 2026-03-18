@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   useSceneQuery,
+  useScenesQuery,
   useAudiosQuery,
   useReorderAudiosMutation,
   useRemoveAudioMutation,
   useUpdateAudioMutation,
+  useAddAudioToScenesMutation,
 } from "@/hooks/api";
 import type { AudioItem } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AddSoundModal } from "@/components/audio/AddSoundModal";
+import { AddToSceneModal } from "@/components/audio/AddToSceneModal";
 import { AudiosBlock } from "@/components/audio/AudiosBlock";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorPage } from "@/components/ui/ErrorPage";
@@ -68,10 +71,12 @@ export default function ScenePage() {
   const scene = sceneData ?? null;
   const sceneId = scene?.id ?? "";
   const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
+  const { data: scenes = [] } = useScenesQuery(user?.uid);
   const loading = authLoading || sceneLoading;
   const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
+  const addAudioToScenesMutation = useAddAudioToScenesMutation();
   const t = useTranslations();
   const error =
     !sceneIdOrSlug
@@ -84,6 +89,7 @@ export default function ScenePage() {
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [audioToDelete, setAudioToDelete] = useState<AudioItem | null>(null);
+  const [audioToAddToScenes, setAudioToAddToScenes] = useState<AudioItem | null>(null);
   const [inactiveAudioIds, setInactiveAudioIds] = useState<string[]>([]);
   const [showAddSoundModal, setShowAddSoundModal] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -136,6 +142,22 @@ export default function ScenePage() {
   const handleAddSoundAdded = useCallback(async () => {
     setShowAddSoundModal(false);
   }, []);
+
+  const handleAddToScenes = useCallback(
+    async (sceneIds: string[]) => {
+      if (!audioToAddToScenes || sceneIds.length === 0) return;
+      await addAudioToScenesMutation.mutateAsync({
+        sceneIds,
+        data: {
+          name: audioToAddToScenes.name,
+          sourceUrl: audioToAddToScenes.sourceUrl,
+          kind: audioToAddToScenes.kind,
+        },
+      });
+      setAudioToAddToScenes(null);
+    },
+    [audioToAddToScenes, addAudioToScenesMutation],
+  );
 
   const handleDragStart = (e: React.DragEvent, audioId: string) => {
     const target = e.target as HTMLElement;
@@ -276,6 +298,16 @@ export default function ScenePage() {
         sceneId={sceneId}
         onAdded={handleAddSoundAdded}
       />
+      <AddToSceneModal
+        key={audioToAddToScenes?.id ?? "closed"}
+        open={!!audioToAddToScenes}
+        onClose={() => !addAudioToScenesMutation.isPending && setAudioToAddToScenes(null)}
+        audio={audioToAddToScenes}
+        currentSceneId={sceneId}
+        scenes={scenes}
+        loading={addAudioToScenesMutation.isPending}
+        onAdd={handleAddToScenes}
+      />
       <Navbar logo={<SoundQuestLogo />} logoHref="/dashboard" logoAriaLabel="SoundQuest" />
 
       <div className="mx-auto max-w-6xl px-4">
@@ -347,6 +379,7 @@ export default function ScenePage() {
             onToggleActive={toggleAudioActive}
             onDelete={setAudioToDelete}
             onRename={handleRename}
+            onAddToScene={setAudioToAddToScenes}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}

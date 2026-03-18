@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/contexts/I18nContext";
-import { EditIcon, TrashIcon } from "@/components/icons";
+import { EditIcon, TrashIcon, PlusIcon } from "@/components/icons";
 import { EditableName } from "./EditableName";
 
 interface AudioRowHeaderProps {
@@ -20,6 +20,8 @@ interface AudioRowHeaderProps {
   /** When true, shows the delete button. Use with onDelete for the click handler. */
   showDeleteButton?: boolean;
   onDelete?: () => void;
+  /** When provided, shows the add-to-scene button. */
+  onAddToScene?: () => void;
   nameInputRef?: React.RefObject<HTMLInputElement | null>;
   /** When provided, renders instead of the default edit/delete buttons. Use for rows that need playback controls + edit/delete. */
   rightSlot?: React.ReactNode;
@@ -39,6 +41,7 @@ export function AudioRowHeader({
   showEditButton,
   showDeleteButton,
   onDelete,
+  onAddToScene,
   nameInputRef,
   rightSlot,
 }: AudioRowHeaderProps) {
@@ -46,6 +49,17 @@ export function AudioRowHeader({
 
   const actions = rightSlot ?? (
     <>
+      {onAddToScene && (
+        <button
+          type="button"
+          onClick={onAddToScene}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          title={t("common.addToScene")}
+          aria-label={t("common.addToScene")}
+        >
+          <PlusIcon className="h-4 w-4" />
+        </button>
+      )}
       {showEditButton && (
         <button
           type="button"

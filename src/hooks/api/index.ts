@@ -3,6 +3,7 @@ export { useSceneQuery } from "./useScene";
 export {
   useAudiosQuery,
   useAddAudioMutation,
+  useAddAudioToScenesMutation,
   useUpdateAudioMutation,
   useRemoveAudioMutation,
   useReorderAudiosMutation,

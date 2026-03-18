@@ -290,6 +290,18 @@
   "freesound.freesoundLink": "Freesound",
   "freesound.applyLink": "freesound.org/apiv2/apply",
 
+  "addToScene.title": "Add audio to another scene",
+  "addToScene.messageToScene": "Add \"{name}\" to scene:",
+  "addToScene.messageToScenes": "Add \"{name}\" to scenes:",
+  "addToScene.scenes": "Scenes",
+  "addToScene.selectScenes": "Select scenes",
+  "addToScene.selectedScenes": "Selected: {names}",
+  "addToScene.scenesCount": "{count} scenes selected",
+  "addToScene.noOtherScenes": "You don't have any other scenes. Create a scene from the dashboard first.",
+  "addToScene.add": "Add",
+  "addToScene.adding": "Adding…",
+  "common.addToScene": "Add this sound to another scene",
+
   "audiosBlock.disabledAudio": "Disabled audio",
 
   "common.prev": "Previous",

@@ -300,6 +300,18 @@
   "freesound.freesoundLink": "Freesound",
   "freesound.applyLink": "freesound.org/apiv2/apply",
 
+  "addToScene.title": "Adicione o áudio em outra cena",
+  "addToScene.messageToScene": "Adicione \"{name}\" à cena:",
+  "addToScene.messageToScenes": "Adicione \"{name}\" às cenas:",
+  "addToScene.scenes": "Cenas",
+  "addToScene.selectScenes": "Selecionar cenas",
+  "addToScene.selectedScenes": "Selecionadas: {names}",
+  "addToScene.scenesCount": "{count} cenas selecionadas",
+  "addToScene.noOtherScenes": "Você não tem outras cenas. Crie uma cena no painel primeiro.",
+  "addToScene.add": "Adicionar",
+  "addToScene.adding": "Adicionando…",
+  "common.addToScene": "Adicionar este som a outra cena",
+
   "audiosBlock.disabledAudio": "Áudio desativado",
 
   "common.prev": "Anterior",
