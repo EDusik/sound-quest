@@ -8,7 +8,7 @@ import { SpotifyAudioRow } from "@/components/audio/SpotifyAudioRow";
 import { AudioRowHeader } from "@/components/audio/AudioRowHeader";
 import { PlaybackControls } from "@/components/audio/PlaybackControls";
 import { VolumeSlider } from "@/components/audio/VolumeSlider";
-import { EditIcon, TrashIcon } from "@/components/icons";
+import { EditIcon, TrashIcon, PlusIcon } from "@/components/icons";
 import { loadYouTubeIframeAPI } from "@/lib/youtube-embed";
 
 interface AudioRowProps {
@@ -18,6 +18,8 @@ interface AudioRowProps {
   onToggleActive?: (audio: AudioItem) => void;
   onDelete?: (audio: AudioItem) => void;
   onRename?: (audio: AudioItem, newName: string) => void;
+  /** Open modal to add this audio to other scenes. */
+  onAddToScene?: (audio: AudioItem) => void;
   /** Optional class for the root card (e.g. rounded-tr-lg rounded-bl-lg when next to drag handle). */
   className?: string;
 }
@@ -29,6 +31,7 @@ function YouTubeAudioRow({
   onToggleActive,
   onDelete,
   onRename,
+  onAddToScene,
   className,
 }: AudioRowProps) {
   const t = useTranslations();
@@ -258,6 +261,17 @@ function YouTubeAudioRow({
         onStop={handleStop}
         onLoop={handleLoop}
       />
+      {onAddToScene && (
+        <button
+          type="button"
+          onClick={() => onAddToScene(audio)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          title={t("common.addToScene")}
+          aria-label={t("common.addToScene")}
+        >
+          <PlusIcon className="h-4 w-4" />
+        </button>
+      )}
       {onRename && (
         <button
           type="button"
@@ -337,6 +351,7 @@ function HtmlAudioRow({
   onToggleActive,
   onDelete,
   onRename,
+  onAddToScene,
   className,
 }: AudioRowProps) {
   const t = useTranslations();
@@ -457,6 +472,17 @@ function HtmlAudioRow({
         onStop={handleStop}
         onLoop={handleLoop}
       />
+      {onAddToScene && (
+        <button
+          type="button"
+          onClick={() => onAddToScene(audio)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          title={t("common.addToScene")}
+          aria-label={t("common.addToScene")}
+        >
+          <PlusIcon className="h-4 w-4" />
+        </button>
+      )}
       {onRename && (
         <button
           type="button"
@@ -559,6 +585,11 @@ export function AudioRow(props: AudioRowProps) {
         onRename={
           props.onRename
             ? (newName) => props.onRename?.(props.audio, newName)
+            : undefined
+        }
+        onAddToScene={
+          props.onAddToScene
+            ? () => props.onAddToScene?.(props.audio)
             : undefined
         }
         className={props.className}

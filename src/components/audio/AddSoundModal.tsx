@@ -9,6 +9,7 @@ import {
   ALLOWED_AUDIO_EXTENSIONS,
 } from "@/lib/storage";
 import { getMaxUploadSizeBytes, getUserPlanLimits } from "@/lib/planLimits";
+import { AiLibraryPanel } from "@/components/audio/AiLibraryPanel";
 import { FreesoundSearch } from "@/components/audio/FreesoundSearch";
 import { SpotifyAddForm } from "@/components/audio/SpotifyAddForm";
 import { Modal } from "@/components/ui/Modal";
@@ -226,6 +227,13 @@ export function AddSoundModal({
       <div className="space-y-4 p-6">
         <div>
           <FreesoundSearch sceneId={sceneId} onAdded={onAdded} />
+        </div>
+        <div>
+          <AiLibraryPanel
+            sceneId={sceneId}
+            open={open}
+            onSceneAudioAdded={onAdded}
+          />
         </div>
         <CollapsibleSection summary={t("addSound.addAudio")}>
           <form

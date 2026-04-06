@@ -14,4 +14,6 @@ export const queryKeys = {
   youtube: {
     title: (youtubeId: string) => ["youtube", "title", youtubeId] as const,
   },
+  library: (typeFilter?: string) =>
+    ["library", typeFilter ?? "all"] as const,
 } as const;

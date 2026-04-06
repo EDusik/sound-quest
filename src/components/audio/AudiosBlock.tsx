@@ -19,6 +19,7 @@ interface AudiosBlockProps {
   onToggleActive: (audio: AudioItem) => void;
   onDelete: (audio: AudioItem) => void;
   onRename?: (audio: AudioItem, newName: string) => void;
+  onAddToScene?: (audio: AudioItem) => void;
   onDragStart: (e: React.DragEvent, audioId: string) => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -38,6 +39,7 @@ export function AudiosBlock({
   onToggleActive,
   onDelete,
   onRename,
+  onAddToScene,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -79,6 +81,7 @@ export function AudiosBlock({
                 onToggleActive={onToggleActive}
                 onDelete={onDelete}
                 onRename={onRename}
+                onAddToScene={onAddToScene}
                 className="rounded-tr-lg rounded-br-lg rounded-tl-none rounded-bl-none"
               />
             </div>
@@ -104,6 +107,7 @@ export function AudiosBlock({
                     onToggleActive={onToggleActive}
                     onDelete={onDelete}
                     onRename={onRename}
+                    onAddToScene={onAddToScene}
                   />
                 </div>
               </li>

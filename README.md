@@ -54,7 +54,7 @@ For Google login and cloud data:
    https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
    ```
    (replace `YOUR_PROJECT_REF` with your Supabase project ref.)
-5. Create the database and storage: in Supabase **SQL Editor**, either run the migrations in `supabase/migrations/` in order (or `supabase db push` if you use the CLI), or run the one-time script `supabase/scripts/run-in-supabase.sql` to create tables, RLS, and the `audios` storage bucket in one go.
+5. Create the database and storage: in Supabase **SQL Editor**, either run the migrations in `supabase/migrations/` in order (or `supabase db push` if you use the CLI), or run the one-time script `supabase/scripts/run-in-supabase.sql` to create tables, RLS, and the `audios` storage bucket in one go. Include the `audio_library` migration if you use the library/AI API.
 6. (Optional) For the app to create the `audios` bucket automatically if missing, add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (Supabase Dashboard → Settings → API → service_role key). Otherwise ensure the bucket exists via migrations or the script above.
 7. Run:
    ```bash
@@ -95,6 +95,10 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 | `NEXT_PUBLIC_PIX_ID`                       | PIX key for the **Support** page (`/support`): shown for copy and in the “Pay with Pix” section.                                                                                                                |
 | `NEXT_PUBLIC_PIX_URL`                      | Optional: URL for Pix payment (e.g. Nubank “cobrar” link). Used by the QR code and “Pay with Pix” on the support page.                                                                                          |
 | `NEXT_PUBLIC_STRIPE_URL`                   | Stripe (or other) donation link for the Support page.                                                                                                                                                           |
+| `AI_LIBRARY_ALLOWED_USER_IDS`             | Comma-separated UUIDs allowed to use `/api/library` and `/api/ai/chat` (Bearer Supabase JWT). See [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md).                                  |
+| `OPENAI_API_KEY`                           | **(Server-only.)** Required for `POST /api/ai/chat`.                                                                                                                                                          |
+| `OPENAI_CHAT_MODEL`                        | Optional override for the chat model (default `gpt-4o-mini`).                                                                                                                                                  |
+| `SERPER_API_KEY`                           | Optional. Web search snippets for the AI chat (`POST /api/ai/chat`).                                                                                                                                           |
 
 ### Firebase / Firestore (optional)
 
@@ -115,7 +119,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 | **Auth & DB**             | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore       |
 | **Data & API**            | [TanStack Query](https://tanstack.com/query) (React Query) for server state; Zod for schemas                                   |
 | **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs)                                                                                        |
-| **Backend**               | Next.js API routes (server-only): `ensure-audios-bucket`, `freesound-search`, `freesound-configured`. No separate Node server. |
+| **Backend**               | Next.js API routes (server-only): `ensure-audios-bucket`, `freesound-search`, `freesound-configured`, `library`, `ai/chat`. No separate Node server. |
 
 ---
 
@@ -146,6 +150,10 @@ The app stores **metadata** (name + URL). Supported sources:
 | `/api/ensure-audios-bucket` | POST   | Creates the Supabase `audios` storage bucket and policies if missing. Requires `Authorization: Bearer <Supabase access_token>` and `SUPABASE_SERVICE_ROLE_KEY`. |
 | `/api/freesound-configured` | GET    | Returns `{ configured: boolean }` depending on `NEXT_PUBLIC_FREESOUND_API_KEY`. Used by the client to show or hide Freesound search.                            |
 | `/api/freesound-search`     | GET    | Proxies search to Freesound API (query params: `query`, `page`, `pageSize`, `filter`) while keeping the token in `NEXT_PUBLIC_FREESOUND_API_KEY` on the server. |
+| `/api/library`              | GET    | Lists the signed-in user’s audio library; optional `?type=…`. Requires Bearer JWT + `AI_LIBRARY_ALLOWED_USER_IDS`. See [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md). |
+| `/api/library`              | POST   | Creates a library item. Same auth as GET.                                                                                                                        |
+| `/api/library/[id]`         | PATCH, DELETE | Updates or deletes an item. Same auth.                                                                                                                    |
+| `/api/ai/chat`              | POST   | AI chat with optional web search (`SERPER_API_KEY`) + OpenAI. Same allowlist + `OPENAI_API_KEY`.                                                                  |
 
 ---
 
@@ -168,7 +176,9 @@ src/
 │   ├── api/                # API routes
 │   │   ├── ensure-audios-bucket/   # Create Supabase audios bucket
 │   │   ├── freesound-configured/  # Check if Freesound key is set
-│   │   └── freesound-search/       # Proxy Freesound search (key server-side)
+│   │   ├── freesound-search/       # Proxy Freesound search (key server-side)
+│   │   ├── library/                # Audio library CRUD (JWT + allowlist)
+│   │   └── ai/chat/                # AI chat + suggestions
 │   ├── auth/               # Auth callback
 │   ├── login/               # Login, enroll, verify
 │   ├── dashboard/           # Scene list (create scene via modal)
