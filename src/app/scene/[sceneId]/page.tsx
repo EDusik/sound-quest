@@ -47,7 +47,9 @@ function loadInactiveAudioIds(sceneId: string): string[] {
     const raw = localStorage.getItem(getInactiveAudiosKey(sceneId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((id) => typeof id === "string")
+      : [];
   } catch {
     return [];
   }
@@ -66,7 +68,7 @@ export default function ScenePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const sceneIdOrSlug = Array.isArray(params.sceneId)
-    ? params.sceneId[0] ?? ""
+    ? (params.sceneId[0] ?? "")
     : (params.sceneId ?? "");
   const {
     data: sceneData,
@@ -75,7 +77,8 @@ export default function ScenePage() {
   } = useSceneQuery(sceneIdOrSlug, user?.uid);
   const scene = sceneData ?? null;
   const sceneId = scene?.id ?? "";
-  const { data: audios = [], isLoading: audiosLoading } = useAudiosQuery(sceneId);
+  const { data: audios = [], isLoading: audiosLoading } =
+    useAudiosQuery(sceneId);
   const { data: scenes = [] } = useScenesQuery(user?.uid);
   const loading = authLoading || sceneLoading;
   const reorderAudiosMutation = useReorderAudiosMutation(sceneId);
@@ -85,18 +88,18 @@ export default function ScenePage() {
   const createLibraryMutation = useCreateLibraryItemMutation();
   const { showSaveToLibraryOnScene: showSceneLibrarySave } = useAdminFeatures();
   const t = useTranslations();
-  const error =
-    !sceneIdOrSlug
-      ? t("scene.sceneNotFound")
-      : sceneError
-        ? getErrorMessage(sceneError, t("scene.failedToLoad"))
-        : null;
+  const error = !sceneIdOrSlug
+    ? t("scene.sceneNotFound")
+    : sceneError
+      ? getErrorMessage(sceneError, t("scene.failedToLoad"))
+      : null;
   const [search, setSearch] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [audioToDelete, setAudioToDelete] = useState<AudioItem | null>(null);
-  const [audioToAddToScenes, setAudioToAddToScenes] = useState<AudioItem | null>(null);
+  const [audioToAddToScenes, setAudioToAddToScenes] =
+    useState<AudioItem | null>(null);
   const [inactiveAudioIds, setInactiveAudioIds] = useState<string[]>([]);
   const [showAddSoundModal, setShowAddSoundModal] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -169,7 +172,8 @@ export default function ScenePage() {
   const handleDragStart = (e: React.DragEvent, audioId: string) => {
     const target = e.target as HTMLElement;
     const isDragHandle = target.closest("[data-drag-handle]");
-    if (!isDragHandle && target.closest("button, input, [role='button'], a")) return;
+    if (!isDragHandle && target.closest("button, input, [role='button'], a"))
+      return;
     setDraggedId(audioId);
     e.dataTransfer.setData("audioId", audioId);
     e.dataTransfer.effectAllowed = "move";
@@ -320,7 +324,9 @@ export default function ScenePage() {
         onClose={closeDeleteModal}
         title={t("scene.deleteSoundTitle")}
         titleId="delete-modal-title"
-        message={t("scene.deleteSoundConfirm", { name: audioToDelete?.name ?? "" })}
+        message={t("scene.deleteSoundConfirm", {
+          name: audioToDelete?.name ?? "",
+        })}
         confirmLabel={t("common.delete")}
         loadingConfirmLabel={t("dashboard.deleting")}
         loading={removeAudioMutation.isPending}
@@ -335,20 +341,29 @@ export default function ScenePage() {
       <AddToSceneModal
         key={audioToAddToScenes?.id ?? "closed"}
         open={!!audioToAddToScenes}
-        onClose={() => !addAudioToScenesMutation.isPending && setAudioToAddToScenes(null)}
+        onClose={() =>
+          !addAudioToScenesMutation.isPending && setAudioToAddToScenes(null)
+        }
         audio={audioToAddToScenes}
         currentSceneId={sceneId}
         scenes={scenes}
         loading={addAudioToScenesMutation.isPending}
         onAdd={handleAddToScenes}
       />
-      <Navbar logo={<SoundQuestLogo />} logoHref="/dashboard" logoAriaLabel="SoundQuest" />
+      <Navbar
+        logo={<SoundQuestLogo />}
+        logoHref="/dashboard"
+        logoAriaLabel="SoundQuest"
+      />
 
       <div className="mx-auto max-w-6xl px-4">
         <SceneTitleBlock scene={scene} />
       </div>
 
-      <section className="mx-auto max-w-6xl px-4 py-4 bg-background" aria-label={t("scene.audiosAria")}>
+      <section
+        className="mx-auto max-w-6xl px-4 py-4 bg-background"
+        aria-label={t("scene.audiosAria")}
+      >
         {(reorderError || renameError) && (
           <ErrorMessage
             message={reorderError ?? renameError ?? ""}

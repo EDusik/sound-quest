@@ -63,10 +63,14 @@ export function AudioRowHeader({
           onClick={onAddToScene}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted"
           title={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
           aria-label={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
         >
           <PlusIcon className="h-4 w-4" />

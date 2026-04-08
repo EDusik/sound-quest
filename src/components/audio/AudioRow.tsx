@@ -8,7 +8,13 @@ import { SpotifyAudioRow } from "@/components/audio/SpotifyAudioRow";
 import { AudioRowHeader } from "@/components/audio/AudioRowHeader";
 import { PlaybackControls } from "@/components/audio/PlaybackControls";
 import { VolumeSlider } from "@/components/audio/VolumeSlider";
-import { EditIcon, TrashIcon, PlusIcon, HeartIcon, PlayIcon } from "@/components/icons";
+import {
+  EditIcon,
+  TrashIcon,
+  PlusIcon,
+  HeartIcon,
+  PlayIcon,
+} from "@/components/icons";
 import { spotifyUriToOpenUrl } from "@/lib/spotify";
 import { loadYouTubeIframeAPI } from "@/lib/youtube-embed";
 
@@ -147,7 +153,7 @@ function YouTubeAudioRow({
       (entries) => {
         if (entries[0]?.isIntersecting) setIsInView(true);
       },
-      { rootMargin: "100px", threshold: 0 }
+      { rootMargin: "100px", threshold: 0 },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -299,8 +305,7 @@ function YouTubeAudioRow({
         onStop={handleStop}
         onLoop={handleLoop}
         omitPause={
-          playbackOnly &&
-          (simplifiedPlaybackControls || playbackOmitPause)
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
         }
         omitStop={playbackOnly && playbackOmitStop}
         omitLoop={playbackOnly && simplifiedPlaybackControls}
@@ -313,10 +318,14 @@ function YouTubeAudioRow({
           onClick={() => onAddToScene(audio)}
           className={actionBtnClass}
           title={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
           aria-label={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
         >
           <PlusIcon className={actionIconClass} />
@@ -396,22 +405,24 @@ function YouTubeAudioRow({
     >
       <div className="min-w-0 flex-1">
         <AudioRowHeader
-        isInactive={isInactive}
-        isEditingName={isEditingName}
-        editNameValue={editNameValue}
-        displayName={audio.name}
-        linkUrl={watchUrl}
-        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
-        onStartEditName={() => {
-          setEditNameValue(audio.name);
-          setIsEditingName(true);
-        }}
-        onNameChange={setEditNameValue}
-        onSaveRename={saveRename}
-        onCancelRename={cancelRename}
-        nameInputRef={nameInputRef}
-        rightSlot={rightSlot}
-      />
+          isInactive={isInactive}
+          isEditingName={isEditingName}
+          editNameValue={editNameValue}
+          displayName={audio.name}
+          linkUrl={watchUrl}
+          onToggleActive={
+            onToggleActive ? () => onToggleActive(audio) : undefined
+          }
+          onStartEditName={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          onNameChange={setEditNameValue}
+          onSaveRename={saveRename}
+          onCancelRename={cancelRename}
+          nameInputRef={nameInputRef}
+          rightSlot={rightSlot}
+        />
       </div>
       <div className="hidden">
         <div ref={containerRef} />
@@ -563,8 +574,7 @@ function HtmlAudioRow({
         onStop={handleStop}
         onLoop={handleLoop}
         omitPause={
-          playbackOnly &&
-          (simplifiedPlaybackControls || playbackOmitPause)
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
         }
         omitStop={playbackOnly && playbackOmitStop}
         omitLoop={playbackOnly && simplifiedPlaybackControls}
@@ -577,10 +587,14 @@ function HtmlAudioRow({
           onClick={() => onAddToScene(audio)}
           className={actionBtnClass}
           title={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
           aria-label={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
         >
           <PlusIcon className={actionIconClass} />
@@ -642,7 +656,8 @@ function HtmlAudioRow({
       >
         <audio
           ref={(el) => {
-            (ref as React.MutableRefObject<HTMLAudioElement | null>).current = el;
+            (ref as React.MutableRefObject<HTMLAudioElement | null>).current =
+              el;
             if (el) setRef(audio.id, el);
           }}
           src={audio.sourceUrl}
@@ -662,33 +677,36 @@ function HtmlAudioRow({
       } ${className ?? ""}`}
     >
       <div className="min-w-0 flex-1">
-      <audio
-        ref={(el) => {
-          (ref as React.MutableRefObject<HTMLAudioElement | null>).current = el;
-          if (el) setRef(audio.id, el);
-        }}
-        src={audio.sourceUrl}
-        preload="metadata"
-        loop={player?.loop ?? false}
-        className="hidden"
-      />
-      <AudioRowHeader
-        isInactive={isInactive}
-        isEditingName={isEditingName}
-        editNameValue={editNameValue}
-        displayName={audio.name}
-        linkUrl={audio.sourceUrl}
-        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
-        onStartEditName={() => {
-          setEditNameValue(audio.name);
-          setIsEditingName(true);
-        }}
-        onNameChange={setEditNameValue}
-        onSaveRename={saveRename}
-        onCancelRename={cancelRename}
-        nameInputRef={nameInputRef}
-        rightSlot={rightSlot}
-      />
+        <audio
+          ref={(el) => {
+            (ref as React.MutableRefObject<HTMLAudioElement | null>).current =
+              el;
+            if (el) setRef(audio.id, el);
+          }}
+          src={audio.sourceUrl}
+          preload="metadata"
+          loop={player?.loop ?? false}
+          className="hidden"
+        />
+        <AudioRowHeader
+          isInactive={isInactive}
+          isEditingName={isEditingName}
+          editNameValue={editNameValue}
+          displayName={audio.name}
+          linkUrl={audio.sourceUrl}
+          onToggleActive={
+            onToggleActive ? () => onToggleActive(audio) : undefined
+          }
+          onStartEditName={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          onNameChange={setEditNameValue}
+          onSaveRename={saveRename}
+          onCancelRename={cancelRename}
+          nameInputRef={nameInputRef}
+          rightSlot={rightSlot}
+        />
       </div>
     </div>
   );
@@ -705,9 +723,7 @@ function SpotifyLibraryOpenButton({
 }) {
   const t = useTranslations();
   const href = spotifyUriToOpenUrl(sourceUrl);
-  const size = compact
-    ? "flex h-7 w-7 rounded-md"
-    : "flex h-9 w-9 rounded-lg";
+  const size = compact ? "flex h-7 w-7 rounded-md" : "flex h-9 w-9 rounded-lg";
   const icon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   return (
     <a
@@ -754,10 +770,14 @@ function SpotifyPlaybackOnlyBar({
           onClick={() => onAddToScene(audio)}
           className={addBtn}
           title={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
           aria-label={
-            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
           }
         >
           <PlusIcon className={addIcon} />
@@ -798,9 +818,7 @@ export function AudioRow(props: AudioRowProps) {
             : undefined
         }
         onRemove={
-          props.onDelete
-            ? () => props.onDelete?.(props.audio)
-            : undefined
+          props.onDelete ? () => props.onDelete?.(props.audio) : undefined
         }
         onRename={
           props.onRename

@@ -71,7 +71,11 @@ export function SpotifyAudioRow({
         (typeof window !== "undefined" ? window.innerWidth - 48 : 300);
       IFrameAPI.createController(
         element,
-        { uri: track.spotifyUri, width: Math.max(300, Math.round(width)), height: 152 },
+        {
+          uri: track.spotifyUri,
+          width: Math.max(300, Math.round(width)),
+          height: 152,
+        },
         () => {
           if (cancelled) return;
         },
@@ -89,29 +93,32 @@ export function SpotifyAudioRow({
     >
       <div className="min-w-0 w-full">
         <AudioRowHeader
-        isInactive={isInactive}
-        isEditingName={isEditingName}
-        editNameValue={editNameValue}
-        displayName={track.name}
-        linkUrl={sourceUrl}
-        onToggleActive={onToggleActive}
-        onStartEditName={() => {
-          setEditNameValue(track.name);
-          setIsEditingName(true);
-        }}
-        onNameChange={setEditNameValue}
-        onSaveRename={saveRename}
-        onCancelRename={cancelRename}
-        showEditButton={!!onRename}
-        showDeleteButton={!!onRemove}
-        onDelete={onRemove}
-        onAddToScene={onAddToScene}
-        addToSceneDisabled={addToSceneDisabled}
-        onAddToLibrary={onAddToLibrary}
-        addToLibraryPending={addToLibraryPending}
-      />
+          isInactive={isInactive}
+          isEditingName={isEditingName}
+          editNameValue={editNameValue}
+          displayName={track.name}
+          linkUrl={sourceUrl}
+          onToggleActive={onToggleActive}
+          onStartEditName={() => {
+            setEditNameValue(track.name);
+            setIsEditingName(true);
+          }}
+          onNameChange={setEditNameValue}
+          onSaveRename={saveRename}
+          onCancelRename={cancelRename}
+          showEditButton={!!onRename}
+          showDeleteButton={!!onRemove}
+          onDelete={onRemove}
+          onAddToScene={onAddToScene}
+          addToSceneDisabled={addToSceneDisabled}
+          onAddToLibrary={onAddToLibrary}
+          addToLibraryPending={addToLibraryPending}
+        />
       </div>
-      <div ref={containerRef} className="h-[152px] w-full min-w-0 overflow-hidden rounded" />
+      <div
+        ref={containerRef}
+        className="h-[152px] w-full min-w-0 overflow-hidden rounded"
+      />
     </div>
   );
 }
