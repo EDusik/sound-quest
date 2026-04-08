@@ -7,6 +7,7 @@ import {
   createLibraryItem,
   deleteLibraryItem,
   fetchLibraryDefaultFavorites,
+  fetchPublicLibraryDefaultFavorites,
   fetchLibraryItems,
   removeLibraryDefaultFavorite,
   updateLibraryItem,
@@ -65,6 +66,7 @@ export function useDeleteLibraryItemMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavoritesPublic });
     },
   });
 }
@@ -86,12 +88,32 @@ export function useLibraryDefaultFavoritesQuery(options: {
   });
 }
 
+/** Library items promoted to Default sounds — visible to everyone (incl. guests). */
+export function usePublicLibraryDefaultFavoritesQuery(options?: {
+  enabled?: boolean;
+}) {
+  const { enabled = true } = options ?? {};
+  return useQuery({
+    queryKey: queryKeys.libraryDefaultFavoritesPublic,
+    queryFn: fetchPublicLibraryDefaultFavorites,
+    select: (data) => data.items,
+    staleTime: 60_000,
+    enabled,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && (error.status === 403 || error.status === 401))
+        return false;
+      return failureCount < 2;
+    },
+  });
+}
+
 export function useAddLibraryDefaultFavoriteMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addLibraryDefaultFavorite,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavoritesPublic });
       queryClient.invalidateQueries({ queryKey: ["library"] });
     },
   });
@@ -103,6 +125,7 @@ export function useRemoveLibraryDefaultFavoriteMutation() {
     mutationFn: removeLibraryDefaultFavorite,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavoritesPublic });
     },
   });
 }

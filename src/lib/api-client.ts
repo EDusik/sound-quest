@@ -89,6 +89,24 @@ export async function apiFetchJson<T>(
   return body as T;
 }
 
+/** Same-origin fetch to public `/api/*` routes (no Authorization header). */
+export async function apiFetchPublicJson<T>(path: string): Promise<T> {
+  const res = await fetch(path, { credentials: "same-origin" });
+  const body = await parseJsonOrEmpty(res);
+  if (!res.ok) {
+    const msg = getErrorMessage(body) ?? res.statusText;
+    const code =
+      body &&
+      typeof body === "object" &&
+      "error" in body &&
+      typeof (body as { error: unknown }).error === "string"
+        ? (body as { error: string }).error
+        : undefined;
+    throw new ApiError(res.status, code, msg);
+  }
+  return body as T;
+}
+
 export async function fetchLibraryItems(
   type?: string,
 ): Promise<{ items: AudioLibraryItem[] }> {
@@ -147,6 +165,15 @@ export async function fetchLibraryDefaultFavorites(): Promise<{
 }> {
   return apiFetchJson<{ items: LibraryDefaultFavoriteItem[] }>(
     "/api/library/default-favorites",
+  );
+}
+
+/** Global "Default sounds" picks from the audio library (no auth). */
+export async function fetchPublicLibraryDefaultFavorites(): Promise<{
+  items: LibraryDefaultFavoriteItem[];
+}> {
+  return apiFetchPublicJson<{ items: LibraryDefaultFavoriteItem[] }>(
+    "/api/library/default-favorites/public",
   );
 }
 

@@ -19,6 +19,7 @@ export {
   useUpdateLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useLibraryDefaultFavoritesQuery,
+  usePublicLibraryDefaultFavoritesQuery,
   useAddLibraryDefaultFavoriteMutation,
   useRemoveLibraryDefaultFavoriteMutation,
 } from "./useLibrary";

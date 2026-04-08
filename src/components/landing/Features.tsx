@@ -60,7 +60,7 @@ export function Features() {
       title={t("landing.featuresHeading")}
       subtitle={t("landing.featuresSubheading")}
       centered
-      className="bg-background"
+      className="border-b-0! bg-[color-mix(in_oklab,var(--card)_30%,transparent)]"
     >
       <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURE_KEYS.map((key, i) => (

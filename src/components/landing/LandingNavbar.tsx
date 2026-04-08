@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   isLandingHashNavActive,
@@ -26,22 +25,20 @@ const MOBILE_LINK_BASE = "inline-flex items-center gap-2 rounded-lg px-3 py-2 te
 
 export function LandingNavbar() {
   const pathname = usePathname();
-  const [hash, setHash] = useState(
-    () => (typeof window !== "undefined" ? window.location.hash : ""),
-  );
+  /** Always start empty so SSR and first client paint match; sync in useLayoutEffect. */
+  const [hash, setHash] = useState("");
   const t = useTranslations();
   const { user, isAuthenticated, signOut } = useAuth();
   const { showAudioLibraryNav, showMyAudioLibraryLink } = useAdminFeatures();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const sync = () => setHash(typeof window !== "undefined" ? window.location.hash : "");
+  useLayoutEffect(() => {
+    const sync = () => setHash(window.location.hash);
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, [pathname]);
 
-  const defaultsActive = isNavLinkActive(pathname, "/library/defaults");
   const loginActive = isNavLinkActive(pathname, "/login");
 
   return (
@@ -75,14 +72,6 @@ export function LandingNavbar() {
               </ScrollToHashLink>
             );
           })}
-          <Link
-            href="/library/defaults"
-            aria-current={defaultsActive ? "page" : undefined}
-            className={`${NAV_DESKTOP_LINK_BASE} ${navLinkTone(defaultsActive)}`}
-          >
-            <Music className="h-4 w-4 shrink-0" aria-hidden />
-            {t("nav.defaultAudios")}
-          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -173,15 +162,6 @@ export function LandingNavbar() {
               </ScrollToHashLink>
             );
           })}
-          <Link
-            href="/library/defaults"
-            aria-current={defaultsActive ? "page" : undefined}
-            className={`${MOBILE_LINK_BASE} ${navLinkTone(defaultsActive)}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Music className="h-4 w-4 shrink-0" aria-hidden />
-            {t("nav.defaultAudios")}
-          </Link>
           {isAuthenticated && user ? (
             <>
               <Link

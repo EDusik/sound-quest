@@ -15,7 +15,7 @@ export function Cta() {
       subtitle={t("landing.ctaSubtext")}
       centered
       contentMaxWidth="narrow"
-      className="bg-card/50"
+      className="bg-[color-mix(in_oklab,var(--card)_30%,transparent)]"
     >
       <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-center">
         <Link href="/login" className={buttonPrimary}>

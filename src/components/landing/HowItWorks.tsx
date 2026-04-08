@@ -25,7 +25,7 @@ export function HowItWorks() {
       title={t("landing.howHeading")}
       subtitle={t("landing.howSubheading")}
       centered
-      className="bg-card/30"
+      className="border-b-0! border-t border-border bg-background"
     >
       <ol className="mt-12 grid gap-8 md:grid-cols-3">
         {STEP_KEYS.map((key, i) => (

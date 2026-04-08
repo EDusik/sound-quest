@@ -23,10 +23,16 @@ function parseCatalog(data: unknown): DefaultCatalogItem[] {
 }
 
 /**
- * Loads the default audio catalog. Currently reads bundled JSON; later can
- * switch to `fetch("/api/defaults")` without changing call sites.
+ * Loads the default audio catalog from the public API (Supabase when configured),
+ * with fallback to bundled JSON.
  */
 export async function loadDefaultAudios(): Promise<DefaultCatalogItem[]> {
-  await Promise.resolve();
-  return parseCatalog(rawCatalog);
+  try {
+    const res = await fetch("/api/default-audio-catalog");
+    if (!res.ok) return parseCatalog(rawCatalog);
+    const json: unknown = await res.json();
+    return parseCatalog(json);
+  } catch {
+    return parseCatalog(rawCatalog);
+  }
 }

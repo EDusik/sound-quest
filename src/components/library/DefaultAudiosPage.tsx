@@ -22,7 +22,7 @@ import type { AudioItem } from "@/lib/types";
 import {
   useAddAudioToScenesMutation,
   useAdminFeatures,
-  useLibraryDefaultFavoritesQuery,
+  usePublicLibraryDefaultFavoritesQuery,
   useScenesQuery,
 } from "@/hooks/api";
 import { queryKeys } from "@/hooks/api/queryKeys";
@@ -60,7 +60,7 @@ export function DefaultAudiosPage() {
   const [search, setSearch] = useState("");
   const [audioToAddToScenes, setAudioToAddToScenes] = useState<AudioItem | null>(null);
   const { user } = useAuth();
-  const { realUser, allowed, showMyAudioLibraryLink } = useAdminFeatures();
+  const { showMyAudioLibraryLink } = useAdminFeatures();
   const { data: scenes = [], isLoading: scenesLoading } = useScenesQuery(
     user?.uid,
   );
@@ -79,13 +79,10 @@ export function DefaultAudiosPage() {
     staleTime: Infinity,
   });
 
-  const favoritesEnabled = realUser && allowed;
   const {
     data: defaultFavorites = [],
     isPending: favoritesPending,
-  } = useLibraryDefaultFavoritesQuery({
-    enabled: favoritesEnabled,
-  });
+  } = usePublicLibraryDefaultFavoritesQuery();
 
   const userCatalogItems: DefaultCatalogItem[] = useMemo(
     () =>
@@ -138,9 +135,7 @@ export function DefaultAudiosPage() {
     hasAnyItems && filtered.length === 0 && search.trim().length > 0;
 
   const catalogAndFavoritesReady =
-    !catalogPending &&
-    !isLoadError &&
-    (!favoritesEnabled || !favoritesPending);
+    !catalogPending && !isLoadError && !favoritesPending;
 
   /** Direct file URLs only; YouTube/Spotify rows mount after data is ready. */
   const fileUrlsSorted = useMemo(() => {
@@ -217,9 +212,7 @@ export function DefaultAudiosPage() {
 
   const showPageLoader =
     !isLoadError &&
-    (catalogPending ||
-      (favoritesEnabled && favoritesPending) ||
-      !fileMetadataReady);
+    (catalogPending || favoritesPending || !fileMetadataReady);
 
   const showEmptyCatalog =
     catalogAndFavoritesReady &&

@@ -3,6 +3,7 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
+import { HomeDefaultSounds } from "@/components/landing/HomeDefaultSounds";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Faq } from "@/components/landing/Faq";
 import { Cta } from "@/components/landing/Cta";
@@ -14,6 +15,7 @@ export function HomeContent() {
       <Hero />
       <Features />
       <HowItWorks />
+      <HomeDefaultSounds />
       <Faq />
       <Cta />
     </div>

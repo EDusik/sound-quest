@@ -8,6 +8,7 @@ export const LANDING_PATH = "/" as const;
 export const NAV_LINKS = [
   { href: "#features", key: "landing.navFeatures" },
   { href: "#how-it-works", key: "landing.navHowItWorks" },
+  { href: "#default-sounds", key: "nav.defaultAudios" },
   { href: "#faq", key: "landing.navFaq" },
 ] as const;
 

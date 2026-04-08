@@ -17,5 +17,7 @@ export const queryKeys = {
   library: (typeFilter?: string) =>
     ["library", typeFilter ?? "all"] as const,
   libraryDefaultFavorites: ["library", "defaultFavorites"] as const,
+  /** Public list of library items promoted to Default sounds (all users). */
+  libraryDefaultFavoritesPublic: ["library", "defaultFavorites", "public"] as const,
   defaultAudios: ["defaultAudios"] as const,
 } as const;

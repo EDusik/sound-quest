@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isNavLinkActive, navLinkTone } from "@/lib/nav-link-active";
 import { useTranslations } from "@/contexts/I18nContext";
@@ -70,18 +69,15 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
             )}
           </h1>
           <div className="flex items-center gap-[6px] shrink-0 justify-end">
-            {!isAuthenticated && (
-              <Link
-                href="/library/defaults"
-                aria-current={defaultsActive ? "page" : undefined}
-                className={`inline-flex max-w-[8rem] items-center gap-1.5 truncate rounded-lg border px-2 py-1.5 text-xs transition-colors sm:max-w-none sm:gap-2 sm:px-3 sm:py-2 sm:text-sm ${
-                  defaultsActive ? "border-accent/40 bg-accent/5" : "border-border"
-                } ${navLinkTone(defaultsActive)}`}
-              >
-                <Music className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
-                <span className="truncate">{t("nav.defaultAudios")}</span>
-              </Link>
-            )}
+            <Link
+              href="/library/defaults"
+              aria-current={defaultsActive ? "page" : undefined}
+              className={`inline-flex max-w-[8rem] items-center truncate rounded-lg border px-2 py-1.5 text-xs transition-colors sm:max-w-none sm:px-3 sm:py-2 sm:text-sm ${
+                defaultsActive ? "border-accent/40 bg-accent/5" : "border-border"
+              } ${navLinkTone(defaultsActive)}`}
+            >
+              <span className="truncate">{t("nav.defaultAudios")}</span>
+            </Link>
             <LanguageSwitch />
             <ThemeToggle />
             {isAuthenticated && user ? (
