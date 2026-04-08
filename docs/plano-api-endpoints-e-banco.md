@@ -162,7 +162,7 @@ Protected routes must **authenticate** with a valid Supabase **access JWT**, the
   - `supabase.auth.getUser(accessToken)` with the string from the `Authorization` header, **or**
   - Cookie-backed `getUser()` if using the SSR cookie pattern.
 - A successful result yields `user.id` (UUID) — use this as `user_id` for DB writes and filters. Treat missing/invalid/expired tokens as **401** `{ "error": "unauthorized" }` (or a stable schema); do not leak whether the email exists.
-- **Service role:** `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS. Use it only in trusted server code for admin operations if needed; for normal library CRUD prefer the user-scoped client or explicit `user_id` filters so RLS and application checks stay aligned.
+- **Service role:** `NEXT_SUPABASE_SERVICE_ROLE_KEY` bypasses RLS. Use it only in trusted server code for admin operations if needed; for normal library CRUD prefer the user-scoped client or explicit `user_id` filters so RLS and application checks stay aligned.
 
 ### 4.3 Order of checks in a route handler
 
@@ -175,7 +175,7 @@ Protected routes must **authenticate** with a valid Supabase **access JWT**, the
 
 - **RLS** on `audio_library` (§2.2) ensures that even if application code mis-filters once, Postgres still restricts rows to `auth.uid() = user_id`.
 - **HTTPS only** in production; never pass tokens in query strings or logs.
-- **Secrets:** `SUPABASE_SERVICE_ROLE_KEY` and any LLM/search keys stay server-side only; never expose in `NEXT_PUBLIC_*`.
+- **Secrets:** `NEXT_SUPABASE_SERVICE_ROLE_KEY` and any LLM/search keys stay server-side only; never expose in `NEXT_PUBLIC_*`.
 
 ### 4.5 Optional hardening
 
@@ -292,9 +292,9 @@ If the LLM returns JSON for `suggestions`, validate it with a dedicated `z.array
 | Variable                                                              | Purpose                                                                 |
 | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `AI_LIBRARY_ALLOWED_USER_IDS`                                         | Comma-separated UUIDs; who may access `/api/library` and `/api/ai/chat` |
-| `OPENAI_API_KEY` (or equivalent)                                      | LLM for chat                                                            |
-| `SERPER_API_KEY` or `GOOGLE_CSE_*` / `BING_*`                         | Web search API (AI tool)                                                |
-| Already in use: `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY` | Auth and Supabase                                                       |
+| `NEXT_ANTHROPIC_API_KEY` (or equivalent)                              | LLM for chat                                                            |
+| `NEXT_SERPER_API_KEY` or `GOOGLE_CSE_*` / `BING_*`                    | Web search API (AI tool)                                                |
+| Already in use: `NEXT_PUBLIC_SUPABASE_*`, `NEXT_SUPABASE_SERVICE_ROLE_KEY` | Auth and Supabase                                                       |
 
 ---
 
