@@ -20,6 +20,8 @@ interface AudiosBlockProps {
   onDelete: (audio: AudioItem) => void;
   onRename?: (audio: AudioItem, newName: string) => void;
   onAddToScene?: (audio: AudioItem) => void;
+  onAddToLibrary?: (audio: AudioItem) => void;
+  addToLibraryPending?: boolean;
   onDragStart: (e: React.DragEvent, audioId: string) => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -40,6 +42,8 @@ export function AudiosBlock({
   onDelete,
   onRename,
   onAddToScene,
+  onAddToLibrary,
+  addToLibraryPending,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -82,6 +86,8 @@ export function AudiosBlock({
                 onDelete={onDelete}
                 onRename={onRename}
                 onAddToScene={onAddToScene}
+                onAddToLibrary={onAddToLibrary}
+                addToLibraryPending={addToLibraryPending}
                 className="rounded-tr-lg rounded-br-lg rounded-tl-none rounded-bl-none"
               />
             </div>
@@ -108,6 +114,8 @@ export function AudiosBlock({
                     onDelete={onDelete}
                     onRename={onRename}
                     onAddToScene={onAddToScene}
+                    onAddToLibrary={onAddToLibrary}
+                    addToLibraryPending={addToLibraryPending}
                   />
                 </div>
               </li>

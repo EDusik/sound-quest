@@ -1,30 +1,37 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { ChatMessageList } from "@/components/chat/ChatMessageList";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { SuggestionList } from "@/components/chat/SuggestionList";
 import {
   useAddAudioMutation,
-  useAiChatMutation,
+  useAiChat,
   useCreateLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useLibraryQuery,
 } from "@/hooks/api";
-import type { ChatMessageInput } from "@/lib/api-client";
+import { usePersistedAiLibraryChat } from "@/hooks/usePersistedAiLibraryChat";
+import type { AiChatSuggestion, ChatMessageInput } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-client";
 import type { AudioLibraryItem } from "@/lib/audio-library-map";
 import { useTranslations } from "@/contexts/I18nContext";
-import { useAuth, isRealUser } from "@/contexts/AuthContext";
+import { useAuth, isRealUser, getUserChatLabel } from "@/contexts/AuthContext";
 import { getErrorMessage } from "@/lib/errors";
+import { libraryStorageUrlFromAiSuggestion } from "@/lib/library-storage-url-from-ai-suggestion";
 import { extractYouTubeId } from "@/lib/youtube";
+import { formatLibraryType } from "@/lib/format-library-type";
 import { AUDIO_LIBRARY_TYPES } from "@/lib/validators/api";
 
-function formatLibraryType(type: string): string {
-  return type
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
 
 interface AiLibraryPanelProps {
   sceneId: string;
@@ -40,15 +47,23 @@ export function AiLibraryPanel({
   const t = useTranslations();
   const { user } = useAuth();
   const realUser = isRealUser(user);
+  const chatUserId = realUser && user ? user.uid : undefined;
+  const {
+    chatMessages,
+    setChatMessages,
+    lastSuggestions,
+    setLastSuggestions,
+    suggestionTypes,
+    setSuggestionTypes,
+  } = usePersistedAiLibraryChat({
+    userId: chatUserId,
+    variant: "scene",
+    sceneId,
+    persistAddedKeys: false,
+  });
+
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessageInput[]>([]);
-  const [lastSuggestions, setLastSuggestions] = useState<
-    { name: string; sourceUrl: string; source: string }[]
-  >([]);
-  const [suggestionTypes, setSuggestionTypes] = useState<
-    Record<number, (typeof AUDIO_LIBRARY_TYPES)[number]>
-  >({});
 
   const libraryTypeFilter = typeFilter || undefined;
   const {
@@ -60,10 +75,62 @@ export function AiLibraryPanel({
     type: libraryTypeFilter,
   });
 
-  const chatMutation = useAiChatMutation();
+  const {
+    sendMessage,
+    streamingText,
+    suggestions,
+    status: chatStatus,
+    error: chatError,
+    reset: resetChat,
+  } = useAiChat();
+
   const createLibraryMutation = useCreateLibraryItemMutation();
   const deleteLibraryMutation = useDeleteLibraryItemMutation();
   const addAudioMutation = useAddAudioMutation(sceneId);
+
+  const suggestionsRef = useRef(suggestions);
+  useLayoutEffect(() => {
+    suggestionsRef.current = suggestions;
+  }, [suggestions]);
+
+  // When streaming completes, commit to history
+  useEffect(() => {
+    if (chatStatus === "done" && streamingText) {
+      const latestSuggestions = suggestionsRef.current;
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: streamingText },
+      ]);
+      setLastSuggestions(latestSuggestions);
+      setSuggestionTypes({});
+      resetChat();
+    }
+  }, [
+    chatStatus,
+    streamingText,
+    resetChat,
+    setChatMessages,
+    setLastSuggestions,
+    setSuggestionTypes,
+  ]);
+
+  // Handle errors
+  useEffect(() => {
+    if (chatStatus === "error" && chatError) {
+      if (chatError === "forbidden") {
+        toast.error(t("aiLibrary.forbidden"));
+      } else {
+        toast.error(getErrorMessage(chatError, t("aiLibrary.chatFailed")));
+      }
+      if (streamingText) {
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: streamingText },
+        ]);
+      }
+      resetChat();
+    }
+  }, [chatStatus, chatError, streamingText, resetChat, t, setChatMessages]);
 
   const forbidden = useMemo(() => {
     if (!libraryError) return false;
@@ -81,15 +148,16 @@ export function AiLibraryPanel({
     (index: number, value: (typeof AUDIO_LIBRARY_TYPES)[number]) => {
       setSuggestionTypes((prev) => ({ ...prev, [index]: value }));
     },
-    [],
+    [setSuggestionTypes],
   );
 
   const addUrlToScene = useCallback(
     async (name: string, sourceUrl: string) => {
-      const ytId = extractYouTubeId(sourceUrl.trim());
+      const resolved = sourceUrl.trim();
+      const ytId = extractYouTubeId(resolved);
       await addAudioMutation.mutateAsync({
         name,
-        sourceUrl: ytId ?? sourceUrl.trim(),
+        sourceUrl: ytId ?? resolved,
         kind: ytId ? "youtube" : "file",
       });
       await onSceneAudioAdded();
@@ -98,41 +166,29 @@ export function AiLibraryPanel({
     [addAudioMutation, onSceneAudioAdded, t],
   );
 
-  const handleSendChat = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendChat = useCallback(() => {
     const text = chatInput.trim();
-    if (!text || chatMutation.isPending) return;
+    if (!text || chatStatus === "thinking" || chatStatus === "streaming") return;
+
     const nextMessages: ChatMessageInput[] = [
       ...chatMessages,
       { role: "user", content: text },
     ];
+
     setChatInput("");
-    try {
-      const data = await chatMutation.mutateAsync(nextMessages);
-      setChatMessages([
-        ...nextMessages,
-        { role: "assistant", content: data.message.content },
-      ]);
-      setLastSuggestions(data.suggestions ?? []);
-      setSuggestionTypes({});
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        toast.error(t("aiLibrary.forbidden"));
-      } else {
-        toast.error(getErrorMessage(err, t("aiLibrary.chatFailed")));
-      }
-    }
-  };
+    setChatMessages(nextMessages);
+    sendMessage(nextMessages);
+  }, [chatInput, chatMessages, chatStatus, sendMessage, setChatMessages]);
 
   const handleAddSuggestionToLibrary = async (
-    s: { name: string; sourceUrl: string; source: string },
+    s: AiChatSuggestion,
     index: number,
   ) => {
-    const type = suggestionTypes[index] ?? "others";
+    const type = suggestionTypes[index] ?? "ambience";
     try {
       await createLibraryMutation.mutateAsync({
         name: s.name,
-        sourceUrl: s.sourceUrl,
+        sourceUrl: libraryStorageUrlFromAiSuggestion(s),
         type,
       });
       toast.success(t("aiLibrary.savedToLibrary"));
@@ -171,50 +227,31 @@ export function AiLibraryPanel({
           {t("aiLibrary.sectionDescription")}
         </p>
 
-        <div>
-          <h3 className="mb-2 text-xs font-medium text-foreground">
-            {t("aiLibrary.chatHeading")}
-          </h3>
-          <div className="max-h-40 space-y-2 overflow-y-auto rounded border border-border bg-background/50 p-2 text-sm">
-            {chatMessages.length === 0 ? (
-              <p className="text-muted-foreground">{t("aiLibrary.chatEmpty")}</p>
-            ) : (
-              chatMessages.map((m, i) => (
-                <div
-                  key={`${m.role}-${i}`}
-                  className={
-                    m.role === "user"
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                  }
-                >
-                  <span className="font-medium">
-                    {m.role === "user" ? "You" : "Assistant"}:
-                  </span>{" "}
-                  {m.content}
-                </div>
-              ))
-            )}
+        <div className="overflow-hidden rounded-xl border border-border bg-card/60 shadow-sm">
+          <div className="border-b border-border bg-linear-to-r from-accent/10 to-accent/5 px-3 py-2 dark:from-accent/28 dark:to-accent/14">
+            <h3 className="text-xs font-semibold text-foreground">
+              {t("aiLibrary.chatHeading")}
+            </h3>
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+              {t("aiLibrary.chatSubtitle")}
+            </p>
           </div>
-          <form onSubmit={handleSendChat} className="mt-2 flex gap-2">
-            <textarea
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              rows={2}
-              className="min-h-10 flex-1 resize-y rounded border border-border bg-card px-3 py-2 text-sm text-foreground"
-              placeholder={t("aiLibrary.chatPlaceholder")}
-              disabled={chatMutation.isPending}
-            />
-            <button
-              type="submit"
-              disabled={chatMutation.isPending || !chatInput.trim()}
-              className="self-end rounded-lg bg-accent px-3 py-2 text-sm font-medium text-background disabled:opacity-50"
-            >
-              {chatMutation.isPending
-                ? t("aiLibrary.sending")
-                : t("aiLibrary.send")}
-            </button>
-          </form>
+          <ChatMessageList
+            embedded
+            messages={chatMessages}
+            streamingText={streamingText}
+            status={chatStatus}
+            compact
+            userLabel={getUserChatLabel(user)}
+          />
+          <ChatInput
+            embedded
+            value={chatInput}
+            onChange={setChatInput}
+            onSubmit={handleSendChat}
+            status={chatStatus}
+            compact
+          />
         </div>
 
         {lastSuggestions.length > 0 && (
@@ -222,66 +259,15 @@ export function AiLibraryPanel({
             <h3 className="mb-2 text-xs font-medium text-foreground">
               {t("aiLibrary.suggestions")}
             </h3>
-            <ul className="space-y-3">
-              {lastSuggestions.map((s, index) => (
-                <li
-                  key={`${s.sourceUrl}-${index}`}
-                  className="rounded border border-border p-2 text-sm"
-                >
-                  <div className="font-medium text-foreground">{s.name}</div>
-                  <a
-                    href={s.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-xs text-accent hover:underline"
-                  >
-                    {s.sourceUrl}
-                  </a>
-                  {s.source ? (
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {s.source}
-                    </div>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                      {t("aiLibrary.typeLabel")}
-                      <select
-                        value={suggestionTypes[index] ?? "others"}
-                        onChange={(e) =>
-                          setSuggestionType(
-                            index,
-                            e.target.value as (typeof AUDIO_LIBRARY_TYPES)[number],
-                          )
-                        }
-                        className="rounded border border-border bg-card px-2 py-1 text-xs text-foreground"
-                      >
-                        {AUDIO_LIBRARY_TYPES.map((ty) => (
-                          <option key={ty} value={ty}>
-                            {formatLibraryType(ty)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      disabled={createLibraryMutation.isPending}
-                      onClick={() => handleAddSuggestionToLibrary(s, index)}
-                      className="rounded border border-border px-2 py-1 text-xs hover:bg-card"
-                    >
-                      {t("aiLibrary.addToLibrary")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={addAudioMutation.isPending}
-                      onClick={() => addUrlToScene(s.name, s.sourceUrl)}
-                      className="rounded border border-accent px-2 py-1 text-xs text-accent hover:bg-card"
-                    >
-                      {t("aiLibrary.addToScene")}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SuggestionList
+              suggestions={lastSuggestions}
+              suggestionTypes={suggestionTypes}
+              onSetType={setSuggestionType}
+              onAddToLibrary={handleAddSuggestionToLibrary}
+              onAddToScene={addUrlToScene}
+              isAddingToLibrary={createLibraryMutation.isPending}
+              compact
+            />
           </div>
         )}
 
@@ -300,7 +286,7 @@ export function AiLibraryPanel({
                 <option value="">{t("aiLibrary.filterAll")}</option>
                 {AUDIO_LIBRARY_TYPES.map((ty) => (
                   <option key={ty} value={ty}>
-                    {formatLibraryType(ty)}
+                    {formatLibraryType(ty, t)}
                   </option>
                 ))}
               </select>
@@ -330,7 +316,7 @@ export function AiLibraryPanel({
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-foreground">{item.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {formatLibraryType(item.type)}
+                      {formatLibraryType(item.type, t)}
                     </div>
                     <a
                       href={item.sourceUrl}

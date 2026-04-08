@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/contexts/I18nContext";
-import { EditIcon, TrashIcon, PlusIcon } from "@/components/icons";
+import { EditIcon, TrashIcon, PlusIcon, HeartIcon } from "@/components/icons";
 import { EditableName } from "./EditableName";
 
 interface AudioRowHeaderProps {
@@ -22,6 +22,10 @@ interface AudioRowHeaderProps {
   onDelete?: () => void;
   /** When provided, shows the add-to-scene button. */
   onAddToScene?: () => void;
+  addToSceneDisabled?: boolean;
+  /** When provided, shows save-to-library (e.g. allowlisted users). */
+  onAddToLibrary?: () => void;
+  addToLibraryPending?: boolean;
   nameInputRef?: React.RefObject<HTMLInputElement | null>;
   /** When provided, renders instead of the default edit/delete buttons. Use for rows that need playback controls + edit/delete. */
   rightSlot?: React.ReactNode;
@@ -42,6 +46,9 @@ export function AudioRowHeader({
   showDeleteButton,
   onDelete,
   onAddToScene,
+  addToSceneDisabled = false,
+  onAddToLibrary,
+  addToLibraryPending,
   nameInputRef,
   rightSlot,
 }: AudioRowHeaderProps) {
@@ -52,12 +59,29 @@ export function AudioRowHeader({
       {onAddToScene && (
         <button
           type="button"
+          disabled={addToSceneDisabled}
           onClick={onAddToScene}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-          title={t("common.addToScene")}
-          aria-label={t("common.addToScene")}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted"
+          title={
+            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+          }
+          aria-label={
+            addToSceneDisabled ? t("addToScene.noScenes") : t("common.addToScene")
+          }
         >
           <PlusIcon className="h-4 w-4" />
+        </button>
+      )}
+      {onAddToLibrary && (
+        <button
+          type="button"
+          disabled={addToLibraryPending}
+          onClick={onAddToLibrary}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-accent hover:bg-border hover:text-foreground disabled:opacity-50"
+          title={t("aiLibrary.addToLibrary")}
+          aria-label={t("aiLibrary.addToLibrary")}
+        >
+          <HeartIcon className="h-4 w-4" />
         </button>
       )}
       {showEditButton && (

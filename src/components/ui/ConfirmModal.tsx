@@ -77,7 +77,9 @@ export function ConfirmModal({
         >
           {title}
         </h2>
-        <p id={descriptionId} className="mt-2 text-sm text-muted">{message}</p>
+        <div id={descriptionId} className="mt-2 text-sm text-muted">
+          {message}
+        </div>
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"

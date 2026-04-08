@@ -16,6 +16,9 @@ interface SpotifyAudioRowProps {
   onRemove?: () => void;
   onRename?: (newName: string) => void;
   onAddToScene?: () => void;
+  addToSceneDisabled?: boolean;
+  onAddToLibrary?: () => void;
+  addToLibraryPending?: boolean;
   className?: string;
 }
 
@@ -27,6 +30,9 @@ export function SpotifyAudioRow({
   onRemove,
   onRename,
   onAddToScene,
+  addToSceneDisabled = false,
+  onAddToLibrary,
+  addToLibraryPending,
   className,
 }: SpotifyAudioRowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +106,9 @@ export function SpotifyAudioRow({
         showDeleteButton={!!onRemove}
         onDelete={onRemove}
         onAddToScene={onAddToScene}
+        addToSceneDisabled={addToSceneDisabled}
+        onAddToLibrary={onAddToLibrary}
+        addToLibraryPending={addToLibraryPending}
       />
       </div>
       <div ref={containerRef} className="h-[152px] w-full min-w-0 overflow-hidden rounded" />
