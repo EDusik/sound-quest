@@ -12,6 +12,10 @@ import {
   jsonUnauthorized,
   jsonValidationError,
 } from "@/lib/http-api";
+import {
+  librarySupabaseErrorResponse,
+  logCreateUserSupabaseFailure,
+} from "@/lib/library-api-helpers";
 import { createUserSupabase } from "@/lib/supabase-user";
 import { libraryIdParamSchema, patchLibraryBodySchema } from "@/lib/validators/api";
 
@@ -20,7 +24,7 @@ async function requireProtected(request: NextRequest) {
   if (!token) return { response: jsonUnauthorized() };
   const user = await getUserFromAccessToken(token);
   if (!user) return { response: jsonUnauthorized() };
-  if (!isUserOnAiLibraryAllowlist(user.id)) return { response: jsonForbidden() };
+  if (!isUserOnAiLibraryAllowlist(user)) return { response: jsonForbidden() };
   return { user, token };
 }
 
@@ -48,7 +52,8 @@ export async function PATCH(
   let supabase;
   try {
     supabase = createUserSupabase(auth.token);
-  } catch {
+  } catch (e) {
+    logCreateUserSupabaseFailure(e);
     return jsonServerError("Server configuration error", 500);
   }
 
@@ -65,7 +70,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (error) {
-    return jsonServerError(error.message, 500);
+    return librarySupabaseErrorResponse(error, " PATCH");
   }
   if (!data) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -88,7 +93,8 @@ export async function DELETE(
   let supabase;
   try {
     supabase = createUserSupabase(auth.token);
-  } catch {
+  } catch (e) {
+    logCreateUserSupabaseFailure(e);
     return jsonServerError("Server configuration error", 500);
   }
 
@@ -99,7 +105,7 @@ export async function DELETE(
     .maybeSingle();
 
   if (selErr) {
-    return jsonServerError(selErr.message, 500);
+    return librarySupabaseErrorResponse(selErr, " DELETE");
   }
   if (!existing) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -111,7 +117,7 @@ export async function DELETE(
     .eq("id", parsedParams.data.id);
 
   if (error) {
-    return jsonServerError(error.message, 500);
+    return librarySupabaseErrorResponse(error, " DELETE");
   }
 
   return new NextResponse(null, { status: 204 });

@@ -3,9 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
+  addLibraryDefaultFavorite,
   createLibraryItem,
   deleteLibraryItem,
+  fetchLibraryDefaultFavorites,
   fetchLibraryItems,
+  removeLibraryDefaultFavorite,
   updateLibraryItem,
 } from "@/lib/api-client";
 import { queryKeys } from "./queryKeys";
@@ -61,6 +64,45 @@ export function useDeleteLibraryItemMutation() {
     mutationFn: deleteLibraryItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
+    },
+  });
+}
+
+export function useLibraryDefaultFavoritesQuery(options: {
+  enabled?: boolean;
+}) {
+  const { enabled = true } = options;
+  return useQuery({
+    queryKey: queryKeys.libraryDefaultFavorites,
+    queryFn: fetchLibraryDefaultFavorites,
+    select: (data) => data.items,
+    enabled,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && (error.status === 403 || error.status === 401))
+        return false;
+      return failureCount < 2;
+    },
+  });
+}
+
+export function useAddLibraryDefaultFavoriteMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: addLibraryDefaultFavorite,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
+}
+
+export function useRemoveLibraryDefaultFavoriteMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: removeLibraryDefaultFavorite,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.libraryDefaultFavorites });
     },
   });
 }

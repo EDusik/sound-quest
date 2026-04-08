@@ -11,18 +11,18 @@ const AUDIOS_MIME_TYPES = [
 /**
  * POST /api/ensure-audios-bucket
  * Creates the "audios" storage bucket and RLS policies if missing.
- * Requires SUPABASE_SERVICE_ROLE_KEY in env (Dashboard → Settings → API).
+ * Requires NEXT_SUPABASE_SERVICE_ROLE_KEY in env (Dashboard → Settings → API).
  * Requires Authorization: Bearer <Supabase access_token> (authenticated user).
  */
 export async function POST(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey || !anonKey) {
     return NextResponse.json(
       {
         error:
-          "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY. Add SUPABASE_SERVICE_ROLE_KEY in .env (Supabase Dashboard → Settings → API).",
+          "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_SUPABASE_SERVICE_ROLE_KEY. Add NEXT_SUPABASE_SERVICE_ROLE_KEY in .env (Supabase Dashboard → Settings → API).",
       },
       { status: 500 },
     );

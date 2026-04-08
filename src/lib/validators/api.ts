@@ -1,17 +1,16 @@
 import { z } from "zod";
+import { DEFAULT_AUDIO_CATEGORY_SLUGS } from "@/lib/default-audio-category-slugs";
 
-/** Aligns with docs/plano-api-endpoints-e-banco.md §2.1 */
-export const AUDIO_LIBRARY_TYPES = [
-  "weather-effects",
-  "battle",
-  "animals",
-  "cities",
-  "ambience",
-  "music",
-  "others",
-] as const;
+const defaultAudioCategorySlugSchema = z.enum(
+  DEFAULT_AUDIO_CATEGORY_SLUGS as unknown as [string, ...string[]],
+);
 
-export const audioLibraryTypeSchema = z.enum(AUDIO_LIBRARY_TYPES);
+export { defaultAudioCategorySlugSchema };
+
+/** Same slugs as the default sounds catalog (`DEFAULT_AUDIO_CATEGORY_SLUGS`). */
+export const AUDIO_LIBRARY_TYPES = DEFAULT_AUDIO_CATEGORY_SLUGS;
+
+export const audioLibraryTypeSchema = defaultAudioCategorySlugSchema;
 
 export const getLibraryQuerySchema = z.object({
   type: audioLibraryTypeSchema.optional(),
@@ -35,6 +34,12 @@ export const patchLibraryBodySchema = z
 
 export const libraryIdParamSchema = z.object({
   id: z.string().min(1),
+});
+
+export const postLibraryDefaultFavoriteBodySchema = z.object({
+  libraryItemId: z.string().min(1),
+  category: defaultAudioCategorySlugSchema,
+  displayName: z.string().min(1).max(500),
 });
 
 const chatRoleSchema = z.enum(["user", "assistant", "system"]);

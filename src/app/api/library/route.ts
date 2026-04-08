@@ -13,6 +13,10 @@ import {
   jsonUnauthorized,
   jsonValidationError,
 } from "@/lib/http-api";
+import {
+  librarySupabaseErrorResponse,
+  logCreateUserSupabaseFailure,
+} from "@/lib/library-api-helpers";
 import { createUserSupabase } from "@/lib/supabase-user";
 import { getLibraryQuerySchema, postLibraryBodySchema } from "@/lib/validators/api";
 
@@ -21,7 +25,7 @@ async function requireProtected(request: NextRequest) {
   if (!token) return { response: jsonUnauthorized() };
   const user = await getUserFromAccessToken(token);
   if (!user) return { response: jsonUnauthorized() };
-  if (!isUserOnAiLibraryAllowlist(user.id)) return { response: jsonForbidden() };
+  if (!isUserOnAiLibraryAllowlist(user)) return { response: jsonForbidden() };
   return { user, token };
 }
 
@@ -38,7 +42,8 @@ export async function GET(request: NextRequest) {
   let supabase;
   try {
     supabase = createUserSupabase(auth.token);
-  } catch {
+  } catch (e) {
+    logCreateUserSupabaseFailure(e);
     return jsonServerError("Server configuration error", 500);
   }
 
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await q.order("created_at", { ascending: false });
 
   if (error) {
-    return jsonServerError(error.message, 500);
+    return librarySupabaseErrorResponse(error, " GET");
   }
 
   return NextResponse.json({
@@ -74,7 +79,8 @@ export async function POST(request: NextRequest) {
   let supabase;
   try {
     supabase = createUserSupabase(auth.token);
-  } catch {
+  } catch (e) {
+    logCreateUserSupabaseFailure(e);
     return jsonServerError("Server configuration error", 500);
   }
 
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return jsonServerError(error.message, 500);
+    return librarySupabaseErrorResponse(error, " POST");
   }
 
   return NextResponse.json(rowToItem(data as AudioLibraryRow), { status: 201 });
