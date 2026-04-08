@@ -1,12 +1,25 @@
 /**
  * Storage abstraction layer:
  * - Anonymous users: data is persisted in localStorage (keyed by anonymous userId).
- * - Authenticated users: data is persisted in Supabase when configured (and Firestore is not used).
+ * - Authenticated users: data is persisted via `/api/scenes` and `/api/audios` when Supabase is configured (and Firestore is not used).
  * - Firebase/Firestore: when enabled, takes precedence over Supabase for persistence.
  * Callers use getScenes(userId), createScene(userId, ...), etc.; the layer chooses the backend
  * based on auth (getSupabaseUserId()) and configuration.
  */
 import axios from "axios";
+import {
+  createAudioApi,
+  createSceneApi,
+  deleteAudioApi,
+  deleteSceneApi,
+  fetchAudiosApi,
+  fetchSceneApi,
+  fetchScenesApi,
+  reorderAudiosApi,
+  reorderScenesApi,
+  updateAudioApi,
+  updateSceneApi,
+} from "./api-client";
 import type { Scene, AudioItem, AudioKind } from "./types";
 import { slugify, ensureUniqueSlug } from "./slug";
 import { getFirebaseDb, isFirestoreEnabled } from "./firebase";
@@ -177,7 +190,7 @@ export async function uploadAudioFile(
     if (result.error) {
       if (isBucketMissing) {
         throw new Error(
-          "Bucket 'audios' not found. Add SUPABASE_SERVICE_ROLE_KEY to .env (Supabase Dashboard → Settings → API) and try again so the app can create the bucket.",
+          "Bucket 'audios' not found. Add NEXT_SUPABASE_SERVICE_ROLE_KEY to .env (Supabase Dashboard → Settings → API) and try again so the app can create the bucket.",
         );
       }
       throw result.error;
@@ -312,159 +325,6 @@ function mirrorAudioToAnonymousLocal(audio: AudioItem): void {
   setLocalAudio(audio);
 }
 
-function sceneFromRow(row: {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  labels: unknown;
-  created_at: string;
-  order: number | null;
-  slug?: string | null;
-}): Scene {
-  const labels = Array.isArray(row.labels)
-    ? (row.labels as Scene["labels"])
-    : [];
-  return {
-    id: row.id,
-    userId: row.user_id,
-    title: row.title,
-    description: row.description ?? "",
-    labels,
-    createdAt: new Date(row.created_at).getTime(),
-    order: row.order ?? undefined,
-    slug: row.slug ?? undefined,
-  };
-}
-
-function audioFromRow(row: {
-  id: string;
-  scene_id: string;
-  name: string;
-  source_url: string;
-  kind: string | null;
-  created_at: string;
-  order: number | null;
-}): AudioItem {
-  return {
-    id: row.id,
-    sceneId: row.scene_id,
-    name: row.name,
-    sourceUrl: row.source_url,
-    kind: (row.kind as AudioItem["kind"]) ?? "file",
-    createdAt: new Date(row.created_at).getTime(),
-    order: row.order ?? undefined,
-  };
-}
-
-async function getSupabaseScenes(userId: string): Promise<Scene[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("scenes")
-    .select("*")
-    .eq("user_id", userId)
-    .order("order", { ascending: true, nullsFirst: false });
-  if (error) throw error;
-  const list = (data ?? []).map(sceneFromRow);
-  return list.sort((a, b) => {
-    const aVal = a.order !== undefined ? a.order : -a.createdAt;
-    const bVal = b.order !== undefined ? b.order : -b.createdAt;
-    return aVal - bVal;
-  });
-}
-
-async function getSupabaseScene(
-  sceneId: string,
-  userId?: string,
-): Promise<Scene | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("scenes")
-    .select("*")
-    .eq("id", sceneId)
-    .single();
-  if (!error && data) return sceneFromRow(data);
-  if (userId) {
-    const { data: bySlug, error: slugError } = await supabase
-      .from("scenes")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("slug", sceneId)
-      .maybeSingle();
-    if (!slugError && bySlug) return sceneFromRow(bySlug);
-  }
-  return null;
-}
-
-async function setSupabaseScene(scene: Scene): Promise<void> {
-  if (!supabase) return;
-  const payload = {
-    id: scene.id,
-    user_id: scene.userId,
-    title: scene.title,
-    description: scene.description ?? "",
-    labels: scene.labels ?? [],
-    created_at: new Date(scene.createdAt ?? Date.now()).toISOString(),
-    order: scene.order ?? null,
-    slug: scene.slug ?? null,
-  };
-  const { error } = await supabase.from("scenes").upsert(payload, {
-    onConflict: "id",
-  });
-  if (error)
-    throw new Error(error.message || "Failed to save scene");
-}
-
-async function deleteSupabaseScene(sceneId: string): Promise<void> {
-  if (!supabase) return;
-  const { error: audiosError } = await supabase
-    .from("audios")
-    .delete()
-    .eq("scene_id", sceneId);
-  if (audiosError) throw audiosError;
-  const { error } = await supabase.from("scenes").delete().eq("id", sceneId);
-  if (error) throw error;
-}
-
-async function getSupabaseAudios(sceneId: string): Promise<AudioItem[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("audios")
-    .select("*")
-    .eq("scene_id", sceneId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  const list = (data ?? []).map(audioFromRow);
-  return list.sort((a, b) => {
-    const aOrder = a.order ?? a.createdAt;
-    const bOrder = b.order ?? b.createdAt;
-    return aOrder !== bOrder ? aOrder - bOrder : a.createdAt - b.createdAt;
-  });
-}
-
-async function setSupabaseAudio(audio: AudioItem): Promise<void> {
-  if (!supabase) return;
-  const payload = {
-    id: audio.id,
-    scene_id: audio.sceneId,
-    name: audio.name,
-    source_url: audio.sourceUrl,
-    kind: audio.kind ?? "file",
-    created_at: new Date(audio.createdAt ?? Date.now()).toISOString(),
-    order: audio.order ?? null,
-  };
-  const { error } = await supabase.from("audios").upsert(payload, {
-    onConflict: "id",
-  });
-  if (error) throw error;
-}
-
-async function deleteSupabaseAudio(audioId: string): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.from("audios").delete().eq("id", audioId);
-  if (error) throw error;
-}
-
 async function getFirestoreScenes(userId: string): Promise<Scene[]> {
   const database = getFirebaseDb();
   if (!database) return getLocalScenes(userId);
@@ -586,7 +446,7 @@ export async function getScenes(userId: string): Promise<Scene[]> {
   if (isFirestoreEnabled()) return getFirestoreScenes(userId);
   if (isSupabaseStorageEnabled()) {
     const uid = await getSupabaseUserId();
-    if (uid) return getSupabaseScenes(uid);
+    if (uid) return fetchScenesApi();
   }
   return Promise.resolve(getLocalScenes(userId));
 }
@@ -611,7 +471,7 @@ export async function getScene(
   // queries against uuid-typed columns.
   if (isSupabaseStorageEnabled()) {
     const supabaseUid = await getSupabaseUserId();
-    if (supabaseUid) return getSupabaseScene(sceneId, supabaseUid);
+    if (supabaseUid) return fetchSceneApi(sceneId);
   }
 
   return Promise.resolve(getLocalScene(sceneId, logicalUserId));
@@ -645,8 +505,13 @@ export async function createScene(
   if (isFirestoreEnabled()) {
     await setFirestoreScene(scene);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await setSupabaseScene(scene);
-    mirrorSceneToAnonymousLocal(scene);
+    const created = await createSceneApi({
+      title: data.title,
+      description: data.description,
+      labels: data.labels,
+    });
+    mirrorSceneToAnonymousLocal(created);
+    return created;
   } else {
     setLocalScene(scene);
   }
@@ -667,7 +532,13 @@ export async function updateScene(scene: Scene): Promise<void> {
   if (isFirestoreEnabled()) {
     await setFirestoreScene(sceneWithSlug);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await setSupabaseScene(sceneWithSlug);
+    await updateSceneApi(sceneWithSlug.id, {
+      title: sceneWithSlug.title,
+      description: sceneWithSlug.description,
+      labels: sceneWithSlug.labels,
+      order: sceneWithSlug.order,
+      slug: sceneWithSlug.slug,
+    });
     mirrorSceneToAnonymousLocal(sceneWithSlug);
   } else {
     setLocalScene(sceneWithSlug);
@@ -678,7 +549,7 @@ export async function deleteScene(sceneId: string): Promise<void> {
   if (isFirestoreEnabled()) {
     await deleteFirestoreScene(sceneId);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await deleteSupabaseScene(sceneId);
+    await deleteSceneApi(sceneId);
     deleteLocalScene(sceneId);
   } else {
     deleteLocalScene(sceneId);
@@ -689,7 +560,7 @@ export async function getAudios(sceneId: string): Promise<AudioItem[]> {
   if (isFirestoreEnabled()) return getFirestoreAudios(sceneId);
   if (isSupabaseStorageEnabled()) {
     const uid = await getSupabaseUserId();
-    if (uid) return getSupabaseAudios(sceneId);
+    if (uid) return fetchAudiosApi(sceneId);
   }
   return Promise.resolve(getLocalAudios(sceneId));
 }
@@ -717,12 +588,17 @@ export async function addAudio(
       throw new Error("Audio was not saved to the database. Please try again.");
     }
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await setSupabaseAudio(audio);
-    const after = await getSupabaseAudios(sceneId);
-    if (!after.some((a) => a.id === id)) {
+    const created = await createAudioApi(sceneId, {
+      name: data.name,
+      sourceUrl: data.sourceUrl,
+      kind: data.kind,
+    });
+    const after = await fetchAudiosApi(sceneId);
+    if (!after.some((a) => a.id === created.id)) {
       throw new Error("Audio was not saved to the database. Please try again.");
     }
-    mirrorAudioToAnonymousLocal(audio);
+    mirrorAudioToAnonymousLocal(created);
+    return created;
   } else {
     setLocalAudio(audio);
   }
@@ -733,7 +609,12 @@ export async function updateAudio(audio: AudioItem): Promise<void> {
   if (isFirestoreEnabled()) {
     await setFirestoreAudio(audio);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await setSupabaseAudio(audio);
+    await updateAudioApi(audio.id, {
+      name: audio.name,
+      sourceUrl: audio.sourceUrl,
+      kind: audio.kind,
+      order: audio.order,
+    });
     mirrorAudioToAnonymousLocal(audio);
   } else {
     setLocalAudio(audio);
@@ -744,7 +625,7 @@ export async function removeAudio(audioId: string): Promise<void> {
   if (isFirestoreEnabled()) {
     await deleteFirestoreAudio(audioId);
   } else if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
-    await deleteSupabaseAudio(audioId);
+    await deleteAudioApi(audioId);
     deleteLocalAudio(audioId);
   } else {
     deleteLocalAudio(audioId);
@@ -755,6 +636,21 @@ export async function reorderAudios(
   sceneId: string,
   orderedIds: string[],
 ): Promise<void> {
+  if (isFirestoreEnabled()) {
+    const list = await getAudios(sceneId);
+    const byId = new Map(list.map((a) => [a.id, a]));
+    for (let index = 0; index < orderedIds.length; index++) {
+      const id = orderedIds[index];
+      const audio = byId.get(id);
+      if (!audio || audio.order === index) continue;
+      await updateAudio({ ...audio, order: index });
+    }
+    return;
+  }
+  if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
+    await reorderAudiosApi(sceneId, orderedIds);
+    return;
+  }
   const list = await getAudios(sceneId);
   const byId = new Map(list.map((a) => [a.id, a]));
   for (let index = 0; index < orderedIds.length; index++) {
@@ -769,6 +665,21 @@ export async function reorderScenes(
   userId: string,
   orderedIds: string[],
 ): Promise<void> {
+  if (isFirestoreEnabled()) {
+    const list = await getScenes(userId);
+    const byId = new Map(list.map((r) => [r.id, r]));
+    for (let index = 0; index < orderedIds.length; index++) {
+      const id = orderedIds[index];
+      const scene = byId.get(id);
+      if (!scene || scene.order === index) continue;
+      await updateScene({ ...scene, order: index });
+    }
+    return;
+  }
+  if (isSupabaseStorageEnabled() && (await getSupabaseUserId())) {
+    await reorderScenesApi(orderedIds);
+    return;
+  }
   const list = await getScenes(userId);
   const byId = new Map(list.map((r) => [r.id, r]));
   for (let index = 0; index < orderedIds.length; index++) {
@@ -828,7 +739,15 @@ export async function migrateLocalDataToSupabase(
       ...scene,
       userId: toUserId,
     };
-    await setSupabaseScene(sceneForSupabase);
+    await createSceneApi({
+      id: sceneForSupabase.id,
+      title: sceneForSupabase.title,
+      description: sceneForSupabase.description,
+      labels: sceneForSupabase.labels,
+      slug: sceneForSupabase.slug,
+      order: sceneForSupabase.order,
+      createdAt: sceneForSupabase.createdAt,
+    });
 
     const audiosForScene = localAudios.filter(
       (audio) => audio.sceneId === scene.id,
@@ -838,7 +757,14 @@ export async function migrateLocalDataToSupabase(
         ...audio,
         sceneId: sceneForSupabase.id,
       };
-      await setSupabaseAudio(audioForSupabase);
+      await createAudioApi(sceneForSupabase.id, {
+        id: audioForSupabase.id,
+        name: audioForSupabase.name,
+        sourceUrl: audioForSupabase.sourceUrl,
+        kind: audioForSupabase.kind,
+        createdAt: audioForSupabase.createdAt,
+        order: audioForSupabase.order,
+      });
     }
   }
 }

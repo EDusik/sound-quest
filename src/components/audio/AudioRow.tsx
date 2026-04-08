@@ -8,7 +8,14 @@ import { SpotifyAudioRow } from "@/components/audio/SpotifyAudioRow";
 import { AudioRowHeader } from "@/components/audio/AudioRowHeader";
 import { PlaybackControls } from "@/components/audio/PlaybackControls";
 import { VolumeSlider } from "@/components/audio/VolumeSlider";
-import { EditIcon, TrashIcon, PlusIcon } from "@/components/icons";
+import {
+  EditIcon,
+  TrashIcon,
+  PlusIcon,
+  HeartIcon,
+  PlayIcon,
+} from "@/components/icons";
+import { spotifyUriToOpenUrl } from "@/lib/spotify";
 import { loadYouTubeIframeAPI } from "@/lib/youtube-embed";
 
 interface AudioRowProps {
@@ -20,8 +27,23 @@ interface AudioRowProps {
   onRename?: (audio: AudioItem, newName: string) => void;
   /** Open modal to add this audio to other scenes. */
   onAddToScene?: (audio: AudioItem) => void;
+  /** When true, add-to-scene is visible but not clickable (e.g. user has no scenes yet). */
+  addToSceneDisabled?: boolean;
+  /** Save this scene audio to the AI library (shown only for allowlisted accounts). */
+  onAddToLibrary?: (audio: AudioItem) => void;
+  addToLibraryPending?: boolean;
   /** Optional class for the root card (e.g. rounded-tr-lg rounded-bl-lg when next to drag handle). */
   className?: string;
+  /** Only PlaybackControls + volume (+ hidden media). Registers with global AudioBar. */
+  playbackOnly?: boolean;
+  /** With playbackOnly: hide pause and loop; play when stopped, stop to end. */
+  simplifiedPlaybackControls?: boolean;
+  /** With playbackOnly: hide pause while playing (e.g. library list cards). Loop unchanged unless simplifiedPlaybackControls. */
+  playbackOmitPause?: boolean;
+  /** With playbackOnly: hide stop control (e.g. default catalog cards). */
+  playbackOmitStop?: boolean;
+  /** With playbackOnly: smaller controls and tighter spacing (e.g. default catalog list). */
+  compactPlayback?: boolean;
 }
 
 function YouTubeAudioRow({
@@ -32,9 +54,24 @@ function YouTubeAudioRow({
   onDelete,
   onRename,
   onAddToScene,
+  addToSceneDisabled = false,
+  onAddToLibrary,
+  addToLibraryPending,
   className,
+  playbackOnly,
+  simplifiedPlaybackControls = false,
+  playbackOmitPause = false,
+  playbackOmitStop = false,
+  compactPlayback = false,
 }: AudioRowProps) {
   const t = useTranslations();
+  const compact = playbackOnly && compactPlayback;
+  const actionBtn =
+    "shrink-0 items-center justify-center text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
+  const actionBtnClass = compact
+    ? `flex h-7 w-7 rounded-md ${actionBtn}`
+    : `flex h-9 w-9 rounded-lg ${actionBtn}`;
+  const actionIconClass = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   const videoId = audio.sourceUrl;
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
@@ -46,6 +83,13 @@ function YouTubeAudioRow({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rowRef = useRef<HTMLDivElement | null>(null);
   const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    if (playbackOnly) {
+      setIsInView(true);
+    }
+  }, [playbackOnly]);
+
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(audio.name);
@@ -109,7 +153,7 @@ function YouTubeAudioRow({
       (entries) => {
         if (entries[0]?.isIntersecting) setIsInView(true);
       },
-      { rootMargin: "100px", threshold: 0 }
+      { rootMargin: "100px", threshold: 0 },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -260,16 +304,43 @@ function YouTubeAudioRow({
         onPause={handlePause}
         onStop={handleStop}
         onLoop={handleLoop}
+        omitPause={
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
+        }
+        omitStop={playbackOnly && playbackOmitStop}
+        omitLoop={playbackOnly && simplifiedPlaybackControls}
+        compact={compact}
       />
       {onAddToScene && (
         <button
           type="button"
+          disabled={addToSceneDisabled}
           onClick={() => onAddToScene(audio)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-          title={t("common.addToScene")}
-          aria-label={t("common.addToScene")}
+          className={actionBtnClass}
+          title={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
+          aria-label={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
         >
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className={actionIconClass} />
+        </button>
+      )}
+      {onAddToLibrary && (
+        <button
+          type="button"
+          disabled={addToLibraryPending}
+          onClick={() => onAddToLibrary(audio)}
+          className={`${actionBtnClass} text-accent hover:text-foreground disabled:opacity-50`}
+          title={t("aiLibrary.addToLibrary")}
+          aria-label={t("aiLibrary.addToLibrary")}
+        >
+          <HeartIcon className={actionIconClass} />
         </button>
       )}
       {onRename && (
@@ -279,22 +350,22 @@ function YouTubeAudioRow({
             setEditNameValue(audio.name);
             setIsEditingName(true);
           }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          className={actionBtnClass}
           title={t("common.editSoundName")}
           aria-label={t("common.editSoundName")}
         >
-          <EditIcon className="h-4 w-4" />
+          <EditIcon className={actionIconClass} />
         </button>
       )}
       {onDelete && (
         <button
           type="button"
           onClick={() => onDelete(audio)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          className={`${actionBtnClass} text-red-400 hover:bg-red-500/20 hover:text-red-300`}
           title={t("common.deleteSound")}
           aria-label={t("common.deleteSound")}
         >
-          <TrashIcon className="h-4 w-4" />
+          <TrashIcon className={actionIconClass} />
         </button>
       )}
       <VolumeSlider
@@ -307,9 +378,23 @@ function YouTubeAudioRow({
           useAudioStore.getState().setVolume(audio.id, v);
         }}
         disabled={isInactive}
+        compact={compact}
       />
     </>
   );
+
+  if (playbackOnly) {
+    return (
+      <div
+        className={`flex flex-wrap items-center ${compact ? "gap-1.5" : "gap-2"} ${className ?? ""}`}
+      >
+        <div className="hidden" aria-hidden>
+          <div ref={containerRef} />
+        </div>
+        {rightSlot}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -320,22 +405,24 @@ function YouTubeAudioRow({
     >
       <div className="min-w-0 flex-1">
         <AudioRowHeader
-        isInactive={isInactive}
-        isEditingName={isEditingName}
-        editNameValue={editNameValue}
-        displayName={audio.name}
-        linkUrl={watchUrl}
-        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
-        onStartEditName={() => {
-          setEditNameValue(audio.name);
-          setIsEditingName(true);
-        }}
-        onNameChange={setEditNameValue}
-        onSaveRename={saveRename}
-        onCancelRename={cancelRename}
-        nameInputRef={nameInputRef}
-        rightSlot={rightSlot}
-      />
+          isInactive={isInactive}
+          isEditingName={isEditingName}
+          editNameValue={editNameValue}
+          displayName={audio.name}
+          linkUrl={watchUrl}
+          onToggleActive={
+            onToggleActive ? () => onToggleActive(audio) : undefined
+          }
+          onStartEditName={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          onNameChange={setEditNameValue}
+          onSaveRename={saveRename}
+          onCancelRename={cancelRename}
+          nameInputRef={nameInputRef}
+          rightSlot={rightSlot}
+        />
       </div>
       <div className="hidden">
         <div ref={containerRef} />
@@ -352,9 +439,24 @@ function HtmlAudioRow({
   onDelete,
   onRename,
   onAddToScene,
+  addToSceneDisabled = false,
+  onAddToLibrary,
+  addToLibraryPending,
   className,
+  playbackOnly,
+  simplifiedPlaybackControls = false,
+  playbackOmitPause = false,
+  playbackOmitStop = false,
+  compactPlayback = false,
 }: AudioRowProps) {
   const t = useTranslations();
+  const compact = playbackOnly && compactPlayback;
+  const actionBtn =
+    "shrink-0 items-center justify-center text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
+  const actionBtnClass = compact
+    ? `flex h-7 w-7 rounded-md ${actionBtn}`
+    : `flex h-9 w-9 rounded-lg ${actionBtn}`;
+  const actionIconClass = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   const ref = useRef<HTMLAudioElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -471,16 +573,43 @@ function HtmlAudioRow({
         onPause={handlePause}
         onStop={handleStop}
         onLoop={handleLoop}
+        omitPause={
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
+        }
+        omitStop={playbackOnly && playbackOmitStop}
+        omitLoop={playbackOnly && simplifiedPlaybackControls}
+        compact={compact}
       />
       {onAddToScene && (
         <button
           type="button"
+          disabled={addToSceneDisabled}
           onClick={() => onAddToScene(audio)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
-          title={t("common.addToScene")}
-          aria-label={t("common.addToScene")}
+          className={actionBtnClass}
+          title={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
+          aria-label={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
         >
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className={actionIconClass} />
+        </button>
+      )}
+      {onAddToLibrary && (
+        <button
+          type="button"
+          disabled={addToLibraryPending}
+          onClick={() => onAddToLibrary(audio)}
+          className={`${actionBtnClass} text-accent hover:text-foreground disabled:opacity-50`}
+          title={t("aiLibrary.addToLibrary")}
+          aria-label={t("aiLibrary.addToLibrary")}
+        >
+          <HeartIcon className={actionIconClass} />
         </button>
       )}
       {onRename && (
@@ -490,22 +619,22 @@ function HtmlAudioRow({
             setEditNameValue(audio.name);
             setIsEditingName(true);
           }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          className={actionBtnClass}
           title={t("common.editSoundName")}
           aria-label={t("common.editSoundName")}
         >
-          <EditIcon className="h-4 w-4" />
+          <EditIcon className={actionIconClass} />
         </button>
       )}
       {onDelete && (
         <button
           type="button"
           onClick={() => onDelete(audio)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          className={`${actionBtnClass} text-red-400 hover:bg-red-500/20 hover:text-red-300`}
           title={t("common.deleteSound")}
           aria-label={t("common.deleteSound")}
         >
-          <TrashIcon className="h-4 w-4" />
+          <TrashIcon className={actionIconClass} />
         </button>
       )}
       <VolumeSlider
@@ -515,9 +644,31 @@ function HtmlAudioRow({
           setVolume(audio.id, v);
         }}
         disabled={isInactive}
+        compact={compact}
       />
     </>
   );
+
+  if (playbackOnly) {
+    return (
+      <div
+        className={`flex flex-wrap items-center ${compact ? "gap-1.5" : "gap-2"} ${className ?? ""}`}
+      >
+        <audio
+          ref={(el) => {
+            (ref as React.MutableRefObject<HTMLAudioElement | null>).current =
+              el;
+            if (el) setRef(audio.id, el);
+          }}
+          src={audio.sourceUrl}
+          preload="metadata"
+          loop={player?.loop ?? false}
+          className="hidden"
+        />
+        {rightSlot}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -526,34 +677,112 @@ function HtmlAudioRow({
       } ${className ?? ""}`}
     >
       <div className="min-w-0 flex-1">
-      <audio
-        ref={(el) => {
-          (ref as React.MutableRefObject<HTMLAudioElement | null>).current = el;
-          if (el) setRef(audio.id, el);
-        }}
-        src={audio.sourceUrl}
-        preload="metadata"
-        loop={player?.loop ?? false}
-        className="hidden"
-      />
-      <AudioRowHeader
-        isInactive={isInactive}
-        isEditingName={isEditingName}
-        editNameValue={editNameValue}
-        displayName={audio.name}
-        linkUrl={audio.sourceUrl}
-        onToggleActive={onToggleActive ? () => onToggleActive(audio) : undefined}
-        onStartEditName={() => {
-          setEditNameValue(audio.name);
-          setIsEditingName(true);
-        }}
-        onNameChange={setEditNameValue}
-        onSaveRename={saveRename}
-        onCancelRename={cancelRename}
-        nameInputRef={nameInputRef}
-        rightSlot={rightSlot}
-      />
+        <audio
+          ref={(el) => {
+            (ref as React.MutableRefObject<HTMLAudioElement | null>).current =
+              el;
+            if (el) setRef(audio.id, el);
+          }}
+          src={audio.sourceUrl}
+          preload="metadata"
+          loop={player?.loop ?? false}
+          className="hidden"
+        />
+        <AudioRowHeader
+          isInactive={isInactive}
+          isEditingName={isEditingName}
+          editNameValue={editNameValue}
+          displayName={audio.name}
+          linkUrl={audio.sourceUrl}
+          onToggleActive={
+            onToggleActive ? () => onToggleActive(audio) : undefined
+          }
+          onStartEditName={() => {
+            setEditNameValue(audio.name);
+            setIsEditingName(true);
+          }}
+          onNameChange={setEditNameValue}
+          onSaveRename={saveRename}
+          onCancelRename={cancelRename}
+          nameInputRef={nameInputRef}
+          rightSlot={rightSlot}
+        />
       </div>
+    </div>
+  );
+}
+
+function SpotifyLibraryOpenButton({
+  sourceUrl,
+  className,
+  compact = false,
+}: {
+  sourceUrl: string;
+  className?: string;
+  compact?: boolean;
+}) {
+  const t = useTranslations();
+  const href = spotifyUriToOpenUrl(sourceUrl);
+  const size = compact ? "flex h-7 w-7 rounded-md" : "flex h-9 w-9 rounded-lg";
+  const icon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${size} shrink-0 items-center justify-center border border-border bg-border text-foreground hover:bg-border/80 ${className ?? ""}`}
+      title={t("libraryPage.openSpotify")}
+      aria-label={t("libraryPage.openSpotify")}
+    >
+      <PlayIcon className={icon} />
+    </a>
+  );
+}
+
+/** Spotify + playbackOnly: open-in-Spotify plus optional add-to-scene (e.g. default catalog). */
+function SpotifyPlaybackOnlyBar({
+  audio,
+  className,
+  onAddToScene,
+  addToSceneDisabled = false,
+  compact = false,
+}: {
+  audio: AudioItem;
+  className?: string;
+  onAddToScene?: (audio: AudioItem) => void;
+  addToSceneDisabled?: boolean;
+  compact?: boolean;
+}) {
+  const t = useTranslations();
+  const addBtn = compact
+    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted"
+    : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
+  const addIcon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
+  return (
+    <div
+      className={`flex flex-wrap items-center ${compact ? "gap-1.5" : "gap-2"} ${className ?? ""}`}
+    >
+      <SpotifyLibraryOpenButton sourceUrl={audio.sourceUrl} compact={compact} />
+      {onAddToScene && (
+        <button
+          type="button"
+          disabled={addToSceneDisabled}
+          onClick={() => onAddToScene(audio)}
+          className={addBtn}
+          title={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
+          aria-label={
+            addToSceneDisabled
+              ? t("addToScene.noScenes")
+              : t("common.addToScene")
+          }
+        >
+          <PlusIcon className={addIcon} />
+        </button>
+      )}
     </div>
   );
 }
@@ -563,6 +792,17 @@ export function AudioRow(props: AudioRowProps) {
     return <YouTubeAudioRow {...props} />;
   }
   if (props.audio.kind === "spotify") {
+    if (props.playbackOnly) {
+      return (
+        <SpotifyPlaybackOnlyBar
+          audio={props.audio}
+          className={props.className}
+          onAddToScene={props.onAddToScene}
+          addToSceneDisabled={props.addToSceneDisabled}
+          compact={props.compactPlayback}
+        />
+      );
+    }
     return (
       <SpotifyAudioRow
         track={{
@@ -578,9 +818,7 @@ export function AudioRow(props: AudioRowProps) {
             : undefined
         }
         onRemove={
-          props.onDelete
-            ? () => props.onDelete?.(props.audio)
-            : undefined
+          props.onDelete ? () => props.onDelete?.(props.audio) : undefined
         }
         onRename={
           props.onRename
@@ -592,6 +830,13 @@ export function AudioRow(props: AudioRowProps) {
             ? () => props.onAddToScene?.(props.audio)
             : undefined
         }
+        addToSceneDisabled={props.addToSceneDisabled}
+        onAddToLibrary={
+          props.onAddToLibrary
+            ? () => props.onAddToLibrary?.(props.audio)
+            : undefined
+        }
+        addToLibraryPending={props.addToLibraryPending}
         className={props.className}
       />
     );

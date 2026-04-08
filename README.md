@@ -33,7 +33,7 @@ Works out of the box with data stored only in the browser (localStorage):
 
 ```bash
 git clone <repo-url>
-cd project
+cd sound-quest
 npm install
 npm run dev
 ```
@@ -54,8 +54,8 @@ For Google login and cloud data:
    https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
    ```
    (replace `YOUR_PROJECT_REF` with your Supabase project ref.)
-5. Create the database and storage: in Supabase **SQL Editor**, either run the migrations in `supabase/migrations/` in order (or `supabase db push` if you use the CLI), or run the one-time script `supabase/scripts/run-in-supabase.sql` to create tables, RLS, and the `audios` storage bucket in one go.
-6. (Optional) For the app to create the `audios` bucket automatically if missing, add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (Supabase Dashboard → Settings → API → service_role key). Otherwise ensure the bucket exists via migrations or the script above.
+5. Create the database and storage: in Supabase **SQL Editor**, either run the migrations in `supabase/migrations/` in chronological order (or `supabase db push` if you use the CLI), or run a bundled script such as `supabase/scripts/run-in-supabase.sql` (base schema + bucket) and, for the **audio library**, default catalog, and **default favorites**, also apply `supabase/scripts/apply-audio-library-and-favorites.sql` (or the matching migrations, including `20250324130000_audio_library.sql` and the `20250407*` migrations for catalog slugs, default audio rows, and `audio_library_default_favorites`).
+6. (Optional) For the app to create the `audios` bucket automatically if missing, add `NEXT_SUPABASE_SERVICE_ROLE_KEY` to `.env` (Supabase Dashboard → Settings → API → service_role key). Otherwise ensure the bucket exists via migrations or the script above.
 7. Run:
    ```bash
    npm run dev
@@ -83,7 +83,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`                 | Supabase project URL (e.g. `https://xxx.supabase.co`).                                                                                                                                                          |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`            | Supabase anonymous key (Auth + DB).                                                                                                                                                                             |
-| `SUPABASE_SERVICE_ROLE_KEY`                | **(Server-only.)** Used to create the `audios` storage bucket if missing (`POST /api/ensure-audios-bucket`). Optional if the bucket is created via SQL/migrations.                                              |
+| `NEXT_SUPABASE_SERVICE_ROLE_KEY`           | **(Server-only.)** Used to create the `audios` storage bucket if missing (`POST /api/ensure-audios-bucket`). Optional if the bucket is created via SQL/migrations.                                              |
 | `NEXT_PUBLIC_FREESOUND_API_KEY`            | Freesound API token. Enables Freesound search on the scene page and is read by server routes such as `/api/freesound-search` and `/api/freesound-configured`. [Get a token](https://freesound.org/apiv2/apply). |
 | `NEXT_PUBLIC_FIREBASE_API_KEY`             | Firebase: API Key (optional).                                                                                                                                                                                   |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`         | Firebase: Auth Domain.                                                                                                                                                                                          |
@@ -95,11 +95,18 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 | `NEXT_PUBLIC_PIX_ID`                       | PIX key for the **Support** page (`/support`): shown for copy and in the “Pay with Pix” section.                                                                                                                |
 | `NEXT_PUBLIC_PIX_URL`                      | Optional: URL for Pix payment (e.g. Nubank “cobrar” link). Used by the QR code and “Pay with Pix” on the support page.                                                                                          |
 | `NEXT_PUBLIC_STRIPE_URL`                   | Stripe (or other) donation link for the Support page.                                                                                                                                                           |
+| `NEXT_PUBLIC_GITHUB_URL`                   | Optional. GitHub profile or repo link (e.g. landing footer). Falls back to a default repo URL if unset.                                                                                                        |
+| `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN` | Comma-separated Supabase user UUIDs with access to the audio library, AI chat, and related APIs (`/api/library`, `/api/ai/chat`, default favorites). Server reads both; the client needs `NEXT_PUBLIC_*` for UI (e.g. “save to library”, library nav). |
+| `NEXT_ANTHROPIC_API_KEY`                   | **(Server-only.)** Anthropic API key for `POST /api/ai/chat`.                                                                                                                                                  |
+| `NEXT_ANTHROPIC_MODEL`                     | Optional. Claude model id for AI chat (default `claude-opus-4-5`).                                                                                                                                            |
+| `NEXT_PIXABAY_API_KEY`                     | **(Server-only.)** Pixabay Sounds API key; used by AI chat to resolve sound suggestions.                                                                                                                         |
+| `NEXT_PIXABAY_SOUNDS_API_URL`              | Optional. Override Pixabay sounds JSON base URL.                                                                                                                                                                |
+| `NEXT_SERPER_API_KEY`                      | Optional. Web search snippets for the AI chat (`POST /api/ai/chat`).                                                                                                                                           |
 
 ### Firebase / Firestore (optional)
 
 - Create a project at [Firebase](https://console.firebase.google.com), enable **Authentication** (Google) and optionally **Firestore**.
-- Set the `NEXT_PUBLIC_FIREBASE_*` variables in `.env`.
+- Add the `NEXT_PUBLIC_FIREBASE_*` variables to `.env` (they are not listed in `.env.example`; see `src/lib/firebase.ts` for names).
 - For Firestore: create the database and set `NEXT_PUBLIC_USE_FIRESTORE=true`.
 - Deploy rules in `firestore.rules` (Console → Firestore → Rules). Create the composite index when prompted if you use queries by `userId` and `orderBy('createdAt')`.
 
@@ -115,7 +122,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 | **Auth & DB**             | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore       |
 | **Data & API**            | [TanStack Query](https://tanstack.com/query) (React Query) for server state; Zod for schemas                                   |
 | **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs)                                                                                        |
-| **Backend**               | Next.js API routes (server-only): `ensure-audios-bucket`, `freesound-search`, `freesound-configured`. No separate Node server. |
+| **Backend**               | Next.js API routes (server-only): scenes and audios CRUD, `ensure-audios-bucket`, Freesound proxy, audio library + default favorites, `ai/chat`. No separate Node server. |
 
 ---
 
@@ -127,6 +134,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 - **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL, file upload (when signed in), **Freesound search** (when `NEXT_PUBLIC_FREESOUND_API_KEY` is set), **Spotify** (track/album/playlist URLs), or YouTube URL support.
 - **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop from any page.
 - **Support page** (`/support`) — Optional donate/support page with PIX (key + QR) and Stripe link. Configure via `NEXT_PUBLIC_PIX_ID`, `NEXT_PUBLIC_PIX_URL`, and `NEXT_PUBLIC_STRIPE_URL`.
+- **Audio library** — **`/library`** and **`/library/ai`** (Anthropic assistant, Pixabay/Freesound, optional web search) require the user to be on `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`. **`/library/defaults`**: curated default sounds (bundled data + DB) — anyone can browse; allowlisted users can pin their library items as defaults per category.
 - **Storage** — localStorage (default), Supabase (PostgreSQL + Storage), or Firestore (optional).
 
 ### Audio sources
@@ -141,11 +149,34 @@ The app stores **metadata** (name + URL). Supported sources:
 
 ### API routes (server)
 
-| Route                       | Method | Description                                                                                                                                                     |
-| --------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/ensure-audios-bucket` | POST   | Creates the Supabase `audios` storage bucket and policies if missing. Requires `Authorization: Bearer <Supabase access_token>` and `SUPABASE_SERVICE_ROLE_KEY`. |
-| `/api/freesound-configured` | GET    | Returns `{ configured: boolean }` depending on `NEXT_PUBLIC_FREESOUND_API_KEY`. Used by the client to show or hide Freesound search.                            |
-| `/api/freesound-search`     | GET    | Proxies search to Freesound API (query params: `query`, `page`, `pageSize`, `filter`) while keeping the token in `NEXT_PUBLIC_FREESOUND_API_KEY` on the server. |
+**Scenes & scene audios** (Bearer Supabase JWT; not the admin allowlist — any signed-in user owns their data):
+
+| Route | Methods | Description |
+| ----- | ------- | ----------- |
+| `/api/scenes` | GET, POST | List scenes; create scene. |
+| `/api/scenes/reorder` | POST | Reorder scenes. |
+| `/api/scenes/[sceneId]` | GET, PATCH, DELETE | Get, update, or delete a scene. |
+| `/api/scenes/[sceneId]/audios` | GET, POST | List or add audios on a scene. |
+| `/api/scenes/[sceneId]/audios/reorder` | POST | Reorder audios in a scene. |
+| `/api/audios/[audioId]` | PATCH, DELETE | Update or delete a single audio row. |
+
+**Library & AI** (Bearer JWT **and** user id on `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`; see [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md) for the data model):
+
+| Route | Methods | Description |
+| ----- | ------- | ----------- |
+| `/api/library` | GET, POST | List (optional `?type=…`) or create library items. |
+| `/api/library/[id]` | PATCH, DELETE | Update or delete a library item. |
+| `/api/library/default-favorites` | GET, POST | List or add “default sound” picks (per category). |
+| `/api/library/default-favorites/[libraryItemId]` | DELETE | Remove a default favorite by library item id. |
+| `/api/ai/chat` | POST | AI chat (Anthropic); Pixabay primary; optional Freesound/Serper. Requires `NEXT_ANTHROPIC_API_KEY`. |
+
+**Utilities**
+
+| Route | Method | Description |
+| ----- | ------ | ----------- |
+| `/api/ensure-audios-bucket` | POST | Creates the Supabase `audios` storage bucket and policies if missing. Requires Bearer token + `NEXT_SUPABASE_SERVICE_ROLE_KEY`. |
+| `/api/freesound-configured` | GET | `{ configured: boolean }` from `NEXT_PUBLIC_FREESOUND_API_KEY`. |
+| `/api/freesound-search` | GET | Proxies Freesound search (`query`, `page`, `pageSize`, `filter`). |
 
 ---
 
@@ -166,12 +197,17 @@ The app stores **metadata** (name + URL). Supported sources:
 src/
 ├── app/                    # App Router
 │   ├── api/                # API routes
+│   │   ├── audios/[audioId]/       # PATCH/DELETE audio
 │   │   ├── ensure-audios-bucket/   # Create Supabase audios bucket
-│   │   ├── freesound-configured/  # Check if Freesound key is set
-│   │   └── freesound-search/       # Proxy Freesound search (key server-side)
+│   │   ├── freesound-configured/   # Check if Freesound key is set
+│   │   ├── freesound-search/       # Proxy Freesound search (key server-side)
+│   │   ├── library/                # Audio library CRUD + default-favorites (JWT + allowlist)
+│   │   ├── scenes/                 # Scenes + reorder + per-scene audios
+│   │   └── ai/chat/                # AI chat + suggestions
 │   ├── auth/               # Auth callback
 │   ├── login/               # Login, enroll, verify
 │   ├── dashboard/           # Scene list (create scene via modal)
+│   ├── library/             # Browse library, AI assistant, default sounds
 │   ├── scene/[sceneId]/     # Scene page (audio list, player)
 │   └── support/             # Support/donate page (PIX, Stripe)
 ├── components/              # Reusable UI (layout, editor, audio, auth, etc.)
@@ -183,7 +219,7 @@ src/
 
 supabase/
 ├── migrations/              # DB and storage migrations (run in order)
-└── scripts/                 # One-time SQL (e.g. run-in-supabase.sql)
+└── scripts/                   # One-time SQL (`run-in-supabase.sql`, `apply-audio-library-and-favorites.sql`, etc.)
 ```
 
 ---

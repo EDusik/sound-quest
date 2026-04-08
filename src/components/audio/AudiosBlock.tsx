@@ -20,6 +20,8 @@ interface AudiosBlockProps {
   onDelete: (audio: AudioItem) => void;
   onRename?: (audio: AudioItem, newName: string) => void;
   onAddToScene?: (audio: AudioItem) => void;
+  onAddToLibrary?: (audio: AudioItem) => void;
+  addToLibraryPending?: boolean;
   onDragStart: (e: React.DragEvent, audioId: string) => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -40,6 +42,8 @@ export function AudiosBlock({
   onDelete,
   onRename,
   onAddToScene,
+  onAddToLibrary,
+  addToLibraryPending,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -61,7 +65,10 @@ export function AudiosBlock({
             key={audio.id}
             onDragOver={onDragOver}
             onDrop={(e) =>
-              onDrop(e, filteredAudios.findIndex((a) => a.id === audio.id))
+              onDrop(
+                e,
+                filteredAudios.findIndex((a) => a.id === audio.id),
+              )
             }
             onDragEnd={onDragEnd}
             className={`flex items-stretch rounded-lg transition-opacity ${
@@ -82,6 +89,8 @@ export function AudiosBlock({
                 onDelete={onDelete}
                 onRename={onRename}
                 onAddToScene={onAddToScene}
+                onAddToLibrary={onAddToLibrary}
+                addToLibraryPending={addToLibraryPending}
                 className="rounded-tr-lg rounded-br-lg rounded-tl-none rounded-bl-none"
               />
             </div>
@@ -95,10 +104,7 @@ export function AudiosBlock({
           </h2>
           <ul className="space-y-3">
             {inactiveAudios.map((audio) => (
-              <li
-                key={audio.id}
-                className="flex items-stretch rounded-lg"
-              >
+              <li key={audio.id} className="flex items-stretch rounded-lg">
                 <div className="min-w-0 flex-1">
                   <AudioRow
                     audio={audio}
@@ -108,6 +114,8 @@ export function AudiosBlock({
                     onDelete={onDelete}
                     onRename={onRename}
                     onAddToScene={onAddToScene}
+                    onAddToLibrary={onAddToLibrary}
+                    addToLibraryPending={addToLibraryPending}
                   />
                 </div>
               </li>

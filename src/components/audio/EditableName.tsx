@@ -1,5 +1,11 @@
 "use client";
 
+const DEFAULT_INPUT_CLASS =
+  "w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent";
+
+const DEFAULT_DISPLAY_CLASS =
+  "truncate block font-medium text-accent hover:underline";
+
 interface EditableNameProps {
   isEditing: boolean;
   value: string;
@@ -11,6 +17,10 @@ interface EditableNameProps {
   disabled?: boolean;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   ariaLabel?: string;
+  /** Overrides default classes on the display link (non-editing). */
+  displayClassName?: string;
+  /** Overrides default classes on the editing input. */
+  inputClassName?: string;
 }
 
 export function EditableName({
@@ -24,6 +34,8 @@ export function EditableName({
   disabled = false,
   inputRef,
   ariaLabel,
+  displayClassName,
+  inputClassName,
 }: EditableNameProps) {
   if (isEditing) {
     return (
@@ -37,7 +49,7 @@ export function EditableName({
           if (e.key === "Enter") onSave();
           if (e.key === "Escape") onCancel();
         }}
-        className="w-full min-w-0 rounded border border-border bg-background px-2 py-1 font-medium text-foreground outline-none focus:border-accent"
+        className={inputClassName ?? DEFAULT_INPUT_CLASS}
         aria-label={ariaLabel}
         autoFocus
         disabled={disabled}
@@ -50,7 +62,7 @@ export function EditableName({
       href={linkUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="truncate block font-medium text-accent hover:underline"
+      className={displayClassName ?? DEFAULT_DISPLAY_CLASS}
     >
       {displayText}
     </a>
