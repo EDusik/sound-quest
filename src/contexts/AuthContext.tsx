@@ -47,6 +47,17 @@ export function isRealUser(user: AuthUser | null): boolean {
   return user != null && user.uid !== DEMO_UID;
 }
 
+/** Chat bubble label: OAuth display name, else email local part before @. */
+export function getUserChatLabel(user: AuthUser | null): string | undefined {
+  if (!user) return undefined;
+  const name = user.displayName?.trim();
+  if (name) return name;
+  const email = user.email?.trim();
+  const local = email?.split("@")[0]?.trim();
+  if (local) return local;
+  return undefined;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   /** True when logged in with Google/Supabase (storage uses Supabase; otherwise localStorage). */

@@ -1,8 +1,8 @@
 /**
- * Web search via Serper (https://serper.dev). If SERPER_API_KEY is unset, returns empty context.
+ * Web search via Serper (https://serper.dev). If NEXT_SERPER_API_KEY is unset, returns empty context.
  */
 export async function fetchSerperContext(query: string): Promise<string> {
-  const key = process.env.SERPER_API_KEY;
+  const key = process.env.NEXT_SERPER_API_KEY;
   if (!key || !query.trim()) return "";
 
   const res = await fetch("https://google.serper.dev/search", {

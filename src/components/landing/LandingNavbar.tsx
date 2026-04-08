@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Music } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  isLandingHashNavActive,
+  isNavLinkActive,
+  navLinkTone,
+} from "@/lib/nav-link-active";
 import { useTranslations } from "@/contexts/I18nContext";
+import { useAdminFeatures } from "@/hooks/api";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
@@ -12,14 +20,29 @@ import { ScrollToHashLink } from "@/components/landing/ScrollToHashLink";
 import { buttonPrimaryNav, linkNavOutline } from "@/components/landing/sectionStyles";
 import { NAV_LINKS } from "@/lib/landing";
 
-const NAV_DESKTOP_LINK_CLASS =
-  "text-sm font-medium text-foreground/90 transition-colors hover:text-foreground";
-const MOBILE_LINK_CLASS = "rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-card";
+const NAV_DESKTOP_LINK_BASE =
+  "inline-flex items-center gap-2 text-sm font-medium transition-colors";
+const MOBILE_LINK_BASE = "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-card";
 
 export function LandingNavbar() {
+  const pathname = usePathname();
+  const [hash, setHash] = useState(
+    () => (typeof window !== "undefined" ? window.location.hash : ""),
+  );
   const t = useTranslations();
   const { user, isAuthenticated, signOut } = useAuth();
+  const { showAudioLibraryNav, showMyAudioLibraryLink } = useAdminFeatures();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setHash(typeof window !== "undefined" ? window.location.hash : "");
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [pathname]);
+
+  const defaultsActive = isNavLinkActive(pathname, "/library/defaults");
+  const loginActive = isNavLinkActive(pathname, "/login");
 
   return (
     <header
@@ -39,11 +62,27 @@ export function LandingNavbar() {
           className="hidden items-center gap-8 md:flex"
           aria-label={t("landing.navAria")}
         >
-          {NAV_LINKS.map(({ href, key }) => (
-            <ScrollToHashLink key={key} href={href} className={NAV_DESKTOP_LINK_CLASS}>
-              {t(key)}
-            </ScrollToHashLink>
-          ))}
+          {NAV_LINKS.map(({ href, key }) => {
+            const hashActive = isLandingHashNavActive(pathname, hash, href);
+            return (
+              <ScrollToHashLink
+                key={key}
+                href={href}
+                className={`${NAV_DESKTOP_LINK_BASE} ${navLinkTone(hashActive)}`}
+                aria-current={hashActive ? "true" : undefined}
+              >
+                {t(key)}
+              </ScrollToHashLink>
+            );
+          })}
+          <Link
+            href="/library/defaults"
+            aria-current={defaultsActive ? "page" : undefined}
+            className={`${NAV_DESKTOP_LINK_BASE} ${navLinkTone(defaultsActive)}`}
+          >
+            <Music className="h-4 w-4 shrink-0" aria-hidden />
+            {t("nav.defaultAudios")}
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -69,6 +108,13 @@ export function LandingNavbar() {
                   supportLinkTitle: t("nav.supportSoundQuestTooltip"),
                   signOutText: t("nav.signOut"),
                   dashboardLinkText: t("landing.navGoToDashboard"),
+                  defaultAudiosLinkText: t("nav.defaultAudios"),
+                  ...(showMyAudioLibraryLink
+                    ? { audioLibraryLinkText: t("nav.audioLibrary") }
+                    : {}),
+                  ...(showAudioLibraryNav
+                    ? { audioLibraryAiLinkText: t("nav.aiAudioSearch") }
+                    : {}),
                 }}
               />
             </>
@@ -76,7 +122,8 @@ export function LandingNavbar() {
             <>
               <Link
                 href="/login"
-                className={`hidden sm:inline-block ${linkNavOutline}`}
+                aria-current={loginActive ? "page" : undefined}
+                className={`hidden sm:inline-block ${linkNavOutline} ${navLinkTone(loginActive)}`}
               >
                 {t("nav.signIn")}
               </Link>
@@ -112,16 +159,29 @@ export function LandingNavbar() {
         aria-label={t("landing.navAria")}
       >
         <div className="flex flex-col gap-1 px-4 py-3">
-          {NAV_LINKS.map(({ href, key }) => (
-            <ScrollToHashLink
-              key={key}
-              href={href}
-              className={MOBILE_LINK_CLASS}
-              onNavigate={() => setMobileMenuOpen(false)}
-            >
-              {t(key)}
-            </ScrollToHashLink>
-          ))}
+          {NAV_LINKS.map(({ href, key }) => {
+            const hashActive = isLandingHashNavActive(pathname, hash, href);
+            return (
+              <ScrollToHashLink
+                key={key}
+                href={href}
+                className={`${MOBILE_LINK_BASE} ${navLinkTone(hashActive)}`}
+                onNavigate={() => setMobileMenuOpen(false)}
+                aria-current={hashActive ? "true" : undefined}
+              >
+                {t(key)}
+              </ScrollToHashLink>
+            );
+          })}
+          <Link
+            href="/library/defaults"
+            aria-current={defaultsActive ? "page" : undefined}
+            className={`${MOBILE_LINK_BASE} ${navLinkTone(defaultsActive)}`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Music className="h-4 w-4 shrink-0" aria-hidden />
+            {t("nav.defaultAudios")}
+          </Link>
           {isAuthenticated && user ? (
             <>
               <Link
@@ -147,8 +207,9 @@ export function LandingNavbar() {
             <>
               <Link
                 href="/login"
+                aria-current={loginActive ? "page" : undefined}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-card"
+                className={`rounded-lg px-3 py-2 text-sm font-medium hover:bg-card ${navLinkTone(loginActive)}`}
               >
                 {t("nav.signIn")}
               </Link>

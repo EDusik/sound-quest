@@ -350,10 +350,7 @@ export default function DashboardPage() {
                 className="text-xl font-semibold text-accent"
                 aria-label={t("dashboard.scenes")}
               >
-                <span className="sm:hidden">🎬</span>
-                <span className="hidden sm:inline">
-                  {t("dashboard.scenes")}
-                </span>
+                {t("dashboard.scenes")}
               </h1>
               <div className="flex items-center gap-1">
                 <SearchBar

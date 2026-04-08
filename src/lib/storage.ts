@@ -190,7 +190,7 @@ export async function uploadAudioFile(
     if (result.error) {
       if (isBucketMissing) {
         throw new Error(
-          "Bucket 'audios' not found. Add SUPABASE_SERVICE_ROLE_KEY to .env (Supabase Dashboard → Settings → API) and try again so the app can create the bucket.",
+          "Bucket 'audios' not found. Add NEXT_SUPABASE_SERVICE_ROLE_KEY to .env (Supabase Dashboard → Settings → API) and try again so the app can create the bucket.",
         );
       }
       throw result.error;

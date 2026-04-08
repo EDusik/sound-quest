@@ -10,6 +10,8 @@ import {
   useRemoveAudioMutation,
   useUpdateAudioMutation,
   useAddAudioToScenesMutation,
+  useAdminFeatures,
+  useCreateLibraryItemMutation,
 } from "@/hooks/api";
 import type { AudioItem } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,8 +29,11 @@ import { ErrorPage } from "@/components/ui/ErrorPage";
 import { IconButton } from "@/components/ui/IconButton";
 import { useAudioStore } from "@/store/audioStore";
 import { getErrorMessage } from "@/lib/errors";
+import { getLibrarySourceUrlForAudio } from "@/lib/audio-item-library-url";
+import { ApiError } from "@/lib/api-client";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
+import { toast } from "sonner";
 
 const INACTIVE_AUDIOS_STORAGE_KEY = "soundquest-inactive-audios";
 
@@ -77,6 +82,8 @@ export default function ScenePage() {
   const removeAudioMutation = useRemoveAudioMutation(sceneId);
   const updateAudioMutation = useUpdateAudioMutation(sceneId);
   const addAudioToScenesMutation = useAddAudioToScenesMutation();
+  const createLibraryMutation = useCreateLibraryItemMutation();
+  const { showSaveToLibraryOnScene: showSceneLibrarySave } = useAdminFeatures();
   const t = useTranslations();
   const error =
     !sceneIdOrSlug
@@ -238,6 +245,33 @@ export default function ScenePage() {
     [updateAudioMutation, t],
   );
 
+  const handleAddSceneAudioToLibrary = useCallback(
+    async (audio: AudioItem) => {
+      const sourceUrl = getLibrarySourceUrlForAudio(audio);
+      try {
+        new URL(sourceUrl);
+      } catch {
+        toast.error(t("scene.addToLibraryBadUrl"));
+        return;
+      }
+      try {
+        await createLibraryMutation.mutateAsync({
+          name: audio.name,
+          sourceUrl,
+          type: "ambience",
+        });
+        toast.success(t("aiLibrary.savedToLibrary"));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 403) {
+          toast.error(t("aiLibrary.forbidden"));
+        } else {
+          toast.error(getErrorMessage(err, t("aiLibrary.saveFailed")));
+        }
+      }
+    },
+    [createLibraryMutation, t],
+  );
+
   useEffect(() => {
     if (!audioToDelete) return;
     const onKey = (e: KeyboardEvent) => {
@@ -326,10 +360,12 @@ export default function ScenePage() {
           />
         )}
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h1 className="text-xl font-semibold text-accent" aria-label={t("scene.audios")}>
-          <span className="sm:hidden">🎵</span>
-          <span className="hidden sm:inline">{t("scene.audios")}</span>
-        </h1>
+          <h1
+            className="text-xl font-semibold text-accent"
+            aria-label={t("scene.audios")}
+          >
+            {t("scene.audios")}
+          </h1>
           <div className="flex items-center gap-1">
             <SearchBar
               open={searchOpen}
@@ -380,6 +416,10 @@ export default function ScenePage() {
             onDelete={setAudioToDelete}
             onRename={handleRename}
             onAddToScene={setAudioToAddToScenes}
+            onAddToLibrary={
+              showSceneLibrarySave ? handleAddSceneAudioToLibrary : undefined
+            }
+            addToLibraryPending={createLibraryMutation.isPending}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}

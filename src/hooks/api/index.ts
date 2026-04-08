@@ -18,7 +18,13 @@ export {
   useCreateLibraryItemMutation,
   useUpdateLibraryItemMutation,
   useDeleteLibraryItemMutation,
+  useLibraryDefaultFavoritesQuery,
+  useAddLibraryDefaultFavoriteMutation,
+  useRemoveLibraryDefaultFavoriteMutation,
 } from "./useLibrary";
-export { useAiChatMutation } from "./useAiChat";
+export { useAiChat } from "./useAiChat";
+export type { AiChatStatus } from "./useAiChat";
+export { useAiLibraryAccess } from "./useAiLibraryAccess";
+export { useAdminFeatures } from "./useAdminFeatures";
 export type { ChatMessageInput } from "@/lib/api-client";
 export { queryKeys } from "./queryKeys";
