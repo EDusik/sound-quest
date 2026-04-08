@@ -5,6 +5,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { AudioLibraryItem } from "@/lib/audio-library-map";
+import type { LibraryDefaultFavoriteItem } from "@/lib/library-default-favorite-map";
 import type { AudioItem, AudioKind, Label, Scene } from "./types";
 
 export class ApiError extends Error {
@@ -141,6 +142,46 @@ export async function deleteLibraryItem(id: string): Promise<void> {
   }
 }
 
+export async function fetchLibraryDefaultFavorites(): Promise<{
+  items: LibraryDefaultFavoriteItem[];
+}> {
+  return apiFetchJson<{ items: LibraryDefaultFavoriteItem[] }>(
+    "/api/library/default-favorites",
+  );
+}
+
+export async function addLibraryDefaultFavorite(body: {
+  libraryItemId: string;
+  category: string;
+  displayName: string;
+}): Promise<LibraryDefaultFavoriteItem> {
+  return apiFetchJson<LibraryDefaultFavoriteItem>("/api/library/default-favorites", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function removeLibraryDefaultFavorite(libraryItemId: string): Promise<void> {
+  const token = await getAccessTokenForApi();
+  if (!token) {
+    throw new ApiError(401, "unauthorized", "Not signed in");
+  }
+  const res = await fetch(
+    `/api/library/default-favorites/${encodeURIComponent(libraryItemId)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "same-origin",
+    },
+  );
+  if (res.status === 204) return;
+  const body = await parseJsonOrEmpty(res);
+  if (!res.ok) {
+    const msg = getErrorMessage(body) ?? res.statusText;
+    throw new ApiError(res.status, undefined, msg);
+  }
+}
+
 export async function postAiChat(
   messages: ChatMessageInput[],
 ): Promise<AiChatResponse> {
@@ -148,6 +189,123 @@ export async function postAiChat(
     method: "POST",
     body: JSON.stringify({ messages }),
   });
+}
+
+export type AiChatSuggestion = {
+  name: string;
+  sourceUrl: string;
+  source: string;
+  previewUrl?: string; // direct audio URL for in-page preview
+};
+
+export type StreamAiChatCallbacks = {
+  onStatus: (status: string) => void;
+  onText: (chunk: string) => void;
+  onSuggestions: (suggestions: AiChatSuggestion[]) => void;
+  onDone: (fullText: string) => void;
+  onError: (error: string) => void;
+  signal?: AbortSignal;
+};
+
+export async function streamAiChat(
+  messages: ChatMessageInput[],
+  callbacks: StreamAiChatCallbacks,
+): Promise<void> {
+  const { onStatus, onText, onSuggestions, onDone, onError, signal } =
+    callbacks;
+
+  let res: Response;
+  try {
+    res = await fetchWithAuth("/api/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages }),
+      signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === "AbortError") return;
+    onError((e as Error).message ?? "Request failed");
+    return;
+  }
+
+  if (!res.ok) {
+    const body = await parseJsonOrEmpty(res);
+    const msg = getErrorMessage(body) ?? res.statusText;
+    if (res.status === 403) {
+      onError("forbidden");
+    } else {
+      onError(msg);
+    }
+    return;
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) {
+    onError("No response stream");
+    return;
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE events (separated by double newlines)
+      const parts = buffer.split("\n\n");
+      // Keep the last part as it may be incomplete
+      buffer = parts.pop() ?? "";
+
+      for (const part of parts) {
+        if (!part.trim()) continue;
+
+        let eventType = "";
+        let eventData = "";
+
+        for (const line of part.split("\n")) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7);
+          } else if (line.startsWith("data: ")) {
+            eventData = line.slice(6);
+          }
+        }
+
+        if (!eventType || !eventData) continue;
+
+        try {
+          const parsed = JSON.parse(eventData);
+
+          switch (eventType) {
+            case "status":
+              onStatus(parsed.status);
+              break;
+            case "text":
+              onText(parsed.text);
+              break;
+            case "suggestions":
+              onSuggestions(parsed.suggestions ?? []);
+              break;
+            case "done":
+              onDone(parsed.text ?? "");
+              break;
+            case "error":
+              onError(parsed.error ?? "Unknown error");
+              break;
+          }
+        } catch {
+          // skip malformed events
+        }
+      }
+    }
+  } catch (e) {
+    if ((e as Error).name === "AbortError") return;
+    onError((e as Error).message ?? "Stream read error");
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 async function fetchWithAuth(

@@ -1,4 +1,5 @@
 import { createClient, type User } from "@supabase/supabase-js";
+import { isAdminUserId } from "@/lib/admin-user-ids";
 
 export function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get("authorization");
@@ -22,16 +23,9 @@ export async function getUserFromAccessToken(
   return user;
 }
 
-function parseAllowlist(): Set<string> {
-  const raw = process.env.AI_LIBRARY_ALLOWED_USER_IDS ?? "";
-  return new Set(
-    raw
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
-  );
-}
-
-export function isUserOnAiLibraryAllowlist(userId: string): boolean {
-  return parseAllowlist().has(userId);
+/**
+ * Audio library + AI chat: only users listed in NEXT_USER_ADMIN (and NEXT_PUBLIC_USER_ADMIN on the client).
+ */
+export function isUserOnAiLibraryAllowlist(user: User): boolean {
+  return isAdminUserId(user.id);
 }
