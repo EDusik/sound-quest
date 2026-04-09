@@ -29,7 +29,6 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
   const { user, isAuthenticated, signOut } = useAuth();
   const { showAudioLibraryNav, showMyAudioLibraryLink } = useAdminFeatures();
   const t = useTranslations();
-  const defaultsActive = isNavLinkActive(pathname, "/library/defaults");
   const loginActive = isNavLinkActive(pathname, "/login");
   const [hasSeenGuestHint, markGuestHintSeen] = useGuestHintSeen();
   const [showGuestHint, setShowGuestHint] = useState(false);
@@ -69,15 +68,6 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
             )}
           </h1>
           <div className="flex items-center gap-[6px] shrink-0 justify-end">
-            <Link
-              href="/library/defaults"
-              aria-current={defaultsActive ? "page" : undefined}
-              className={`inline-flex max-w-[8rem] items-center truncate rounded-lg border px-2 py-1.5 text-xs transition-colors sm:max-w-none sm:px-3 sm:py-2 sm:text-sm ${
-                defaultsActive ? "border-accent/40 bg-accent/5" : "border-border"
-              } ${navLinkTone(defaultsActive)}`}
-            >
-              <span className="truncate">{t("nav.defaultAudios")}</span>
-            </Link>
             <LanguageSwitch />
             <ThemeToggle />
             {isAuthenticated && user ? (

@@ -1,6 +1,7 @@
 /**
  * Storage abstraction layer:
- * - Anonymous users: data is persisted in localStorage (keyed by anonymous userId).
+ * - Anonymous users: data is persisted in localStorage with `userId === ANONYMOUS_UID`.
+ *   With Supabase, cloud-backed rows are mirrored locally with the real account `userId`.
  * - Authenticated users: data is persisted via `/api/scenes` and `/api/audios` when Supabase is configured (and Firestore is not used).
  * - Firebase/Firestore: when enabled, takes precedence over Supabase for persistence.
  * Callers use getScenes(userId), createScene(userId, ...), etc.; the layer chooses the backend
@@ -8,6 +9,7 @@
  */
 import axios from "axios";
 import {
+  ApiError,
   createAudioApi,
   createSceneApi,
   deleteAudioApi,
@@ -40,6 +42,34 @@ import {
 
 const SCENES_KEY = "audio_scenes_scenes";
 const AUDIOS_KEY = "audio_scenes_audios";
+
+/** Bump if migration logic changes and must run again for the same user. */
+const SUPABASE_LOCAL_MIGRATE_VERSION = "v2";
+
+function supabaseLocalMigrateDoneKey(userId: string) {
+  return `soundquest_supabase_local_migrate_${SUPABASE_LOCAL_MIGRATE_VERSION}:${userId}`;
+}
+
+const migrateLocalToSupabaseInFlight = new Map<string, Promise<void>>();
+
+/** POST races or retries can surface as 409 or 500 + Postgres duplicate-key text. */
+function isLikelyIdempotentConflict(e: unknown): boolean {
+  if (!(e instanceof ApiError)) return false;
+  const m = (e.message ?? "").toLowerCase();
+  return (
+    e.status === 409 ||
+    (e.status === 500 &&
+      (m.includes("duplicate key") ||
+        m.includes("unique constraint") ||
+        m.includes("23505")))
+  );
+}
+
+/** After a swallowed scene conflict, audio create can 404 if the scene id never belonged to this user. */
+function isRecoverableAudioMigrateError(e: unknown): boolean {
+  if (isLikelyIdempotentConflict(e)) return true;
+  return e instanceof ApiError && e.status === 404;
+}
 
 const SUPABASE_UID_CACHE_MS = 5000;
 let supabaseUidCache: { userId: string | null; expires: number } | null = null;
@@ -225,7 +255,9 @@ function getLocalScene(sceneId: string, userId?: string): Scene | null {
     const raw = localStorage.getItem(SCENES_KEY);
     const all: Scene[] = raw ? JSON.parse(raw) : [];
     const byId = all.find((r) => r.id === sceneId);
-    if (byId) return byId;
+    if (byId) {
+      if (!userId || byId.userId === userId) return byId;
+    }
     if (userId) {
       const bySlug = all.find(
         (r) => r.userId === userId && r.slug === sceneId,
@@ -313,16 +345,53 @@ function deleteLocalAudio(audioId: string): void {
   }
 }
 
-function mirrorSceneToAnonymousLocal(scene: Scene): void {
-  const anonymousScene: Scene = {
-    ...scene,
-    userId: ANONYMOUS_UID,
-  };
-  setLocalScene(anonymousScene);
+/** Offline cache for Supabase-backed scenes: keep real `userId` so another login does not inherit this data. */
+function mirrorSceneToLocal(scene: Scene): void {
+  setLocalScene(scene);
 }
 
-function mirrorAudioToAnonymousLocal(audio: AudioItem): void {
+function mirrorAudioToLocal(audio: AudioItem): void {
   setLocalAudio(audio);
+}
+
+/** Drop scenes/audios in localStorage that belong to another Supabase user (stale cache after account switch). */
+function purgeLocalCachesForSupabaseSession(currentUserId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const scenesRaw = localStorage.getItem(SCENES_KEY);
+    const allScenes: Scene[] = scenesRaw ? JSON.parse(scenesRaw) : [];
+    const keptScenes = allScenes.filter(
+      (s) => s.userId === ANONYMOUS_UID || s.userId === currentUserId,
+    );
+    const keptSceneIds = new Set(keptScenes.map((s) => s.id));
+    const audiosRaw = localStorage.getItem(AUDIOS_KEY);
+    const allAudios: AudioItem[] = audiosRaw ? JSON.parse(audiosRaw) : [];
+    const keptAudios = allAudios.filter((a) => keptSceneIds.has(a.sceneId));
+    if (
+      keptScenes.length !== allScenes.length ||
+      keptAudios.length !== allAudios.length
+    ) {
+      localStorage.setItem(SCENES_KEY, JSON.stringify(keptScenes));
+      localStorage.setItem(AUDIOS_KEY, JSON.stringify(keptAudios));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function relabelAnonymousScenesInLocalStorage(toUserId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(SCENES_KEY);
+    const all: Scene[] = raw ? JSON.parse(raw) : [];
+    if (!all.some((s) => s.userId === ANONYMOUS_UID)) return;
+    const next = all.map((s) =>
+      s.userId === ANONYMOUS_UID ? { ...s, userId: toUserId } : s,
+    );
+    localStorage.setItem(SCENES_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
 }
 
 async function getFirestoreScenes(userId: string): Promise<Scene[]> {
@@ -510,7 +579,7 @@ export async function createScene(
       description: data.description,
       labels: data.labels,
     });
-    mirrorSceneToAnonymousLocal(created);
+    mirrorSceneToLocal(created);
     return created;
   } else {
     setLocalScene(scene);
@@ -539,7 +608,7 @@ export async function updateScene(scene: Scene): Promise<void> {
       order: sceneWithSlug.order,
       slug: sceneWithSlug.slug,
     });
-    mirrorSceneToAnonymousLocal(sceneWithSlug);
+    mirrorSceneToLocal(sceneWithSlug);
   } else {
     setLocalScene(sceneWithSlug);
   }
@@ -597,7 +666,7 @@ export async function addAudio(
     if (!after.some((a) => a.id === created.id)) {
       throw new Error("Audio was not saved to the database. Please try again.");
     }
-    mirrorAudioToAnonymousLocal(created);
+    mirrorAudioToLocal(created);
     return created;
   } else {
     setLocalAudio(audio);
@@ -615,7 +684,7 @@ export async function updateAudio(audio: AudioItem): Promise<void> {
       kind: audio.kind,
       order: audio.order,
     });
-    mirrorAudioToAnonymousLocal(audio);
+    mirrorAudioToLocal(audio);
   } else {
     setLocalAudio(audio);
   }
@@ -691,16 +760,15 @@ export async function reorderScenes(
 }
 
 /**
- * Migrates all localStorage-based scenes and audios for a given "from" user id
- * into Supabase for the currently authenticated Supabase user.
+ * Migrates guest-only localStorage scenes (`userId === ANONYMOUS_UID`) into Supabase
+ * for the signed-in user. Scenes already tagged with another account are ignored
+ * and removed from local cache via `purgeLocalCachesForSupabaseSession`.
  *
  * - Only runs when Supabase storage is enabled and there is a logged-in user.
- * - Data in localStorage is intentionally preserved; a per-user flag prevents
- *   running the migration more than once.
+ * - A per-user flag prevents repeating migration for the same account.
  */
 export async function migrateLocalDataToSupabase(
-  // Kept for backwards compatibility; currently unused, but allows
-  // future targeting of specific anonymous ids if needed.
+  // Kept for backwards compatibility; reserved for future anonymous-id targeting.
   _fromUserId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<void> {
   if (typeof window === "undefined") return;
@@ -709,62 +777,118 @@ export async function migrateLocalDataToSupabase(
   const toUserId = await getSupabaseUserId();
   if (!toUserId) return;
 
-  let localScenes: Scene[] = [];
-  let localAudios: AudioItem[] = [];
+  purgeLocalCachesForSupabaseSession(toUserId);
 
+  const doneKey = supabaseLocalMigrateDoneKey(toUserId);
   try {
-    const scenesRaw = window.localStorage.getItem(SCENES_KEY);
-    localScenes = scenesRaw ? (JSON.parse(scenesRaw) as Scene[]) : [];
+    if (window.localStorage.getItem(doneKey)) return;
   } catch {
-    localScenes = [];
+    // ignore (e.g. storage disabled)
   }
 
-  try {
-    const audiosRaw = window.localStorage.getItem(AUDIOS_KEY);
-    localAudios = audiosRaw ? (JSON.parse(audiosRaw) as AudioItem[]) : [];
-  } catch {
-    localAudios = [];
-  }
+  const existingRun = migrateLocalToSupabaseInFlight.get(toUserId);
+  if (existingRun) return existingRun;
 
-  // Migrate all local scenes found, regardless of stored userId.
-  // This better reflects the user expectation: "everything I created
-  // in this browser before logging in should appear in my account".
-  const scenesToMigrate = localScenes;
-  if (scenesToMigrate.length === 0) {
-    return;
-  }
+  const run = (async () => {
+    let localScenes: Scene[] = [];
+    let localAudios: AudioItem[] = [];
 
-  for (const scene of scenesToMigrate) {
-    const sceneForSupabase: Scene = {
-      ...scene,
-      userId: toUserId,
-    };
-    await createSceneApi({
-      id: sceneForSupabase.id,
-      title: sceneForSupabase.title,
-      description: sceneForSupabase.description,
-      labels: sceneForSupabase.labels,
-      slug: sceneForSupabase.slug,
-      order: sceneForSupabase.order,
-      createdAt: sceneForSupabase.createdAt,
-    });
-
-    const audiosForScene = localAudios.filter(
-      (audio) => audio.sceneId === scene.id,
-    );
-    for (const audio of audiosForScene) {
-      const audioForSupabase: AudioItem = {
-        ...audio,
-        sceneId: sceneForSupabase.id,
-      };
-      await createAudioApi(sceneForSupabase.id, {
-        id: audioForSupabase.id,
-        name: audioForSupabase.name,
-        sourceUrl: audioForSupabase.sourceUrl,
-        kind: audioForSupabase.kind,
-        createdAt: audioForSupabase.createdAt,
-        order: audioForSupabase.order,
-      });
+    try {
+      const scenesRaw = window.localStorage.getItem(SCENES_KEY);
+      localScenes = scenesRaw ? (JSON.parse(scenesRaw) as Scene[]) : [];
+    } catch {
+      localScenes = [];
     }
-  }
+
+    try {
+      const audiosRaw = window.localStorage.getItem(AUDIOS_KEY);
+      localAudios = audiosRaw ? (JSON.parse(audiosRaw) as AudioItem[]) : [];
+    } catch {
+      localAudios = [];
+    }
+
+    // Only guest-created rows: never migrate another user's mirrored local cache.
+    const scenesToMigrate = localScenes.filter(
+      (s) => s.userId === ANONYMOUS_UID,
+    );
+    if (scenesToMigrate.length === 0) {
+      try {
+        window.localStorage.setItem(doneKey, "1");
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+
+    for (const scene of scenesToMigrate) {
+      const sceneForSupabase: Scene = {
+        ...scene,
+        userId: toUserId,
+      };
+      let sceneIdForAudios = sceneForSupabase.id;
+      try {
+        await createSceneApi({
+          id: sceneForSupabase.id,
+          title: sceneForSupabase.title,
+          description: sceneForSupabase.description,
+          labels: sceneForSupabase.labels,
+          slug: sceneForSupabase.slug,
+          order: sceneForSupabase.order,
+          createdAt: sceneForSupabase.createdAt,
+        });
+      } catch (e) {
+        if (!isLikelyIdempotentConflict(e)) throw e;
+        const remoteScenes = await fetchScenesApi();
+        const mine = remoteScenes.find((s) => s.id === sceneForSupabase.id);
+        if (mine) {
+          sceneIdForAudios = mine.id;
+        } else {
+          const created = await createSceneApi({
+            title: sceneForSupabase.title,
+            description: sceneForSupabase.description,
+            labels: sceneForSupabase.labels,
+            slug: sceneForSupabase.slug,
+            order: sceneForSupabase.order,
+            createdAt: sceneForSupabase.createdAt,
+          });
+          sceneIdForAudios = created.id;
+        }
+      }
+
+      const audiosForScene = localAudios.filter(
+        (audio) => audio.sceneId === scene.id,
+      );
+      for (const audio of audiosForScene) {
+        const audioForSupabase: AudioItem = {
+          ...audio,
+          sceneId: sceneIdForAudios,
+        };
+        try {
+          await createAudioApi(sceneIdForAudios, {
+            id: audioForSupabase.id,
+            name: audioForSupabase.name,
+            sourceUrl: audioForSupabase.sourceUrl,
+            kind: audioForSupabase.kind,
+            createdAt: audioForSupabase.createdAt,
+            order: audioForSupabase.order,
+          });
+        } catch (e) {
+          if (!isRecoverableAudioMigrateError(e)) throw e;
+        }
+      }
+    }
+
+    relabelAnonymousScenesInLocalStorage(toUserId);
+
+    try {
+      window.localStorage.setItem(doneKey, "1");
+    } catch {
+      /* ignore */
+    }
+  })();
+
+  migrateLocalToSupabaseInFlight.set(toUserId, run);
+  run.finally(() => migrateLocalToSupabaseInFlight.delete(toUserId));
+
+  return run;
 }

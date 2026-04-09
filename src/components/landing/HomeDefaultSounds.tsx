@@ -231,6 +231,7 @@ export function HomeDefaultSounds() {
                   playbackOnly
                   simplifiedPlaybackControls
                   playbackOmitStop
+                  playbackOmitVolume
                   compactPlayback
                   audio={audioItemFromDefaultCatalogItem(
                     item,

@@ -42,6 +42,8 @@ interface AudioRowProps {
   playbackOmitPause?: boolean;
   /** With playbackOnly: hide stop control (e.g. default catalog cards). */
   playbackOmitStop?: boolean;
+  /** With playbackOnly: hide volume slider (e.g. default catalog cards). */
+  playbackOmitVolume?: boolean;
   /** With playbackOnly: smaller controls and tighter spacing (e.g. default catalog list). */
   compactPlayback?: boolean;
 }
@@ -62,6 +64,7 @@ function YouTubeAudioRow({
   simplifiedPlaybackControls = false,
   playbackOmitPause = false,
   playbackOmitStop = false,
+  playbackOmitVolume = false,
   compactPlayback = false,
 }: AudioRowProps) {
   const t = useTranslations();
@@ -296,21 +299,6 @@ function YouTubeAudioRow({
 
   const rightSlot = (
     <>
-      <PlaybackControls
-        isPlaying={isPlaying}
-        loop={loop}
-        disabled={isInactive}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onStop={handleStop}
-        onLoop={handleLoop}
-        omitPause={
-          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
-        }
-        omitStop={playbackOnly && playbackOmitStop}
-        omitLoop={playbackOnly && simplifiedPlaybackControls}
-        compact={compact}
-      />
       {onAddToScene && (
         <button
           type="button"
@@ -331,6 +319,21 @@ function YouTubeAudioRow({
           <PlusIcon className={actionIconClass} />
         </button>
       )}
+      <PlaybackControls
+        isPlaying={isPlaying}
+        loop={loop}
+        disabled={isInactive}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onLoop={handleLoop}
+        omitPause={
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
+        }
+        omitStop={playbackOnly && playbackOmitStop}
+        omitLoop={playbackOnly && simplifiedPlaybackControls}
+        compact={compact}
+      />
       {onAddToLibrary && (
         <button
           type="button"
@@ -368,18 +371,20 @@ function YouTubeAudioRow({
           <TrashIcon className={actionIconClass} />
         </button>
       )}
-      <VolumeSlider
-        value={volume}
-        onChange={(v) => {
-          setVolume(v);
-          if (playerRef.current) {
-            playerRef.current.setVolume(v * 100);
-          }
-          useAudioStore.getState().setVolume(audio.id, v);
-        }}
-        disabled={isInactive}
-        compact={compact}
-      />
+      {!(playbackOnly && playbackOmitVolume) && (
+        <VolumeSlider
+          value={volume}
+          onChange={(v) => {
+            setVolume(v);
+            if (playerRef.current) {
+              playerRef.current.setVolume(v * 100);
+            }
+            useAudioStore.getState().setVolume(audio.id, v);
+          }}
+          disabled={isInactive}
+          compact={compact}
+        />
+      )}
     </>
   );
 
@@ -447,6 +452,7 @@ function HtmlAudioRow({
   simplifiedPlaybackControls = false,
   playbackOmitPause = false,
   playbackOmitStop = false,
+  playbackOmitVolume = false,
   compactPlayback = false,
 }: AudioRowProps) {
   const t = useTranslations();
@@ -565,21 +571,6 @@ function HtmlAudioRow({
 
   const rightSlot = (
     <>
-      <PlaybackControls
-        isPlaying={!!isPlaying}
-        loop={player?.loop ?? false}
-        disabled={isInactive}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onStop={handleStop}
-        onLoop={handleLoop}
-        omitPause={
-          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
-        }
-        omitStop={playbackOnly && playbackOmitStop}
-        omitLoop={playbackOnly && simplifiedPlaybackControls}
-        compact={compact}
-      />
       {onAddToScene && (
         <button
           type="button"
@@ -600,6 +591,21 @@ function HtmlAudioRow({
           <PlusIcon className={actionIconClass} />
         </button>
       )}
+      <PlaybackControls
+        isPlaying={!!isPlaying}
+        loop={player?.loop ?? false}
+        disabled={isInactive}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onLoop={handleLoop}
+        omitPause={
+          playbackOnly && (simplifiedPlaybackControls || playbackOmitPause)
+        }
+        omitStop={playbackOnly && playbackOmitStop}
+        omitLoop={playbackOnly && simplifiedPlaybackControls}
+        compact={compact}
+      />
       {onAddToLibrary && (
         <button
           type="button"
@@ -637,15 +643,17 @@ function HtmlAudioRow({
           <TrashIcon className={actionIconClass} />
         </button>
       )}
-      <VolumeSlider
-        value={volume}
-        onChange={(v) => {
-          if (ref.current) ref.current.volume = v;
-          setVolume(audio.id, v);
-        }}
-        disabled={isInactive}
-        compact={compact}
-      />
+      {!(playbackOnly && playbackOmitVolume) && (
+        <VolumeSlider
+          value={volume}
+          onChange={(v) => {
+            if (ref.current) ref.current.volume = v;
+            setVolume(audio.id, v);
+          }}
+          disabled={isInactive}
+          compact={compact}
+        />
+      )}
     </>
   );
 
@@ -762,7 +770,6 @@ function SpotifyPlaybackOnlyBar({
     <div
       className={`flex flex-wrap items-center ${compact ? "gap-1.5" : "gap-2"} ${className ?? ""}`}
     >
-      <SpotifyLibraryOpenButton sourceUrl={audio.sourceUrl} compact={compact} />
       {onAddToScene && (
         <button
           type="button"
@@ -783,6 +790,7 @@ function SpotifyPlaybackOnlyBar({
           <PlusIcon className={addIcon} />
         </button>
       )}
+      <SpotifyLibraryOpenButton sourceUrl={audio.sourceUrl} compact={compact} />
     </div>
   );
 }

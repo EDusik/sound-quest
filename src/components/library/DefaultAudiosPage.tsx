@@ -232,13 +232,28 @@ export function DefaultAudiosPage() {
             kind: audioToAddToScenes.kind,
           },
         });
-        toast.success(t("libraryPage.suggestionAdded"));
+        const sceneTitles = sceneIds
+          .map((id) => scenes.find((s) => s.id === id)?.title)
+          .filter((title): title is string => Boolean(title));
+        if (sceneIds.length === 1 && sceneTitles.length === 1) {
+          toast.success(
+            t("defaultAudiosPage.addedToScene", { sceneName: sceneTitles[0] }),
+          );
+        } else if (sceneTitles.length > 0) {
+          toast.success(
+            t("defaultAudiosPage.addedToScenes", {
+              sceneNames: sceneTitles.join(", "),
+            }),
+          );
+        } else {
+          toast.success(t("libraryPage.suggestionAdded"));
+        }
         setAudioToAddToScenes(null);
       } catch (err) {
         toast.error(getErrorMessage(err, t("defaultAudiosPage.addToSceneFailed")));
       }
     },
-    [audioToAddToScenes, addAudioToScenesMutation, t],
+    [audioToAddToScenes, addAudioToScenesMutation, scenes, t],
   );
 
   const openAddToScene = useCallback((audio: AudioItem) => {
@@ -359,6 +374,7 @@ export function DefaultAudiosPage() {
                             playbackOnly
                             simplifiedPlaybackControls
                             playbackOmitStop
+                            playbackOmitVolume
                             compactPlayback
                             audio={audioItemFromDefaultCatalogItem(item)}
                             sceneId={DEFAULT_CATALOG_PLAYER_SCENE_ID}

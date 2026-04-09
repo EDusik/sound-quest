@@ -33,6 +33,11 @@ export type AiChatResponse = {
 export async function getAccessTokenForApi(): Promise<string | null> {
   if (!supabase) return null;
   const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  const {
     data: { session },
   } = await supabase.auth.getSession();
   return session?.access_token ?? null;
@@ -105,6 +110,10 @@ export async function apiFetchPublicJson<T>(path: string): Promise<T> {
     throw new ApiError(res.status, code, msg);
   }
   return body as T;
+}
+
+export async function fetchLibraryAccess(): Promise<{ allowed: boolean }> {
+  return apiFetchJson<{ allowed: boolean }>("/api/library/access");
 }
 
 export async function fetchLibraryItems(

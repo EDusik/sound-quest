@@ -18,19 +18,21 @@ export function useMigrateLocalScenesOnLogin() {
   const { user, isAuthenticated, isConfigured, loading } = useAuth();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (loading || !isConfigured || !isAuthenticated || !user?.uid) return;
+  const uid = user?.uid;
 
-    migrateLocalDataToSupabase(user.uid)
+  useEffect(() => {
+    if (loading || !isConfigured || !isAuthenticated || !uid) return;
+
+    migrateLocalDataToSupabase(uid)
       .then(() => {
         // After a successful migration, refetch scenes for this user so
         // the UI reflects the newly moved data without requiring a reload.
         queryClient.invalidateQueries({
-          queryKey: queryKeys.scenes.list(user.uid),
+          queryKey: queryKeys.scenes.list(uid),
         });
       })
       .catch((err) => {
         console.error("Failed to migrate local scenes to Supabase:", err);
       });
-  }, [user, isAuthenticated, isConfigured, loading, queryClient]);
+  }, [uid, isAuthenticated, isConfigured, loading, queryClient]);
 }

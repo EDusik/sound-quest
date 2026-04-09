@@ -463,6 +463,21 @@ export function LibraryBrowsePage() {
                               />
                             </div>
                             <div className="flex shrink-0 items-center gap-1">
+                              <AudioRow
+                                playbackOnly
+                                simplifiedPlaybackControls
+                                playbackOmitStop
+                                playbackOmitVolume
+                                compactPlayback
+                                audio={audioItemFromLibraryItem(item)}
+                                sceneId={LIBRARY_PLAYER_SCENE_ID}
+                                isInactive={
+                                  editingId === item.id ||
+                                  deleteMutation.isPending ||
+                                  updateMutation.isPending
+                                }
+                                className="shrink-0"
+                              />
                               <button
                                 type="button"
                                 disabled={
@@ -494,20 +509,6 @@ export function LibraryBrowsePage() {
                                   aria-hidden
                                 />
                               </button>
-                              <AudioRow
-                                playbackOnly
-                                simplifiedPlaybackControls
-                                playbackOmitStop
-                                compactPlayback
-                                audio={audioItemFromLibraryItem(item)}
-                                sceneId={LIBRARY_PLAYER_SCENE_ID}
-                                isInactive={
-                                  editingId === item.id ||
-                                  deleteMutation.isPending ||
-                                  updateMutation.isPending
-                                }
-                                className="shrink-0"
-                              />
                               <button
                                 type="button"
                                 disabled={

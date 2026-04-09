@@ -4,8 +4,38 @@ import { requireBearerUser } from "@/lib/auth-bearer";
 import { jsonServerError, jsonValidationError } from "@/lib/http-api";
 import { sceneFromRow } from "@/lib/scene-audio-map";
 import { createUserSupabase } from "@/lib/supabase-user";
+import { isPgUniqueViolation } from "@/lib/pg-error";
 import { ensureUniqueSlug, slugify } from "@/lib/slug";
 import { postSceneBodySchema } from "@/lib/validators/scenes-api";
+
+async function updateOwnedScene(
+  supabase: ReturnType<typeof createUserSupabase>,
+  id: string,
+  userId: string,
+  fields: {
+    title: string;
+    description: string;
+    labels: unknown;
+    created_at: string;
+    order: number;
+    slug: string;
+  },
+) {
+  return supabase
+    .from("scenes")
+    .update({
+      title: fields.title,
+      description: fields.description,
+      labels: fields.labels,
+      created_at: fields.created_at,
+      order: fields.order,
+      slug: fields.slug,
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+}
 
 export async function GET(request: NextRequest) {
   const auth = await requireBearerUser(request);
@@ -101,11 +131,59 @@ export async function POST(request: NextRequest) {
     slug,
   };
 
-  const { data: row, error } = await supabase
-    .from("scenes")
-    .upsert(payload, { onConflict: "id" })
-    .select("*")
-    .single();
+  // Avoid upsert on global primary key `id`: if another user already owns this id,
+  // ON CONFLICT would try to UPDATE their row and RLS fails ("USING expression").
+  const updateFields = {
+    title: payload.title,
+    description: payload.description,
+    labels: payload.labels,
+    created_at: payload.created_at,
+    order: payload.order,
+    slug: payload.slug,
+  };
+
+  let row;
+  let error;
+
+  if (existingScene != null) {
+    ({ data: row, error } = await updateOwnedScene(
+      supabase,
+      id,
+      auth.user.id,
+      updateFields,
+    ));
+  } else {
+    ({ data: row, error } = await supabase
+      .from("scenes")
+      .insert(payload)
+      .select("*")
+      .single());
+
+    if (error && isPgUniqueViolation(error)) {
+      const insErr = error;
+      const { data: alreadyMine } = await supabase
+        .from("scenes")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
+
+      if (alreadyMine) {
+        ({ data: row, error } = await updateOwnedScene(
+          supabase,
+          id,
+          auth.user.id,
+          updateFields,
+        ));
+      } else {
+        return jsonServerError(
+          insErr.message ||
+            "This scene id or slug is already taken (including by another account).",
+          409,
+        );
+      }
+    }
+  }
 
   if (error) return jsonServerError(error.message, 500);
 

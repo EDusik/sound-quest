@@ -64,6 +64,8 @@
   "defaultAudiosPage.loadError": "Could not load the default catalog. Try again later.",
   "defaultAudiosPage.linkToLibrary": "My audio library",
   "defaultAudiosPage.addToSceneFailed": "Could not add the sound to the scene(s).",
+  "defaultAudiosPage.addedToScene": "Added to the scene \"{sceneName}\"",
+  "defaultAudiosPage.addedToScenes": "Added to scenes: {sceneNames}",
 
   "defaultAudioCategory.ambience.title": "Ambience",
   "defaultAudioCategory.ambience.subtitle": "Atmosphere / Environmental",

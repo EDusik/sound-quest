@@ -66,6 +66,8 @@
   "defaultAudiosPage.loadError": "Não foi possível carregar o catálogo. Tente mais tarde.",
   "defaultAudiosPage.linkToLibrary": "Minha biblioteca de áudios",
   "defaultAudiosPage.addToSceneFailed": "Não foi possível adicionar o som à(s) cena(s).",
+  "defaultAudiosPage.addedToScene": "Adicionado à cena \"{sceneName}\"",
+  "defaultAudiosPage.addedToScenes": "Adicionado às cenas: {sceneNames}",
 
   "defaultAudioCategory.ambience.title": "Ambiente",
   "defaultAudioCategory.ambience.subtitle": "Atmosfera / Ambiental",

@@ -97,7 +97,7 @@ export function AddToSceneModal({
       title={title}
       titleId="add-to-scene-modal-title"
       maxWidth="max-w-lg"
-      panelClassName="min-h-[20rem] overflow-visible"
+      panelClassName="min-h-[240px] overflow-visible"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-5 py-4">
         <p className="text-sm text-muted" id="add-to-scene-modal-desc">
