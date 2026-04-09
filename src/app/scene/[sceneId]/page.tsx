@@ -13,7 +13,7 @@ import {
   useAdminFeatures,
   useCreateLibraryItemMutation,
 } from "@/hooks/api";
-import type { AudioItem } from "@/lib/types";
+import type { AudioItem } from "@/lib/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
 import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
@@ -28,9 +28,9 @@ import { Spinner } from "@/components/ui/Spinner";
 import { ErrorPage } from "@/components/ui/ErrorPage";
 import { IconButton } from "@/components/ui/IconButton";
 import { useAudioStore } from "@/store/audioStore";
-import { getErrorMessage } from "@/lib/errors";
-import { getLibrarySourceUrlForAudio } from "@/lib/audio-item-library-url";
-import { ApiError } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils/errors";
+import { getLibrarySourceUrlForAudio } from "@/lib/audio/mappers/audio-item-library-url";
+import { ApiError } from "@/lib/api/api-client";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 import { toast } from "sonner";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/contexts/I18nContext";
-import type { Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/utils/i18n";
 
 export function LanguageSwitch() {
   const { locale, setLocale, t, ready } = useI18n();

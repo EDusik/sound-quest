@@ -1,4 +1,4 @@
-import { siteUrl } from "@/lib/seo";
+import { siteUrl } from "@/lib/seo/seo";
 
 /** FAQ Q&A in English for schema.org FAQPage (rich results). */
 const FAQ_ITEMS = [

@@ -6,13 +6,13 @@ import {
   getPreviewUrl,
   type FreesoundSound,
   type FreesoundSearchResponse,
-} from "@/lib/freesound";
+} from "@/lib/audio/providers/freesound";
 import {
   useFreesoundConfiguredQuery,
   useFreesoundSearchQuery,
   useAddAudioMutation,
 } from "@/hooks/api";
-import { getErrorMessage, getTranslatedFreesoundError } from "@/lib/errors";
+import { getErrorMessage, getTranslatedFreesoundError } from "@/lib/utils/errors";
 import { useTranslations } from "@/contexts/I18nContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";

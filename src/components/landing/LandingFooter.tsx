@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "@/contexts/I18nContext";
 import { SoundQuestBrand, textWithBrand } from "@/components/branding/SoundQuestLogo";
 import { ScrollToHashLink } from "@/components/landing/ScrollToHashLink";
-import { getCurrentYear } from "@/lib/date";
+import { getCurrentYear } from "@/lib/utils/date";
 
 export function LandingFooter() {
   const t = useTranslations();

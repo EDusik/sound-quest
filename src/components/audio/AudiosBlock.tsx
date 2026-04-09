@@ -1,6 +1,6 @@
 "use client";
 
-import type { AudioItem } from "@/lib/types";
+import type { AudioItem } from "@/lib/utils/types";
 import { AudioRow } from "@/components/audio/AudioRow";
 import { DragHandle } from "@/components/ui/DragHandle";
 import { useTranslations } from "@/contexts/I18nContext";

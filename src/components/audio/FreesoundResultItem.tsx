@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/contexts/I18nContext";
-import { getPreviewUrl, type FreesoundSound } from "@/lib/freesound";
+import { getPreviewUrl, type FreesoundSound } from "@/lib/audio/providers/freesound";
 import { PlayIcon, PauseIcon } from "@/components/icons";
 
 interface FreesoundResultItemProps {

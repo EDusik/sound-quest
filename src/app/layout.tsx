@@ -6,7 +6,7 @@ import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { SkipToContent } from "@/components/a11y/SkipToContent";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Providers } from "@/components/layout/Providers";
-import { siteMetadata } from "@/lib/seo";
+import { siteMetadata } from "@/lib/seo/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

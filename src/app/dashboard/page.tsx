@@ -10,7 +10,7 @@ import {
   useDeleteSceneMutation,
   useReorderScenesMutation,
 } from "@/hooks/api";
-import type { Scene, Label } from "@/lib/types";
+import type { Scene, Label } from "@/lib/utils/types";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -22,8 +22,8 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { IconButton } from "@/components/ui/IconButton";
 import { LABEL_DEFAULT_COLORS } from "@/components/editor/LabelEditor";
-import { validateSceneForm } from "@/lib/sceneSchema";
-import { getErrorMessage } from "@/lib/errors";
+import { validateSceneForm } from "@/lib/utils/sceneSchema";
+import { getErrorMessage } from "@/lib/utils/errors";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
 
 export default function DashboardPage() {

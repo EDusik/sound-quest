@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { AudioItem } from "@/lib/types";
-import type { Scene } from "@/lib/types";
+import type { AudioItem } from "@/lib/utils/types";
+import type { Scene } from "@/lib/utils/types";
 import { Modal } from "@/components/ui/Modal";
 import { ChevronDownIcon } from "@/components/icons";
 import { useTranslations } from "@/contexts/I18nContext";

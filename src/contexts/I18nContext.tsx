@@ -14,7 +14,7 @@ import {
   type Translations,
   getInitialLocale,
   storeLocale,
-} from "@/lib/i18n";
+} from "@/lib/utils/i18n";
 
 // Lazy-load translations to keep initial bundle smaller
 const localeModules: Record<Locale, () => Promise<{ default: Translations }>> = {

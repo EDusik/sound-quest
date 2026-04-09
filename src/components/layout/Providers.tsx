@@ -10,7 +10,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AudioBar } from "@/components/audio/AudioBar";
 import { GlobalAuthLoading } from "@/components/auth/GlobalAuthLoading";
 import { ThemeFavicon } from "@/components/theme/ThemeFavicon";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/utils/queryClient";
 import { useMigrateLocalScenesOnLogin } from "@/hooks/useMigrateLocalScenesOnLogin";
 
 /** Routes that render immediately without waiting for auth (better LCP). */

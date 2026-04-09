@@ -1,17 +1,1 @@
-import { NextResponse } from "next/server";
-import { isFreesoundConfigured } from "@/lib/freesound-env";
-
-/**
- * GET /api/freesound-configured
- * Returns whether Freesound API key is set (server-side). Client uses this to show/hide search UI.
- */
-export async function GET() {
-  return NextResponse.json(
-    { configured: isFreesoundConfigured() },
-    {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-      },
-    },
-  );
-}
+export { GET } from "@/features/integrations/freesound/server/routes/configured";

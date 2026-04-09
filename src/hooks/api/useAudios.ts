@@ -7,8 +7,8 @@ import {
   updateAudio,
   removeAudio,
   reorderAudios,
-} from "@/lib/storage";
-import type { AudioItem, AudioKind } from "@/lib/types";
+} from "@/lib/storage/storage";
+import type { AudioItem, AudioKind } from "@/lib/utils/types";
 import { queryKeys } from "./queryKeys";
 
 export function useAudiosQuery(sceneId: string | undefined) {

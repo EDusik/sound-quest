@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireBearerUser } from "@/lib/auth-bearer";
-import { jsonServerError, jsonValidationError } from "@/lib/http-api";
-import { audioFromRow } from "@/lib/scene-audio-map";
-import { createUserSupabase } from "@/lib/supabase-user";
+import { requireBearerUser } from "@/lib/auth/auth-bearer";
+import { jsonServerError, jsonValidationError } from "@/lib/api/http-api";
+import { audioFromRow } from "@/lib/audio/mappers/scene-audio-map";
+import { createUserSupabase } from "@/lib/db/supabase/supabase-user";
 import { patchAudioBodySchema } from "@/lib/validators/scenes-api";
 
 export async function PATCH(

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { clearSupabaseUserIdCache } from "@/lib/storage";
-import { ANONYMOUS_UID } from "@/lib/authConstants";
+import { supabase, isSupabaseConfigured } from "@/lib/db/supabase/supabase";
+import { clearSupabaseUserIdCache } from "@/lib/storage/storage";
+import { ANONYMOUS_UID } from "@/lib/auth/authConstants";
 
 const DEMO_UID = ANONYMOUS_UID;
 

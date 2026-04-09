@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import type { AudioItem } from "@/lib/types";
+import type { AudioItem } from "@/lib/utils/types";
 import { useAudioStore } from "@/store/audioStore";
 import { useTranslations } from "@/contexts/I18nContext";
 import { SpotifyAudioRow } from "@/components/audio/SpotifyAudioRow";
@@ -15,8 +15,8 @@ import {
   HeartIcon,
   PlayIcon,
 } from "@/components/icons";
-import { spotifyUriToOpenUrl } from "@/lib/spotify";
-import { loadYouTubeIframeAPI } from "@/lib/youtube-embed";
+import { spotifyUriToOpenUrl } from "@/lib/audio/providers/spotify";
+import { loadYouTubeIframeAPI } from "@/lib/audio/providers/youtube-embed";
 
 interface AudioRowProps {
   audio: AudioItem;

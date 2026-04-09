@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { SpotifyTrack } from "@/lib/types";
-import { spotifyUriToOpenUrl } from "@/lib/spotify";
-import { loadSpotifyIframeAPI } from "@/lib/spotify-embed";
+import type { SpotifyTrack } from "@/lib/utils/types";
+import { spotifyUriToOpenUrl } from "@/lib/audio/providers/spotify";
+import { loadSpotifyIframeAPI } from "@/lib/audio/providers/spotify-embed";
 import { AudioRowHeader } from "./AudioRowHeader";
 
 export type { SpotifyTrack };
