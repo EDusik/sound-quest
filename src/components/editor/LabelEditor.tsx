@@ -1,7 +1,7 @@
 "use client";
 
-import type { Label } from "@/lib/types";
-import { LABEL_TEXT_MAX, LABELS_MAX } from "@/lib/sceneSchema";
+import type { Label } from "@/lib/utils/types";
+import { LABEL_TEXT_MAX, LABELS_MAX } from "@/lib/utils/sceneSchema";
 import { useTranslations } from "@/contexts/I18nContext";
 
 /** WCAG AA compliant with white text (contrast ≥ 4.5:1) */

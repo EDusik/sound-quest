@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { isNavLinkActive, navLinkTone } from "@/lib/nav-link-active";
+import { isNavLinkActive, navLinkTone } from "@/lib/utils/nav-link-active";
 import { useTranslations } from "@/contexts/I18nContext";
 import { useAdminFeatures } from "@/hooks/api";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";

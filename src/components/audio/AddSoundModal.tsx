@@ -7,16 +7,16 @@ import {
   isAllowedAudioUrl,
   getAllowedAudioExtension,
   ALLOWED_AUDIO_EXTENSIONS,
-} from "@/lib/storage";
-import { getMaxUploadSizeBytes, getUserPlanLimits } from "@/lib/planLimits";
+} from "@/lib/storage/storage";
+import { getMaxUploadSizeBytes, getUserPlanLimits } from "@/lib/utils/planLimits";
 import { AiLibraryPanel } from "@/components/audio/AiLibraryPanel";
 import { FreesoundSearch } from "@/components/audio/FreesoundSearch";
 import { SpotifyAddForm } from "@/components/audio/SpotifyAddForm";
 import { Modal } from "@/components/ui/Modal";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
-import { extractYouTubeId } from "@/lib/youtube";
-import { extractSpotifyId, toSpotifyUri } from "@/lib/spotify";
-import { getErrorMessage } from "@/lib/errors";
+import { extractYouTubeId } from "@/lib/audio/providers/youtube";
+import { extractSpotifyId, toSpotifyUri } from "@/lib/audio/providers/spotify";
+import { getErrorMessage } from "@/lib/utils/errors";
 import {
   useUploadAudioFileMutation,
   useAddAudioMutation,

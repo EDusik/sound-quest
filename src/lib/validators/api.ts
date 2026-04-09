@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_AUDIO_CATEGORY_SLUGS } from "@/lib/default-audio-category-slugs";
+import { DEFAULT_AUDIO_CATEGORY_SLUGS } from "@/lib/audio/catalog/default-audio-category-slugs";
 
 const defaultAudioCategorySlugSchema = z.enum(
   DEFAULT_AUDIO_CATEGORY_SLUGS as unknown as [string, ...string[]],

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { LANDING_PATH } from "@/lib/landing";
+import { LANDING_PATH } from "@/lib/utils/landing";
 import { Footer } from "@/components/layout/Footer";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 

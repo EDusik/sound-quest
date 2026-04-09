@@ -1,4 +1,4 @@
-import { homeMetadata } from "@/lib/seo";
+import { homeMetadata } from "@/lib/seo/seo";
 import { HomeStructuredData } from "@/components/landing/HomeStructuredData";
 import { HomeContent } from "@/components/landing/HomeContent";
 

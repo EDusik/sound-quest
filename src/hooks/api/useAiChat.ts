@@ -5,7 +5,7 @@ import {
   streamAiChat,
   type AiChatSuggestion,
   type ChatMessageInput,
-} from "@/lib/api-client";
+} from "@/lib/api/api-client";
 
 export type AiChatStatus =
   | "idle"

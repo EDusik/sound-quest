@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuth, isRealUser } from "@/contexts/AuthContext";
-import { ApiError, fetchLibraryAccess } from "@/lib/api-client";
+import { ApiError, fetchLibraryAccess } from "@/lib/api/api-client";
 import { queryKeys } from "./queryKeys";
 
 /**

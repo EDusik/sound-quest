@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import type { FreesoundSearchResponse } from "@/lib/freesound";
+import type { FreesoundSearchResponse } from "@/lib/audio/providers/freesound";
 import { queryKeys } from "./queryKeys";
 
 export interface FreesoundSearchParams {

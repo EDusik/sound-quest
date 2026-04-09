@@ -1,4 +1,4 @@
-import { siteUrl } from "@/lib/seo";
+import { siteUrl } from "@/lib/seo/seo";
 
 const webSiteSchema = {
   "@context": "https://schema.org",

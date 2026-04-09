@@ -8,7 +8,7 @@ import {
   isLandingHashNavActive,
   isNavLinkActive,
   navLinkTone,
-} from "@/lib/nav-link-active";
+} from "@/lib/utils/nav-link-active";
 import { useTranslations } from "@/contexts/I18nContext";
 import { useAdminFeatures } from "@/hooks/api";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
@@ -17,7 +17,7 @@ import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ScrollToHashLink } from "@/components/landing/ScrollToHashLink";
 import { buttonPrimaryNav, linkNavOutline } from "@/components/landing/sectionStyles";
-import { NAV_LINKS } from "@/lib/landing";
+import { NAV_LINKS } from "@/lib/utils/landing";
 
 const NAV_DESKTOP_LINK_BASE =
   "inline-flex items-center gap-2 text-sm font-medium transition-colors";

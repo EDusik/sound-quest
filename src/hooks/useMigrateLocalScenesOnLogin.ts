@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { migrateLocalDataToSupabase } from "@/lib/storage";
+import { migrateLocalDataToSupabase } from "@/lib/storage/storage";
 import { queryKeys } from "@/hooks/api/queryKeys";
 
 /**

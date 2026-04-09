@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth, isRealUser } from "@/contexts/AuthContext";
-import { isAdminUserId } from "@/lib/admin-user-ids";
+import { isAdminUserId } from "@/lib/auth/admin-user-ids";
 import { useAiLibraryAccess } from "./useAiLibraryAccess";
 
 /**

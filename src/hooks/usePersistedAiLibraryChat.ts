@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AiChatSuggestion, ChatMessageInput } from "@/lib/api-client";
+import type { AiChatSuggestion, ChatMessageInput } from "@/lib/api/api-client";
 import {
   aiLibraryChatStorageKeyPage,
   aiLibraryChatStorageKeyScene,
   clearAiLibraryChatStorage,
   loadAiLibraryChatState,
   saveAiLibraryChatState,
-} from "@/lib/ai-library-chat-storage";
+} from "@/lib/ai/ai-library-chat-storage";
 import { AUDIO_LIBRARY_TYPES } from "@/lib/validators/api";
 
 export function usePersistedAiLibraryChat(options: {

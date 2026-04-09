@@ -13,13 +13,13 @@ import { AudioRow } from "@/components/audio/AudioRow";
 import { Section } from "@/components/landing/Section";
 import { Spinner } from "@/components/ui/Spinner";
 import { useI18n } from "@/contexts/I18nContext";
-import { DEFAULT_AUDIO_CATEGORIES } from "@/lib/default-audio-categories";
-import type { DefaultCatalogItem } from "@/lib/default-audio-catalog";
-import { loadDefaultAudios } from "@/lib/default-audio-catalog";
+import { DEFAULT_AUDIO_CATEGORIES } from "@/lib/audio/catalog/default-audio-categories";
+import type { DefaultCatalogItem } from "@/lib/audio/catalog/default-audio-catalog";
+import { loadDefaultAudios } from "@/lib/audio/catalog/default-audio-catalog";
 import {
   audioItemFromDefaultCatalogItem,
   HOME_DEFAULT_SOUNDS_SCENE_ID,
-} from "@/lib/default-item-to-audio-item";
+} from "@/lib/audio/mappers/default-item-to-audio-item";
 import { queryKeys } from "@/hooks/api/queryKeys";
 
 const PREVIEW_LIMIT = 12;

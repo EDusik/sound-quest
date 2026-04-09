@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { extractSpotifyId, toSpotifyUri } from "@/lib/spotify";
+import { extractSpotifyId, toSpotifyUri } from "@/lib/audio/providers/spotify";
 import { useTranslations } from "@/contexts/I18nContext";
-import type { SpotifyTrack } from "@/lib/types";
+import type { SpotifyTrack } from "@/lib/utils/types";
 
 interface SpotifyAddFormProps {
   /** Shared name from parent (used when embedded in AddSoundModal) */

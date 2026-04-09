@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { Library, Music, Sparkles } from "lucide-react";
 import type { AuthUser } from "@/contexts/AuthContext";
 import { SignOutIcon, HeartIcon } from "@/components/icons";
-import { isNavLinkActive, navLinkTone } from "@/lib/nav-link-active";
+import { isNavLinkActive, navLinkTone } from "@/lib/utils/nav-link-active";
 
 export interface UserMenuLabels {
   /** Accessible label for the trigger button (e.g. "John, User menu"). */

@@ -1,6 +1,6 @@
 "use client";
 
-import { scrollToSection } from "@/lib/landing";
+import { scrollToSection } from "@/lib/utils/landing";
 
 type ScrollToHashLinkProps = {
   href: string;
