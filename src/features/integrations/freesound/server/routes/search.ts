@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFreesoundApiKey } from "../freesound-env";
 
-export const runtime = "edge";
-
 const BASE = "https://freesound.org/apiv2";
 const UPSTREAM_TIMEOUT_MS = 8_000;
 
