@@ -182,7 +182,7 @@ export function AiLibraryPanel({ sceneId, open, onSceneAudioAdded }: AiLibraryPa
   if (!realUser) {
     return (
       <CollapsibleSection summary={t("aiLibrary.sectionTitle")}>
-        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+        <p className="px-4 py-3 text-sm text-muted-foreground">
           {t("aiLibrary.signInHint")}
         </p>
       </CollapsibleSection>
@@ -191,7 +191,7 @@ export function AiLibraryPanel({ sceneId, open, onSceneAudioAdded }: AiLibraryPa
 
   return (
     <CollapsibleSection summary={t("aiLibrary.sectionTitle")}>
-      <div className="space-y-6 border-t border-border p-4">
+      <div className="space-y-6 p-4">
         <p className="text-xs text-muted-foreground">{t("aiLibrary.sectionDescription")}</p>
 
         <div className="overflow-hidden rounded-xl border border-border bg-card/60 shadow-sm">

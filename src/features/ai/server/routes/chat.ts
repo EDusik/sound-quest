@@ -11,13 +11,15 @@ import {
   jsonUnauthorized,
   jsonValidationError,
 } from "@/lib/api/http-api";
-import { getPreviewUrl } from "@/lib/audio/providers/freesound";
 import {
   type PixabaySoundHit,
   isPixabayHomepageUrl,
   pixabaySoundEffectsSearchUrl,
   resolvePixabayPageAndPreview,
 } from "@/lib/audio/providers/pixabay-chat-sounds";
+
+/** `true` = resolve previews via Pixabay Sounds API (`NEXT_PIXABAY_API_KEY`). Mantido `false` para desativar essa busca. */
+const ENABLE_PIXABAY_SOUND_ENRICHMENT = false;
 import { postAiChatBodySchema } from "@/lib/validators/api";
 
 const anthropic = new Anthropic({
@@ -37,9 +39,9 @@ When asking questions, use ---SUGGESTIONS--- followed by [].
 
 IMPORTANT — suggestion quality:
 - Use DESCRIPTIVE, SPECIFIC sound names (e.g., "Wolf Pack Howling at Night" not just "wolf")
-- Prefer Pixabay for sound effects, ambience, AND music — it provides direct download URLs and well-rated community sounds. Use Freesound as a fallback for niche/specialized SFX. Use Incompetech for looping background music.
+- Prefer Pixabay for sound effects, ambience, AND music — it provides direct download URLs and well-rated community sounds. Use Incompetech for looping background music.
 - Never invent URLs — the system will find the actual audio files using the name you provide
-- For each suggestion, set "source" to exactly: "Pixabay", "Freesound", "Incompetech", or the real site name
+- For each suggestion, set "source" to exactly: "Pixabay", "Incompetech", or the real site name
 
 Structure your response in TWO parts:
 
@@ -48,7 +50,7 @@ PART 1: A natural, helpful conversational reply with brief descriptions of each 
 PART 2: After your text reply, write exactly this delimiter on its own line:
 ---SUGGESTIONS---
 Then write a JSON array:
-[{"name":"<descriptive sound name>","sourceUrl":"<leave as freesound.org or pixabay.com homepage — system replaces this>","source":"<Freesound|Pixabay|Incompetech|other>"}]
+[{"name":"<descriptive sound name>","sourceUrl":"<leave as pixabay.com homepage — system may replace this>","source":"<Pixabay|Incompetech|other>"}]
 
 Example response (Portuguese):
 Ótima escolha! Para uma floresta assombrada, aqui estão sons que vão criar a atmosfera perfeita:
@@ -117,40 +119,9 @@ function parseSuggestions(fullText: string): {
   return { text, suggestions: [] };
 }
 
-async function fetchFreesoundPreview(
-  name: string,
-  apiKey: string,
-): Promise<{ id: number; name: string; previewUrl: string } | null> {
-  const queries = [name, name.split(" ").slice(0, 3).join(" ")];
-  for (const q of queries) {
-    try {
-      const url = `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(q)}&token=${apiKey}&fields=id,name,previews&page_size=3`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-      if (!res.ok) continue;
-      const data = (await res.json()) as {
-        results?: { id: number; name: string; previews: Record<string, string> }[];
-      };
-      const sound = data.results?.[0];
-      if (sound?.previews) {
-        const previewUrl = getPreviewUrl(sound.previews);
-        if (previewUrl) return { id: sound.id, name: sound.name, previewUrl };
-      }
-    } catch {
-      // try next query
-    }
-  }
-  return null;
-}
-
 async function enrichSuggestions(
   suggestions: { name: string; sourceUrl: string; source: string }[],
 ): Promise<{ name: string; sourceUrl: string; source: string; previewUrl?: string }[]> {
-  const freesoundApiKey = process.env.NEXT_PUBLIC_FREESOUND_API_KEY;
-  const pixabayApiKey = process.env.NEXT_PIXABAY_API_KEY;
-  const pixabaySoundsApiBase =
-    process.env.NEXT_PIXABAY_SOUNDS_API_URL?.replace(/\/?$/, "/") ??
-    "https://pixabay.com/api/sounds/";
-
   return Promise.all(
     suggestions.map(async (s) => {
       type Enriched = {
@@ -167,70 +138,43 @@ async function enrichSuggestions(
 
       const isPixabay =
         s.source.toLowerCase().includes("pixabay") || s.sourceUrl.includes("pixabay.com");
-      const isFreesound =
-        s.source.toLowerCase().includes("freesound") || s.sourceUrl.includes("freesound.org");
 
       let working: Enriched = { ...s };
 
-      // Pixabay JSON API (when available) — prefer pageURL / id page over the site homepage
-      if (pixabayApiKey) {
-        try {
-          const q = encodeURIComponent(s.name);
-          const res = await fetch(
-            `${pixabaySoundsApiBase}?key=${pixabayApiKey}&q=${q}&order=popular&per_page=3`,
-            {
-              signal: AbortSignal.timeout(8000),
-              headers: { Accept: "application/json" },
-            },
-          );
-          const ct = res.headers.get("content-type") ?? "";
-          if (res.ok && (ct.includes("application/json") || ct.includes("text/json"))) {
-            const data = (await res.json()) as { hits?: PixabaySoundHit[] };
-            const hit = data.hits?.[0];
-            const { pageUrl, previewUrl } = resolvePixabayPageAndPreview(hit);
-            if (pageUrl) {
-              working = {
-                ...working,
-                sourceUrl: pageUrl,
-                ...(previewUrl ? { previewUrl } : {}),
-              };
-            } else if (previewUrl) {
-              working = { ...working, previewUrl };
+      // Pixabay JSON API — desativado por `ENABLE_PIXABAY_SOUND_ENRICHMENT`; reative a flag no topo do arquivo.
+      if (ENABLE_PIXABAY_SOUND_ENRICHMENT) {
+        const pixabayApiKey = process.env.NEXT_PIXABAY_API_KEY;
+        const pixabaySoundsApiBase =
+          process.env.NEXT_PIXABAY_SOUNDS_API_URL?.replace(/\/?$/, "/") ??
+          "https://pixabay.com/api/sounds/";
+        if (pixabayApiKey) {
+          try {
+            const q = encodeURIComponent(s.name);
+            const res = await fetch(
+              `${pixabaySoundsApiBase}?key=${pixabayApiKey}&q=${q}&order=popular&per_page=3`,
+              {
+                signal: AbortSignal.timeout(8000),
+                headers: { Accept: "application/json" },
+              },
+            );
+            const ct = res.headers.get("content-type") ?? "";
+            if (res.ok && (ct.includes("application/json") || ct.includes("text/json"))) {
+              const data = (await res.json()) as { hits?: PixabaySoundHit[] };
+              const hit = data.hits?.[0];
+              const { pageUrl, previewUrl } = resolvePixabayPageAndPreview(hit);
+              if (pageUrl) {
+                working = {
+                  ...working,
+                  sourceUrl: pageUrl,
+                  ...(previewUrl ? { previewUrl } : {}),
+                };
+              } else if (previewUrl) {
+                working = { ...working, previewUrl };
+              }
             }
+          } catch {
+            // fall through
           }
-        } catch {
-          // fall through
-        }
-      }
-
-      // Freesound — preview + page URL for Freesound; for Pixabay-labelled items keep Pixabay link
-      if (freesoundApiKey && (isFreesound || isPixabay || pixabayApiKey)) {
-        const result = await fetchFreesoundPreview(s.name, freesoundApiKey);
-        if (result) {
-          if (isFreesound) {
-            return {
-              ...working,
-              name: result.name,
-              sourceUrl: `https://freesound.org/sounds/${result.id}/`,
-              previewUrl: result.previewUrl,
-            };
-          }
-          if (isPixabay) {
-            if (isPixabayHomepageUrl(working.sourceUrl)) {
-              working = {
-                ...working,
-                sourceUrl: pixabaySoundEffectsSearchUrl(s.name),
-              };
-            }
-            return {
-              ...working,
-              previewUrl: working.previewUrl ?? result.previewUrl,
-            };
-          }
-          return {
-            ...working,
-            previewUrl: result.previewUrl,
-          };
         }
       }
 

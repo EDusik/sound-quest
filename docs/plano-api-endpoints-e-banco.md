@@ -143,7 +143,6 @@ The backend validates the user and feature flag; calls the LLM with a web-search
 ### 3.3 Existing endpoints (reference)
 
 - **POST `/api/ensure-audios-bucket`** — already exists; creates the `audios` Storage bucket if missing (per-scene upload).
-- **GET `/api/freesound-search`** and **GET `/api/freesound-configured`** — already exist; not part of the AI library flow (the AI uses web search, not necessarily Freesound).
 
 ---
 

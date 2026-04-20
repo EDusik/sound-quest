@@ -8,9 +8,6 @@ export {
   useRemoveAudioMutation,
   useReorderAudiosMutation,
 } from "./useAudios";
-export { useFreesoundConfiguredQuery } from "./useFreesoundConfigured";
-export { useFreesoundSearchQuery } from "./useFreesoundSearch";
-export type { FreesoundSearchParams } from "./useFreesoundSearch";
 export { useYouTubeTitleQuery } from "./useYouTubeTitle";
 export { useUploadAudioFileMutation } from "./useUploadAudioFile";
 export {
