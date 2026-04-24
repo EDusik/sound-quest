@@ -7,7 +7,7 @@ Technical document listing the required endpoints and data model (Supabase/Postg
 ## 1. Overview
 
 - **Auth:** Supabase (unchanged). All routes below that require a user validate the Supabase JWT and, where applicable, the feature flag (allowlist).
-- **Feature flag:** environment variable `AI_LIBRARY_ALLOWED_USER_IDS` (comma-separated list of UUIDs). Library and AI endpoints return **403** if the authenticated user is not on the list.
+- **Feature flag:** environment variables `NEXT_USER_ADMIN` (server) and `NEXT_PUBLIC_USER_ADMIN` (client UI), both comma-separated lists of Supabase user UUIDs. Library and AI endpoints return **403** if the authenticated user is not on the list.
 - **API base URL:** same domain as Next.js (e.g. `https://app.example.com/api/...`).
 - **JWT security:** Supabase-issued access tokens; server verifies the JWT before trust (see §4). Missing or invalid tokens yield **401**; valid token but not on the allowlist yields **403**.
 - **Input validation:** [Zod](https://zod.dev) for request bodies, query strings, and route params on the new routes (see §5). Invalid input returns **400** with a stable error shape before or alongside auth checks.
@@ -15,7 +15,7 @@ Technical document listing the required endpoints and data model (Supabase/Postg
 | Concern        | Mechanism                                   | Details                                             |
 | -------------- | ------------------------------------------- | --------------------------------------------------- |
 | Authentication | Supabase **JWT** (access token)             | §4 — verify server-side; **401** if missing/invalid |
-| Authorization  | **Allowlist** `AI_LIBRARY_ALLOWED_USER_IDS` | §1, §4 — **403** if not listed                      |
+| Authorization  | **Allowlist** `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN` | §1, §4 — **403** if not listed                      |
 | Input shape    | **Zod** schemas                             | §5 — **400** on validation failure                  |
 | Data isolation | RLS + `user_id` from verified JWT only      | §2.2, §4                                            |
 
@@ -72,7 +72,37 @@ create policy "Users can manage own audio library"
   with check (auth.uid() = user_id);
 ```
 
-### 2.3 Existing tables (no changes)
+### 2.3 Table `donations` (Pix / Mercado Pago)
+
+Optional support for **voluntary donations** on `/support`. Rows are written only from Next.js API routes using the **service role** key (RLS enabled, no policies for `anon`/`authenticated` — not exposed to the browser).
+
+| Column             | Type          | Constraints / notes                                       |
+| ------------------ | ------------- | --------------------------------------------------------- |
+| `id`               | `text`        | PK — Mercado Pago payment id                              |
+| `amount_cents`     | `integer`     | NOT NULL, CHECK ≥ 100 (minimum R$ 1,00)                   |
+| `currency`         | `text`        | Default `BRL`                                             |
+| `status`           | `text`        | `pending`, `approved`, `rejected`, `cancelled`, `expired` |
+| `qr_code`          | `text`        | Pix “copia e cola”                                        |
+| `qr_code_base64`   | `text`        | QR PNG as base64                                          |
+| `ticket_url`       | `text`        | Optional MP ticket URL                                    |
+| `payer_email`      | `text`        | Optional                                                  |
+| `raw`              | `jsonb`       | Last relevant MP payload snapshot                         |
+| `expires_at`       | `timestamptz` | From MP `date_of_expiration` when present                 |
+| `last_mp_fetch_at` | `timestamptz` | Throttle for `GET …/status` refresh from MP API           |
+| `created_at`       | `timestamptz` | Default `now()`                                           |
+| `updated_at`       | `timestamptz` | Default `now()`                                           |
+
+**Migration:** `supabase/migrations/20260420120000_donations.sql`.
+
+**HTTP (same Next app, no Supabase JWT on these routes):**
+
+| Method | Path                             | Role                                                                                                                               |
+| ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/donations/pix`             | Body `{ amountCents }` (Zod). Creates MP Pix payment + inserts `donations`. Requires `MERCADO_PAGO_ACCESS_TOKEN` + service role. |
+| `GET`  | `/api/donations/pix/[id]/status` | Returns row fields for polling; may refresh from MP if `pending` and last fetch is older than ~15s.                                |
+| `POST` | `/api/webhooks/mercado-pago`     | Mercado Pago webhook; validates `x-signature` with `MERCADO_PAGO_WEBHOOK_SECRET`; updates `donations`. **Node.js runtime.**        |
+
+### 2.4 Existing tables (no changes)
 
 - `scenes` and `audios`: unchanged (per-scene audio).
 - Supabase Auth and Storage: unchanged.
@@ -81,18 +111,18 @@ create policy "Users can manage own audio library"
 
 ## 3. API endpoints
 
-All routes below are **Next.js API Routes** under `src/app/api/...`. Where “Auth + feature flag” applies, the flow is: 1) validate Supabase JWT (see §4); 2) get `user_id` from the verified session only; 3) check that `user_id` is in `AI_LIBRARY_ALLOWED_USER_IDS`; if not, return **403**.
+All routes below are **Next.js API Routes** under `src/app/api/...`. Where “Auth + feature flag” applies, the flow is: 1) validate Supabase JWT (see §4); 2) get `user_id` from the verified session only; 3) check that `user_id` is in `NEXT_USER_ADMIN` (or `NEXT_PUBLIC_USER_ADMIN`); if not, return **403**.
 
 ---
 
 ### 3.1 Audio library (CRUD)
 
-| Method | Route               | Auth + feature flag | Description                                                                                 |
-| ------ | ------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| Method | Route               | Auth + feature flag | Description                                                                                |
+| ------ | ------------------- | ------------------- | ------------------------------------------------------------------------------------------ |
 | GET    | `/api/library`      | Yes                 | Lists the user’s library items. Optional query: `?type=weather-effects` to filter by type. |
-| POST   | `/api/library`      | Yes                 | Creates a library item (name, source_url, type).                                            |
-| PATCH  | `/api/library/[id]` | Yes                 | Updates item (name, type, order). Only if `user_id` is the owner.                           |
-| DELETE | `/api/library/[id]` | Yes                 | Deletes item. Only if `user_id` is the owner.                                               |
+| POST   | `/api/library`      | Yes                 | Creates a library item (name, source_url, type).                                           |
+| PATCH  | `/api/library/[id]` | Yes                 | Updates item (name, type, order). Only if `user_id` is the owner.                          |
+| DELETE | `/api/library/[id]` | Yes                 | Deletes item. Only if `user_id` is the owner.                                              |
 
 **GET `/api/library`**
 
@@ -167,7 +197,7 @@ Protected routes must **authenticate** with a valid Supabase **access JWT**, the
 
 1. **Optional:** Parse and validate input with Zod (§5)—can run first to save work on junk payloads, or after auth if you prefer to hide schema details from unauthenticated clients.
 2. **JWT:** Extract token → `getUser` → on failure **401**.
-3. **Allowlist:** If `user.id` ∉ `AI_LIBRARY_ALLOWED_USER_IDS` → **403**.
+3. **Allowlist:** If `user.id` ∉ `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN` → **403**.
 4. **Handler logic** (DB, LLM, etc.).
 
 ### 4.4 Defense in depth
@@ -288,12 +318,16 @@ If the LLM returns JSON for `suggestions`, validate it with a dedicated `z.array
 
 ## 7. Required environment variables
 
-| Variable                                                              | Purpose                                                                 |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `AI_LIBRARY_ALLOWED_USER_IDS`                                         | Comma-separated UUIDs; who may access `/api/library` and `/api/ai/chat` |
-| `NEXT_ANTHROPIC_API_KEY` (or equivalent)                              | LLM for chat                                                            |
-| `NEXT_SERPER_API_KEY` or `GOOGLE_CSE_*` / `BING_*`                    | Web search API (AI tool)                                                |
-| Already in use: `NEXT_PUBLIC_SUPABASE_*`, `NEXT_SUPABASE_SERVICE_ROLE_KEY` | Auth and Supabase                                                       |
+| Variable                                                    | Purpose                                                                                             |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`                | Comma-separated Supabase UUIDs; who may access `/api/library` and `/api/ai/chat` (server + client). |
+| `NEXT_ANTHROPIC_API_KEY`                                    | LLM (Anthropic) for `/api/ai/chat`.                                                                 |
+| `NEXT_ANTHROPIC_MODEL`                                      | Optional. Claude model id (default `claude-opus-4-5`).                                              |
+| `NEXT_PIXABAY_API_KEY`                                      | Pixabay Sounds API (primary source for AI sound suggestions).                                       |
+| `NEXT_PIXABAY_SOUNDS_API_URL`                               | Optional. Override Pixabay sounds JSON base URL.                                                    |
+| `NEXT_SERPER_API_KEY`                                       | Optional. Web search snippets via [Serper](https://serper.dev) for the AI chat.                     |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase auth + DB (client + server).                                                               |
+| `NEXT_SUPABASE_SERVICE_ROLE_KEY`                            | Server-only. Required for `/api/ensure-audios-bucket` and Pix donations.                            |
 
 ---
 

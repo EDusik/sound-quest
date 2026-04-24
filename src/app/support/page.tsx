@@ -1,32 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import Link from "next/link";
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import { CreditCard } from "lucide-react";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { HeartIcon } from "@/components/icons";
 import { Navbar } from "@/components/layout/Navbar";
+import { PixDonationCard } from "@/features/donations/components/PixDonationCard";
 import { useTranslations } from "@/contexts/I18nContext";
-
-const QRCode = dynamic(() => import("react-qr-code").then((m) => m.default), {
-  ssr: false,
-  loading: () => (
-    <div
-      className="flex h-[180px] w-[180px] items-center justify-center rounded-lg border border-border bg-card text-muted"
-      aria-hidden
-    >
-      …
-    </div>
-  ),
-});
-
-const PIX_KEY = process.env.NEXT_PUBLIC_PIX_ID ?? "";
-/** Nubank payment link — QR code opens this URL for Pix payment */
 
 export default function SupportPage() {
   const t = useTranslations();
-  const [copied, setCopied] = useState(false);
-  const [pixOpen, setPixOpen] = useState(false);
   const [contentHeight, setContentHeight] = useState<string>("100dvh");
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -46,13 +29,8 @@ export default function SupportPage() {
     return () => ro.disconnect();
   }, []);
 
-  const copyPixKey = useCallback(() => {
-    if (!PIX_KEY) return;
-    navigator.clipboard.writeText(PIX_KEY).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    });
-  }, []);
+  const panelClass =
+    "flex h-full min-h-0 flex-col rounded-2xl border border-border/80 bg-card/70 p-6 shadow-[0_16px_48px_-12px_rgba(15,23,42,0.08)] backdrop-blur-md sm:p-7 dark:border-border/70 dark:bg-card/45 dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.35)]";
 
   return (
     <div className="relative flex flex-col overflow-hidden bg-background">
@@ -69,124 +47,90 @@ export default function SupportPage() {
         />
       </div>
       <div
-        className="relative z-10 flex w-full shrink-0 flex-col items-center justify-center px-4 py-10 sm:py-14"
+        className="relative z-10 w-full shrink-0 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 lg:py-9"
         style={{ height: contentHeight, minHeight: 0 }}
       >
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center">
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-accent/30 bg-card/75 p-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-accent/35 dark:bg-card/55 dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.45)] sm:p-10">
-            <div
-              className="absolute inset-x-8 top-0 h-px rounded-full bg-linear-to-r from-transparent via-accent/45 to-transparent"
-              aria-hidden
-            />
-            <h1 className="flex flex-wrap items-center gap-2 text-2xl tracking-wide text-foreground">
+        <div className="flex min-h-full flex-col justify-center">
+          <div className="mx-auto w-full max-w-5xl">
+            <h1 className="mb-4 flex w-full flex-wrap items-center justify-center gap-1.5 text-center text-xl font-medium tracking-wide text-foreground sm:mb-5 sm:gap-2 sm:text-2xl">
               <span>{t("support.titlePrefix")}</span>
               <span className="font-cinzel font-bold">{t("brand.name")}</span>
-              <HeartIcon className="h-[1.1em] w-[1.1em] shrink-0 text-rose-500 dark:text-rose-400" />
+              <HeartIcon className="h-[0.95em] w-[0.95em] shrink-0 text-rose-500 dark:text-rose-400 sm:h-[1em] sm:w-[1em]" />
             </h1>
-            <p className="mt-4 text-muted-foreground">{t("support.intro")}</p>
+            <p className="mx-auto mb-6 w-[60%] text-pretty text-center text-sm leading-snug text-muted-foreground lg:mb-8">
+              {t("support.intro")}
+            </p>
 
-            {/* Stripe — Card */}
-            <section className="mt-8" aria-labelledby="support-stripe-heading">
-              <h2 id="support-stripe-heading" className="sr-only">
-                {t("support.payWithCard")}
-              </h2>
-              <a
-                href={process.env.NEXT_PUBLIC_STRIPE_URL ?? ""}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/90 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-border hover:bg-border/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card dark:border-border"
-                aria-label={t("support.payWithCardAria")}
+            <div className="grid w-full grid-cols-1 items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
+              {/* Stripe — cartão */}
+              <section
+                className={panelClass}
+                aria-labelledby="support-stripe-heading"
               >
-                💳 {t("support.payWithCard")}
-              </a>
-            </section>
-
-            {/* Pix — accordion: QR code opens Nubank payment link */}
-            <section
-              className="mt-6 border-t border-border pt-6"
-              aria-labelledby="support-pix-heading"
-            >
-              <h2 id="support-pix-heading" className="sr-only">
-                {t("support.payWithPix")}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setPixOpen((o) => !o)}
-                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border/90 bg-card px-4 py-3.5 text-left text-sm font-semibold text-foreground shadow-sm transition hover:border-border hover:bg-border/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card dark:border-border"
-                aria-expanded={pixOpen}
-                aria-controls="support-pix-content"
-                id="support-pix-trigger"
-              >
-                <span>⚡ {t("support.payWithPix")}</span>
-                <span
-                  className="shrink-0 transition-transform"
-                  aria-hidden
-                  style={{
-                    transform: pixOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                >
-                  ▼
-                </span>
-              </button>
-              <div
-                id="support-pix-content"
-                role="region"
-                aria-labelledby="support-pix-trigger"
-                aria-hidden={!pixOpen}
-                className="grid transition-[grid-template-rows] duration-200 ease-out"
-                style={{
-                  gridTemplateRows: pixOpen ? "1fr" : "0fr",
-                }}
-              >
-                <div className="min-h-0 overflow-hidden">
-                  <p className="mt-4 mb-4 text-sm text-muted-foreground">
-                    {t("support.pixQrHint")}
-                  </p>
-                  <div className="flex flex-col items-center">
-                    <div className="flex shrink-0 items-center justify-center rounded-lg border border-border bg-white p-3">
-                      <QRCode
-                        value={process.env.NEXT_PUBLIC_PIX_URL ?? ""}
-                        size={200}
-                        bgColor="#ffffff"
-                        fgColor="#0f172a"
-                        level="M"
-                        title={t("support.payWithPixAria")}
-                      />
-                    </div>
+                <div className="mb-5 flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent shadow-sm dark:bg-muted/25">
+                    <CreditCard className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <h2
+                      id="support-stripe-heading"
+                      className="text-base font-semibold tracking-wide text-foreground"
+                    >
+                      {t("support.stripeSectionTitle")}
+                    </h2>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {t("support.stripeSectionIntro")}
+                    </p>
                   </div>
-                  {PIX_KEY && (
-                    <div className="mt-6 border-t border-border pt-4">
-                      <p className="mb-1 text-xs font-medium text-muted-foreground">
-                        {t("support.pixKeyLabel")}
-                      </p>
-                      <p
-                        className="break-all font-mono text-sm text-foreground"
-                        data-pix-key
-                      >
-                        {PIX_KEY}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={copyPixKey}
-                        className="mt-3 inline-flex items-center gap-2 rounded-xl border border-border/90 bg-card px-3 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:border-border hover:bg-border/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card dark:border-border"
-                        aria-label={t("support.copyPixKeyAria")}
-                      >
-                        {copied
-                          ? t("support.pixKeyCopied")
-                          : t("support.copyPixKey")}
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
-            </section>
+                <div className="mt-auto flex flex-1 flex-col justify-end pt-2">
+                  <a
+                    href={process.env.NEXT_PUBLIC_STRIPE_URL ?? ""}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/90 bg-background/80 px-4 py-3.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card dark:border-border dark:bg-background/40"
+                    aria-label={t("support.payWithCardAria")}
+                  >
+                    <CreditCard
+                      className="h-4 w-4 shrink-0 opacity-80"
+                      aria-hidden
+                    />
+                    {t("support.payWithCard")}
+                  </a>
+                </div>
+              </section>
 
-            <Link
-              href="/dashboard"
-              className="mt-8 block text-center text-sm font-medium text-accent underline decoration-accent/30 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent-hover"
-            >
-              {t("support.backToDashboard")}
-            </Link>
+              {/* Mercado Pago — Pix */}
+              <section
+                className={panelClass}
+                aria-labelledby="support-mercado-pago-heading"
+              >
+                <div className="mb-5 flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent shadow-sm dark:bg-muted/25">
+                    <svg
+                      viewBox="0 0 640 640"
+                      className="h-5 w-5"
+                      fill="currentColor"
+                      aria-hidden
+                    >
+                      <path d="M306.4 356.5C311.8 351.1 321.1 351.1 326.5 356.5L403.5 433.5C417.7 447.7 436.6 455.5 456.6 455.5L471.7 455.5L374.6 552.6C344.3 582.1 295.1 582.1 264.8 552.6L167.3 455.2L176.6 455.2C196.6 455.2 215.5 447.4 229.7 433.2L306.4 356.5zM326.5 282.9C320.1 288.4 311.9 288.5 306.4 282.9L229.7 206.2C215.5 191.1 196.6 184.2 176.6 184.2L167.3 184.2L264.7 86.8C295.1 56.5 344.3 56.5 374.6 86.8L471.8 183.9L456.6 183.9C436.6 183.9 417.7 191.7 403.5 205.9L326.5 282.9zM176.6 206.7C190.4 206.7 203.1 212.3 213.7 222.1L290.4 298.8C297.6 305.1 307 309.6 316.5 309.6C325.9 309.6 335.3 305.1 342.5 298.8L419.5 221.8C429.3 212.1 442.8 206.5 456.6 206.5L494.3 206.5L552.6 264.8C582.9 295.1 582.9 344.3 552.6 374.6L494.3 432.9L456.6 432.9C442.8 432.9 429.3 427.3 419.5 417.5L342.5 340.5C328.6 326.6 304.3 326.6 290.4 340.6L213.7 417.2C203.1 427 190.4 432.6 176.6 432.6L144.8 432.6L86.8 374.6C56.5 344.3 56.5 295.1 86.8 264.8L144.8 206.7L176.6 206.7z" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <h2
+                      id="support-mercado-pago-heading"
+                      className="text-base font-semibold tracking-wide text-foreground"
+                    >
+                      {t("support.payWithMercadoPago")}
+                    </h2>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {t("support.mercadoPagoSectionIntro")}
+                    </p>
+                  </div>
+                </div>
+                <PixDonationCard className="mt-5 min-h-0 flex-1" />
+              </section>
+            </div>
           </div>
         </div>
       </div>

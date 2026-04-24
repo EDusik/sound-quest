@@ -26,3 +26,4 @@ export { useAiLibraryAccess } from "./useAiLibraryAccess";
 export { useAdminFeatures } from "./useAdminFeatures";
 export type { ChatMessageInput } from "@/lib/api/api-client";
 export { queryKeys } from "./queryKeys";
+export { useCreateDonationPixMutation } from "@/features/donations/api/useDonationPix";

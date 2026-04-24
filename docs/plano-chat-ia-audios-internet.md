@@ -20,7 +20,7 @@ Especificação da rota (URL) que integra um chat com IA: a IA busca na internet
 | **`/library/ai`** (ou `/sounds/ai`) | Página do **chat com IA**. Usuário descreve o que precisa; a IA busca na internet e retorna lista de melhores áudios/músicas; na mesma tela o usuário pode adicionar cada item à biblioteca. |
 | **`/library`** (ou `/sounds/library`) | Página de **áudios default** do projeto: lista da biblioteca de áudios, **divididos por tipo** (efeitos de tempo, batalha, animais, cidades, ambiente, música, outros). Itens adicionados pelo chat aparecem aqui. |
 
-Ambas as rotas são protegidas por **feature flag** (visíveis apenas para usuários permitidos em `AI_LIBRARY_ALLOWED_USER_IDS`).
+Ambas as rotas são protegidas por **feature flag** (visíveis apenas para usuários permitidos em `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`).
 
 ---
 
@@ -78,7 +78,7 @@ sequenceDiagram
 
 ### 4.3 Regras de negócio
 
-- A rota **`/library/ai`** só é acessível para usuários autenticados que estejam em **`AI_LIBRARY_ALLOWED_USER_IDS`** (feature flag). Caso contrário: 404 ou mensagem “Recurso indisponível” e sem exibir o link no menu.
+- A rota **`/library/ai`** só é acessível para usuários autenticados que estejam em **`NEXT_USER_ADMIN`** / **`NEXT_PUBLIC_USER_ADMIN`** (feature flag). Caso contrário: 404 ou mensagem “Recurso indisponível” e sem exibir o link no menu.
 - A IA deve ser instruída (system prompt) a **priorizar** resultados com boa avaliação, downloads gratuitos quando aplicável e **links diretos** para áudio (ex.: MP3, WAV) quando possível.
 - Os itens adicionados ficam na **mesma** biblioteca exibida em **`/library`** (tabela `audio_library`), sem duplicar conceitos.
 

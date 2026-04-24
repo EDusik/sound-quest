@@ -80,33 +80,36 @@ The app sends `redirectTo` with `window.location.origin`, so production must hav
 
 Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are optional** to run in “localStorage only” mode.
 
-| Variable                                   | Description                                                                                                                                                                                                     |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`                 | Supabase project URL (e.g. `https://xxx.supabase.co`).                                                                                                                                                          |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`            | Supabase anonymous key (Auth + DB).                                                                                                                                                                             |
-| `NEXT_SUPABASE_SERVICE_ROLE_KEY`           | **(Server-only.)** Used to create the `audios` storage bucket if missing (`POST /api/ensure-audios-bucket`). Optional if the bucket is created via SQL/migrations.                                              |
-| `NEXT_PUBLIC_FIREBASE_API_KEY`             | Firebase: API Key (optional).                                                                                                                                                                                   |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`         | Firebase: Auth Domain.                                                                                                                                                                                          |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`          | Firebase: Project ID.                                                                                                                                                                                           |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`      | Firebase: Storage Bucket.                                                                                                                                                                                       |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase: Messaging Sender ID.                                                                                                                                                                                  |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`              | Firebase: App ID.                                                                                                                                                                                               |
-| `NEXT_PUBLIC_USE_FIRESTORE`                | `"true"` to use Firestore instead of localStorage.                                                                                                                                                              |
-| `NEXT_PUBLIC_PIX_ID`                       | PIX key for the **Support** page (`/support`): shown for copy and in the “Pay with Pix” section.                                                                                                                |
-| `NEXT_PUBLIC_PIX_URL`                      | Optional: URL for Pix payment (e.g. Nubank “cobrar” link). Used by the QR code and “Pay with Pix” on the support page.                                                                                          |
-| `NEXT_PUBLIC_STRIPE_URL`                   | Stripe (or other) donation link for the Support page.                                                                                                                                                           |
-| `NEXT_PUBLIC_GITHUB_URL`                   | Optional. GitHub profile or repo link (e.g. landing footer). Falls back to a default repo URL if unset.                                                                                                        |
+| Variable                                     | Description                                                                                                                                                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`                   | Supabase project URL (e.g. `https://xxx.supabase.co`).                                                                                                                                                                                                 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`              | Supabase anonymous key (Auth + DB).                                                                                                                                                                                                                    |
+| `NEXT_SUPABASE_SERVICE_ROLE_KEY`             | **(Server-only.)** Used to create the `audios` bucket if missing (`POST /api/ensure-audios-bucket`) and to persist Pix donations (`public.donations`). Optional if you do not use those features.                                                      |
+| `NEXT_PUBLIC_FIREBASE_API_KEY`               | Firebase: API Key (optional).                                                                                                                                                                                                                          |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`           | Firebase: Auth Domain.                                                                                                                                                                                                                                 |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`            | Firebase: Project ID.                                                                                                                                                                                                                                  |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`        | Firebase: Storage Bucket.                                                                                                                                                                                                                              |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`   | Firebase: Messaging Sender ID.                                                                                                                                                                                                                         |
+| `NEXT_PUBLIC_FIREBASE_APP_ID`                | Firebase: App ID.                                                                                                                                                                                                                                      |
+| `NEXT_PUBLIC_USE_FIRESTORE`                  | `"true"` to use Firestore instead of localStorage.                                                                                                                                                                                                     |
+| `MERCADO_PAGO_ACCESS_TOKEN`                  | **(Server-only.)** Mercado Pago credential for Pix donations (`POST /api/donations/pix`).                                                                                                                                                              |
+| `MERCADO_PAGO_WEBHOOK_SECRET`                | **(Server-only.)** Webhook signature secret from the Mercado Pago dashboard; validates `POST /api/webhooks/mercado-pago`.                                                                                                                              |
+| `MERCADO_PAGO_NOTIFICATION_URL`              | Optional. Full notification URL override; if unset, built from `NEXT_PUBLIC_SITE_URL` or `VERCEL_URL` + `/api/webhooks/mercado-pago`.                                                                                                                  |
+| `MERCADO_PAGO_DONATION_PAYER_EMAIL`          | Optional. Payer email sent to MP when creating Pix (MP requires an email). If unset, a unique placeholder is generated per payment.                                                                                                                    |
+| `NEXT_PUBLIC_SITE_URL`                       | Optional. Public site origin (e.g. `https://your-app.vercel.app`) for default webhook/notification URL.                                                                                                                                                |
+| `NEXT_PUBLIC_STRIPE_URL`                     | Stripe (or other) donation link for the Support page.                                                                                                                                                                                                  |
+| `NEXT_PUBLIC_GITHUB_URL`                     | Optional. GitHub profile or repo link (e.g. landing footer). Falls back to a default repo URL if unset.                                                                                                                                                |
 | `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN` | Comma-separated Supabase user UUIDs with access to the audio library, AI chat, and related APIs (`/api/library`, `/api/ai/chat`, default favorites). Server reads both; the client needs `NEXT_PUBLIC_*` for UI (e.g. “save to library”, library nav). |
-| `NEXT_ANTHROPIC_API_KEY`                   | **(Server-only.)** Anthropic API key for `POST /api/ai/chat`.                                                                                                                                                  |
-| `NEXT_ANTHROPIC_MODEL`                     | Optional. Claude model id for AI chat (default `claude-opus-4-5`).                                                                                                                                            |
-| `NEXT_PIXABAY_API_KEY`                     | **(Server-only.)** Pixabay Sounds API key; used by AI chat to resolve sound suggestions.                                                                                                                         |
-| `NEXT_PIXABAY_SOUNDS_API_URL`              | Optional. Override Pixabay sounds JSON base URL.                                                                                                                                                                |
-| `NEXT_SERPER_API_KEY`                      | Optional. Web search snippets for the AI chat (`POST /api/ai/chat`).                                                                                                                                           |
+| `NEXT_ANTHROPIC_API_KEY`                     | **(Server-only.)** Anthropic API key for `POST /api/ai/chat`.                                                                                                                                                                                          |
+| `NEXT_ANTHROPIC_MODEL`                       | Optional. Claude model id for AI chat (default `claude-opus-4-5`).                                                                                                                                                                                     |
+| `NEXT_PIXABAY_API_KEY`                       | **(Server-only.)** Pixabay Sounds API key; used by AI chat to resolve sound suggestions.                                                                                                                                                               |
+| `NEXT_PIXABAY_SOUNDS_API_URL`                | Optional. Override Pixabay sounds JSON base URL.                                                                                                                                                                                                       |
+| `NEXT_SERPER_API_KEY`                        | Optional. Web search snippets for the AI chat (`POST /api/ai/chat`).                                                                                                                                                                                   |
 
 ### Firebase / Firestore (optional)
 
 - Create a project at [Firebase](https://console.firebase.google.com), enable **Authentication** (Google) and optionally **Firestore**.
-- Add the `NEXT_PUBLIC_FIREBASE_*` variables to `.env` (they are not listed in `.env.example`; see `src/lib/firebase.ts` for names).
+- Add the `NEXT_PUBLIC_FIREBASE_*` variables to `.env` (see the Firebase block in `.env.example`; they are read in `src/lib/db/firebase/firebase.ts`).
 - For Firestore: create the database and set `NEXT_PUBLIC_USE_FIRESTORE=true`.
 - Deploy rules in `firestore.rules` (Console → Firestore → Rules). Create the composite index when prompted if you use queries by `userId` and `orderBy('createdAt')`.
 
@@ -114,15 +117,15 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 
 ## 🛠 Tech stack
 
-| Layer                     | Technology                                                                                                                     |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Framework**             | [Next.js 16](https://nextjs.org) (App Router)                                                                                  |
-| **UI**                    | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com)                                                       |
-| **Language**              | [TypeScript](https://www.typescriptlang.org)                                                                                   |
-| **Auth & DB**             | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore       |
-| **Data & API**            | [TanStack Query](https://tanstack.com/query) (React Query) for server state; Zod for schemas                                   |
-| **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs)                                                                                        |
-| **Backend**               | Next.js API routes under `src/app/api/**` re-export handlers from `src/features/**/server` (scenes, library, AI, integrations). Includes scenes/audios CRUD, `ensure-audios-bucket`, default catalog, library access checks, `ai/chat`. No separate Node server. |
+| Layer                     | Technology                                                                                                                                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**             | [Next.js 16](https://nextjs.org) (App Router)                                                                                                                                                                                                                                                           |
+| **UI**                    | [React 19](https://react.dev), [Tailwind CSS 4](https://tailwindcss.com)                                                                                                                                                                                                                                |
+| **Language**              | [TypeScript](https://www.typescriptlang.org)                                                                                                                                                                                                                                                            |
+| **Auth & DB**             | [Supabase](https://supabase.com) (Auth + PostgreSQL); optional: [Firebase](https://firebase.google.com) Auth + Firestore                                                                                                                                                                                |
+| **Data & API**            | [TanStack Query](https://tanstack.com/query) (React Query) for server state; Zod for schemas                                                                                                                                                                                                            |
+| **Global state (player)** | [Zustand](https://zustand-demo.pmnd.rs)                                                                                                                                                                                                                                                                 |
+| **Backend**               | Next.js API routes under `src/app/api/**` re-export handlers from `src/features/**/server` (scenes, library, AI, donations, integrations). Includes scenes/audios CRUD, `ensure-audios-bucket`, default catalog, library access checks, `ai/chat`, Mercado Pago Pix + webhook. No separate Node server. |
 
 ---
 
@@ -133,7 +136,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and adjust. **All variables are 
 - **Dashboard** — List of scenes with title, description and colored tags; reorder by drag; create, edit and delete scenes.
 - **Scene page** (`/scene/[id]`) — Audio list with search; play/pause/stop, volume and loop per item; add by URL, file upload (when signed in), **Spotify** (track/album/playlist URLs), or YouTube URL support.
 - **Global audio bar** — Fixed bar at the bottom when any audio is playing; pause/stop from any page.
-- **Support page** (`/support`) — Optional donate/support page with PIX (key + QR) and Stripe link. Configure via `NEXT_PUBLIC_PIX_ID`, `NEXT_PUBLIC_PIX_URL`, and `NEXT_PUBLIC_STRIPE_URL`.
+- **Support page** (`/support`) — Optional donations: **Pix via Mercado Pago** (dynamic QR + copy-paste) and Stripe link. Configure `MERCADO_PAGO_*`, `NEXT_PUBLIC_SITE_URL` or `MERCADO_PAGO_NOTIFICATION_URL`, `NEXT_SUPABASE_SERVICE_ROLE_KEY` (table `donations`), plus `NEXT_PUBLIC_STRIPE_URL` for card.
 - **Audio library** — **`/library`** and **`/library/ai`** (Anthropic assistant, Pixabay, optional web search) require the user to be on `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`. **`/library/defaults`**: curated default sounds (bundled data + DB) — anyone can browse; allowlisted users can pin their library items as defaults per category.
 - **Storage** — localStorage (default), Supabase (PostgreSQL + Storage), or Firestore (optional).
 
@@ -150,38 +153,46 @@ The app stores **metadata** (name + URL). Supported sources:
 
 **Scenes & scene audios** (Bearer Supabase JWT; not the admin allowlist — any signed-in user owns their data):
 
-| Route | Methods | Description |
-| ----- | ------- | ----------- |
-| `/api/scenes` | GET, POST | List scenes; create scene. |
-| `/api/scenes/reorder` | POST | Reorder scenes. |
-| `/api/scenes/[sceneId]` | GET, PATCH, DELETE | Get, update, or delete a scene. |
-| `/api/scenes/[sceneId]/audios` | GET, POST | List or add audios on a scene. |
-| `/api/scenes/[sceneId]/audios/reorder` | POST | Reorder audios in a scene. |
-| `/api/audios/[audioId]` | PATCH, DELETE | Update or delete a single audio row. |
+| Route                                  | Methods            | Description                          |
+| -------------------------------------- | ------------------ | ------------------------------------ |
+| `/api/scenes`                          | GET, POST          | List scenes; create scene.           |
+| `/api/scenes/reorder`                  | POST               | Reorder scenes.                      |
+| `/api/scenes/[sceneId]`                | GET, PATCH, DELETE | Get, update, or delete a scene.      |
+| `/api/scenes/[sceneId]/audios`         | GET, POST          | List or add audios on a scene.       |
+| `/api/scenes/[sceneId]/audios/reorder` | POST               | Reorder audios in a scene.           |
+| `/api/audios/[audioId]`                | PATCH, DELETE      | Update or delete a single audio row. |
 
 **Library & AI** (Bearer JWT **and** user id on `NEXT_USER_ADMIN` / `NEXT_PUBLIC_USER_ADMIN`; see [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md) for the data model):
 
-| Route | Methods | Description |
-| ----- | ------- | ----------- |
-| `/api/library` | GET, POST | List (optional `?type=…`) or create library items. |
-| `/api/library/[id]` | PATCH, DELETE | Update or delete a library item. |
-| `/api/library/default-favorites` | GET, POST | List or add “default sound” picks (per category). |
-| `/api/library/default-favorites/[libraryItemId]` | DELETE | Remove a default favorite by library item id. |
-| `/api/library/access` | GET | `{ allowed: boolean }` — whether the authenticated user is on the library/AI admin allowlist (Bearer JWT). |
-| `/api/ai/chat` | POST | AI chat (Anthropic); Pixabay primary; optional web search (Serper). Requires `NEXT_ANTHROPIC_API_KEY`. |
+| Route                                            | Methods       | Description                                                                                                |
+| ------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `/api/library`                                   | GET, POST     | List (optional `?type=…`) or create library items.                                                         |
+| `/api/library/[id]`                              | PATCH, DELETE | Update or delete a library item.                                                                           |
+| `/api/library/default-favorites`                 | GET, POST     | List or add “default sound” picks (per category).                                                          |
+| `/api/library/default-favorites/[libraryItemId]` | DELETE        | Remove a default favorite by library item id.                                                              |
+| `/api/library/access`                            | GET           | `{ allowed: boolean }` — whether the authenticated user is on the library/AI admin allowlist (Bearer JWT). |
+| `/api/ai/chat`                                   | POST          | AI chat (Anthropic); Pixabay primary; optional web search (Serper). Requires `NEXT_ANTHROPIC_API_KEY`.     |
 
 **Public catalog (no auth)**
 
-| Route | Method | Description |
-| ----- | ------ | ----------- |
-| `/api/default-audio-catalog` | GET | Default sound catalog: Supabase `default_audio_catalog` when configured, else bundled `data/default-audios.json`. |
-| `/api/library/default-favorites/public` | GET | Global “default sounds” (library items promoted to the public catalog). Requires matching Supabase RLS (see migrations). |
+| Route                                   | Method | Description                                                                                                              |
+| --------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `/api/default-audio-catalog`            | GET    | Default sound catalog: Supabase `default_audio_catalog` when configured, else bundled `data/default-audios.json`.        |
+| `/api/library/default-favorites/public` | GET    | Global “default sounds” (library items promoted to the public catalog). Requires matching Supabase RLS (see migrations). |
 
 **Utilities**
 
-| Route | Method | Description |
-| ----- | ------ | ----------- |
-| `/api/ensure-audios-bucket` | POST | Creates the Supabase `audios` storage bucket and policies if missing. Requires Bearer token + `NEXT_SUPABASE_SERVICE_ROLE_KEY`. |
+| Route                       | Method | Description                                                                                                                     |
+| --------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/ensure-audios-bucket` | POST   | Creates the Supabase `audios` storage bucket and policies if missing. Requires Bearer token + `NEXT_SUPABASE_SERVICE_ROLE_KEY`. |
+
+**Donations — Pix (Mercado Pago)** (no Supabase user JWT; server uses `MERCADO_PAGO_ACCESS_TOKEN` + `NEXT_SUPABASE_SERVICE_ROLE_KEY`)
+
+| Route                            | Method | Description                                                                                                  |
+| -------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| `/api/donations/pix`             | POST   | JSON `{ "amountCents": number }` — creates a Pix payment and row in `public.donations`.                      |
+| `/api/donations/pix/[id]/status` | GET    | Returns payment status and QR payload for client polling.                                                    |
+| `/api/webhooks/mercado-pago`     | POST   | Mercado Pago notifications; validates `x-signature` with `MERCADO_PAGO_WEBHOOK_SECRET`. **Node.js runtime.** |
 
 ---
 
@@ -209,8 +220,8 @@ src/
 │   ├── dashboard/               # Scene list
 │   ├── library/                 # Library browse, AI, default sounds
 │   ├── scene/[sceneId]/         # Scene page (audio list, player)
-│   └── support/                 # Support / donations (PIX, Stripe)
-├── features/                    # scenes, library, ai, audioPlayer, integrations (spotify, youtube, pixabay); each feature may include server/, components/, api/
+│   └── support/                 # Support / donations (Pix via MP, Stripe)
+├── features/                    # scenes, library, ai, donations, audioPlayer, integrations (spotify, youtube, pixabay); each feature may include server/, components/, api/
 ├── shared/                      # Shared UI (e.g. shared/ui) and libs; no imports from features/
 ├── components/                  # Shared UI (landing, layout, audio, etc.)
 ├── contexts/                    # Auth, theme, i18n
@@ -233,10 +244,10 @@ docs/
 
 ## 📚 Documentation
 
-| Document | Purpose |
-| -------- | ------- |
+| Document                                                                         | Purpose                                                               |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | [docs/architecture/folder-boundaries.md](docs/architecture/folder-boundaries.md) | Import rules for `app/`, `features/`, `shared/`, and server-only code |
-| [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md) | API and database model for the audio library |
-| [docs/plano-chat-ia-audios-internet.md](docs/plano-chat-ia-audios-internet.md) | AI chat / external audio sources design notes |
+| [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md)       | API and database model for the audio library                          |
+| [docs/plano-chat-ia-audios-internet.md](docs/plano-chat-ia-audios-internet.md)   | AI chat / external audio sources design notes                         |
 
 ---

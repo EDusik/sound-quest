@@ -1,6 +1,6 @@
 # Features
 
-Este diretório agrupa código **por domínio do produto** (ex.: `scenes`, `library`, `ai`), em vez de por camada técnica.
+Este diretório agrupa código **por domínio do produto** (ex.: `scenes`, `library`, `ai`, `donations`), em vez de por camada técnica.
 
 ## Convenções
 - `components/`: UI específica do domínio (não “shared”)
