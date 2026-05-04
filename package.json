@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
+    "prestart": "node -e \"if(process.env.NODE_ENV!=='production')console.log('\\nTip: use npm run dev for hot reload while editing. npm start only serves the last build; use npm run preview to rebuild then serve.\\n')\"",
     "start": "next start",
+    "preview": "next build && next start",
     "lint": "eslint .",
     "prepare": "husky"
   },

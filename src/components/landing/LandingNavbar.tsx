@@ -16,12 +16,34 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageSwitch } from "@/components/layout/LanguageSwitch";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ScrollToHashLink } from "@/components/landing/ScrollToHashLink";
-import { buttonPrimaryNav, linkNavOutline } from "@/components/landing/sectionStyles";
+import {
+  buttonPrimaryNav,
+  linkNavOutline,
+} from "@/components/landing/sectionStyles";
 import { NAV_LINKS } from "@/lib/utils/landing";
 
 const NAV_DESKTOP_LINK_BASE =
   "inline-flex items-center gap-2 text-sm font-medium transition-colors";
-const MOBILE_LINK_BASE = "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-card";
+const MOBILE_LINK_BASE =
+  "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-card";
+
+/** Smooth ~two-lobe curve for a compact sine-like dashboard affordance. */
+function SineWaveIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2 12C4.5 5.5 6.5 5.5 9 12C11.5 18.5 13.5 18.5 16 12C18.5 5.5 20.5 5.5 23 12" />
+    </svg>
+  );
+}
 
 export function LandingNavbar() {
   const pathname = usePathname();
@@ -56,7 +78,7 @@ export function LandingNavbar() {
         </Link>
 
         <nav
-          className="hidden items-center gap-8 md:flex"
+          className="hidden min-[966px]:flex items-center gap-8"
           aria-label={t("landing.navAria")}
         >
           {NAV_LINKS.map(({ href, key }) => {
@@ -81,9 +103,11 @@ export function LandingNavbar() {
             <>
               <Link
                 href="/dashboard"
-                className={`hidden sm:inline-flex ${buttonPrimaryNav}`}
+                className={`hidden sm:inline-flex items-center justify-center ${buttonPrimaryNav} px-2.5! py-2`}
+                aria-label={t("landing.navGoToDashboard")}
+                title={t("landing.navGoToDashboard")}
               >
-                {t("landing.navGoToDashboard")}
+                <SineWaveIcon className="h-5 w-5 shrink-0" />
               </Link>
               <UserMenu
                 user={user}
@@ -118,23 +142,42 @@ export function LandingNavbar() {
               </Link>
               <Link href="/login" className={buttonPrimaryNav}>
                 <span className="sm:hidden">{t("landing.navStart")}</span>
-                <span className="hidden sm:inline">{t("landing.navStartFree")}</span>
+                <span className="hidden sm:inline">
+                  {t("landing.navStartFree")}
+                </span>
               </Link>
             </>
           )}
           <button
             type="button"
             onClick={() => setMobileMenuOpen((o) => !o)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground hover:bg-card md:hidden"
+            className="flex h-10 w-10 min-[966px]:hidden items-center justify-center rounded-lg border border-border text-foreground hover:bg-card"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-nav"
-            aria-label={mobileMenuOpen ? t("landing.navCloseMenu") : t("landing.navOpenMenu")}
+            aria-label={
+              mobileMenuOpen
+                ? t("landing.navCloseMenu")
+                : t("landing.navOpenMenu")
+            }
           >
             {mobileMenuOpen ? (
-              <span className="text-lg leading-none" aria-hidden>×</span>
+              <span className="text-lg leading-none" aria-hidden>
+                ×
+              </span>
             ) : (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </button>
@@ -143,7 +186,7 @@ export function LandingNavbar() {
 
       <div
         id="mobile-nav"
-        className={`border-t border-border bg-background md:hidden ${mobileMenuOpen ? "block" : "hidden"}`}
+        className={`border-t border-border bg-background min-[966px]:hidden ${mobileMenuOpen ? "block" : "hidden"}`}
         role="navigation"
         aria-label={t("landing.navAria")}
       >
@@ -167,9 +210,11 @@ export function LandingNavbar() {
               <Link
                 href="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                aria-label={t("landing.navGoToDashboard")}
+                title={t("landing.navGoToDashboard")}
               >
-                {t("landing.navGoToDashboard")}
+                <SineWaveIcon className="h-5 w-5 shrink-0" />
               </Link>
               <button
                 type="button"
