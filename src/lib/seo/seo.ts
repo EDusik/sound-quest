@@ -5,7 +5,6 @@ export const siteUrl = "https://sound-table.vercel.app";
 const defaultDescription =
   "Create immersive RPG sessions with ambient sounds, music and sound effects. Build scenes for your tabletop campaigns. Free soundboard for dungeon masters. Crie sessões de RPG imersivas com sons ambiente, música e efeitos sonoros. Monte cenas para suas campanhas de mesa. Soundboard gratuito para mestres.";
 
-/** Home page SEO: focused on landing message and primary keywords. */
 export const homeMetadata: Metadata = {
   title: "SoundQuest – RPG Soundboard for Tabletop Games",
   description:
@@ -42,7 +41,6 @@ export const siteMetadata: Metadata = {
   },
   description: defaultDescription,
   keywords: [
-    // English keywords
     "rpg soundboard",
     "tabletop rpg audio",
     "dnd ambient sounds",
@@ -55,7 +53,6 @@ export const siteMetadata: Metadata = {
     "tabletop sound controller",
     "sound control",
     "sound manager",
-    // Portuguese keywords
     "rpg de mesa",
     "sessão de rpg",
     "sessões de rpg",

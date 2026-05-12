@@ -59,7 +59,6 @@ export function SoundQuestLogo({
       className="inline-block shrink-0 text-foreground animate-dice-rotate"
       aria-hidden
     >
-      {/* D20 - icosahedron edges only (wireframe); stroke follows theme via currentColor */}
       <g
         transform="translate(32,32) scale(1.15, 1.4)"
         fill="none"

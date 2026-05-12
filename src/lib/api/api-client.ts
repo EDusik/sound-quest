@@ -290,9 +290,7 @@ export async function streamAiChat(
 
       buffer += decoder.decode(value, { stream: true });
 
-      // Process complete SSE events (separated by double newlines)
       const parts = buffer.split("\n\n");
-      // Keep the last part as it may be incomplete
       buffer = parts.pop() ?? "";
 
       for (const part of parts) {
@@ -332,7 +330,7 @@ export async function streamAiChat(
               break;
           }
         } catch {
-          // skip malformed events
+          void 0;
         }
       }
     }

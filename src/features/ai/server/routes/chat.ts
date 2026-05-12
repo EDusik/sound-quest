@@ -17,10 +17,9 @@ import {
   pixabaySoundEffectsSearchUrl,
   resolvePixabayPageAndPreview,
 } from "@/lib/audio/providers/pixabay-chat-sounds";
-
-/** `true` = resolve previews via Pixabay Sounds API (`NEXT_PIXABAY_API_KEY`). Mantido `false` para desativar essa busca. */
-const ENABLE_PIXABAY_SOUND_ENRICHMENT = false;
 import { postAiChatBodySchema } from "@/lib/validators/api";
+
+const ENABLE_PIXABAY_SOUND_ENRICHMENT = false;
 
 const anthropic = new Anthropic({
   apiKey: process.env.NEXT_ANTHROPIC_API_KEY,
@@ -98,7 +97,7 @@ function parseSuggestions(fullText: string): {
           };
         }
       } catch {
-        // ignore
+        void 0;
       }
     }
     return { text: fullText.trim(), suggestions: [] };
@@ -113,7 +112,7 @@ function parseSuggestions(fullText: string): {
       return { text, suggestions };
     }
   } catch {
-    // ignore
+    void 0;
   }
 
   return { text, suggestions: [] };
@@ -131,7 +130,6 @@ async function enrichSuggestions(
         previewUrl?: string;
       };
 
-      // Direct audio file URL → use as previewUrl
       if (/\.(mp3|wav|ogg|flac)(\?.*)?$/i.test(s.sourceUrl)) {
         return { ...s, previewUrl: s.sourceUrl };
       }
@@ -141,7 +139,6 @@ async function enrichSuggestions(
 
       let working: Enriched = { ...s };
 
-      // Pixabay JSON API — desativado por `ENABLE_PIXABAY_SOUND_ENRICHMENT`; reative a flag no topo do arquivo.
       if (ENABLE_PIXABAY_SOUND_ENRICHMENT) {
         const pixabayApiKey = process.env.NEXT_PIXABAY_API_KEY;
         const pixabaySoundsApiBase =
@@ -173,7 +170,7 @@ async function enrichSuggestions(
               }
             }
           } catch {
-            // fall through
+            void 0;
           }
         }
       }
@@ -254,7 +251,6 @@ export async function POST(request: NextRequest) {
 
         clearTimeout(timeout);
 
-        // Fallback: if fullText is still empty use finalMessage
         if (!fullText) {
           const final = await sdkStream.finalMessage();
           const block = final.content[0];

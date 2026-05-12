@@ -30,8 +30,6 @@ export function FavoriteToDefaultModal({
   const [displayName, setDisplayName] = useState("");
   const [category, setCategory] = useState<DefaultAudioCategorySlug>("ambience");
 
-  // Reset form when the modal opens with a new item (adjusting state during render,
-  // React's recommended alternative to useEffect + setState for derived state).
   const [prevItemId, setPrevItemId] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(false);
   if (item && open && (item.id !== prevItemId || open !== prevOpen)) {

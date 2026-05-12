@@ -1,13 +1,11 @@
 export function extractYouTubeId(urlOrId: string): string | null {
   const trimmed = urlOrId.trim();
 
-  // If it already looks like a YouTube video ID, accept it directly.
   if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
 
   try {
     const url = new URL(trimmed);
     if (url.hostname.includes("youtube.com")) {
-      // ?v= (watch) or /shorts/VIDEO_ID
       const fromQuery = url.searchParams.get("v");
       if (fromQuery) return fromQuery;
       const shortsMatch = url.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})$/);
@@ -24,7 +22,7 @@ export function extractYouTubeId(urlOrId: string): string | null {
       return url.pathname.slice(1) || null;
     }
   } catch {
-    // Not a valid URL, fall through.
+    void 0;
   }
 
   return null;

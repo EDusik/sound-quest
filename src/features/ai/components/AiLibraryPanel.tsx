@@ -76,7 +76,6 @@ export function AiLibraryPanel({ sceneId, open, onSceneAudioAdded }: AiLibraryPa
     suggestionsRef.current = suggestions;
   }, [suggestions]);
 
-  // When streaming completes, commit to history
   useEffect(() => {
     if (chatStatus === "done" && streamingText) {
       const latestSuggestions = suggestionsRef.current;
@@ -94,7 +93,6 @@ export function AiLibraryPanel({ sceneId, open, onSceneAudioAdded }: AiLibraryPa
     setSuggestionTypes,
   ]);
 
-  // Handle errors
   useEffect(() => {
     if (chatStatus === "error" && chatError) {
       if (chatError === "forbidden") {

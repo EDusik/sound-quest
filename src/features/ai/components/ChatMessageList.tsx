@@ -11,7 +11,6 @@ interface ChatMessageListProps {
   streamingText: string;
   status: AiChatStatus;
   compact?: boolean;
-  /** Dentro do card: sem borda duplicada, área com mais respiro */
   embedded?: boolean;
   className?: string;
   /** Label above user messages; falls back to translated "You" when omitted. */

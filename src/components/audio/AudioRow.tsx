@@ -261,7 +261,7 @@ function YouTubeAudioRow({
         try {
           playerRef.current.destroy();
         } catch {
-          // ignore
+          void 0;
         }
         playerRef.current = null;
       }

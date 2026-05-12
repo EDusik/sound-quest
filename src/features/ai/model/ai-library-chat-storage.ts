@@ -97,7 +97,7 @@ export function clearAiLibraryChatStorage(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // ignore
+    void 0;
   }
 }
 
@@ -125,7 +125,7 @@ export function saveAiLibraryChatState(
     }
     localStorage.setItem(key, JSON.stringify(body));
   } catch {
-    // quota or private mode
+    void 0;
   }
 }
 

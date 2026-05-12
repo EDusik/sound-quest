@@ -16,7 +16,6 @@ import {
   storeLocale,
 } from "@/lib/utils/i18n";
 
-// Lazy-load translations to keep initial bundle smaller
 const localeModules: Record<Locale, () => Promise<{ default: Translations }>> = {
   en: () => import("@/locales/en.json").then((m) => ({ default: m as unknown as Translations })),
   pt: () => import("@/locales/pt.json").then((m) => ({ default: m as unknown as Translations })),
@@ -44,7 +43,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [translations, setTranslations] = useState<Translations | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Load translations for initial locale on mount
   useEffect(() => {
     localeModules[locale]()
       .then((m) => {
@@ -54,7 +52,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       .catch(() => setReady(true));
   }, [locale]);
 
-  // When locale changes, load new translations and persist
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     storeLocale(newLocale);
@@ -66,7 +63,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Update document lang when translations are first ready
   useEffect(() => {
     if (!ready || typeof document === "undefined") return;
     document.documentElement.lang = locale === "pt" ? "pt-BR" : "en";

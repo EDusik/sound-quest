@@ -141,7 +141,7 @@ export default function DashboardPage() {
       });
       closeCreateModal();
     } catch {
-      // Error handled via createSceneMutation.error
+      void 0;
     }
   };
 

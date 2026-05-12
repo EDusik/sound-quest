@@ -37,7 +37,6 @@ export default function AuthCallbackPage() {
             `/login/verify?next=${encodeURIComponent(redirectToDashboard)}`,
           );
         } else {
-          // Full navigation so dashboard loads with session already in storage
           if (typeof window !== "undefined") {
             window.location.replace(redirectToDashboard);
           } else {

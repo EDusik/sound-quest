@@ -167,7 +167,6 @@ export function PixDonationCard({ className }: { className?: string } = {}) {
           {(display.qrCodeBase64 || display.qrCode) && (
             <div className="flex justify-center">
               {display.qrCodeBase64 ? (
-                // Mercado Pago returns dynamic base64; next/image offers little benefit here.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={`data:image/png;base64,${display.qrCodeBase64}`}

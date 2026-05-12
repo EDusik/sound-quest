@@ -280,7 +280,7 @@ function setLocalScene(scene: Scene): void {
     else all.push(scene);
     localStorage.setItem(SCENES_KEY, JSON.stringify(all));
   } catch {
-    // ignore
+    void 0;
   }
 }
 
@@ -296,7 +296,7 @@ function deleteLocalScene(sceneId: string): void {
     const audiosNext = audios.filter((a) => a.sceneId !== sceneId);
     localStorage.setItem(AUDIOS_KEY, JSON.stringify(audiosNext));
   } catch {
-    // ignore
+    void 0;
   }
 }
 
@@ -327,7 +327,7 @@ function setLocalAudio(audio: AudioItem): void {
     else all.push(audio);
     localStorage.setItem(AUDIOS_KEY, JSON.stringify(all));
   } catch {
-    // ignore
+    void 0;
   }
 }
 
@@ -341,7 +341,7 @@ function deleteLocalAudio(audioId: string): void {
       JSON.stringify(all.filter((a) => a.id !== audioId)),
     );
   } catch {
-    // ignore
+    void 0;
   }
 }
 
@@ -375,7 +375,7 @@ function purgeLocalCachesForSupabaseSession(currentUserId: string): void {
       localStorage.setItem(AUDIOS_KEY, JSON.stringify(keptAudios));
     }
   } catch {
-    /* ignore */
+    void 0;
   }
 }
 
@@ -390,7 +390,7 @@ function relabelAnonymousScenesInLocalStorage(toUserId: string): void {
     );
     localStorage.setItem(SCENES_KEY, JSON.stringify(next));
   } catch {
-    /* ignore */
+    void 0;
   }
 }
 
@@ -759,16 +759,8 @@ export async function reorderScenes(
   }
 }
 
-/**
- * Migrates guest-only localStorage scenes (`userId === ANONYMOUS_UID`) into Supabase
- * for the signed-in user. Scenes already tagged with another account are ignored
- * and removed from local cache via `purgeLocalCachesForSupabaseSession`.
- *
- * - Only runs when Supabase storage is enabled and there is a logged-in user.
- * - A per-user flag prevents repeating migration for the same account.
- */
+/** Migrates guest-only localStorage scenes into Supabase for the signed-in user. */
 export async function migrateLocalDataToSupabase(
-  // Kept for backwards compatibility; reserved for future anonymous-id targeting.
   _fromUserId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<void> {
   if (typeof window === "undefined") return;
@@ -783,7 +775,7 @@ export async function migrateLocalDataToSupabase(
   try {
     if (window.localStorage.getItem(doneKey)) return;
   } catch {
-    // ignore (e.g. storage disabled)
+    void 0;
   }
 
   const existingRun = migrateLocalToSupabaseInFlight.get(toUserId);
@@ -815,7 +807,7 @@ export async function migrateLocalDataToSupabase(
       try {
         window.localStorage.setItem(doneKey, "1");
       } catch {
-        /* ignore */
+        void 0;
       }
       return;
     }
@@ -883,7 +875,7 @@ export async function migrateLocalDataToSupabase(
     try {
       window.localStorage.setItem(doneKey, "1");
     } catch {
-      /* ignore */
+      void 0;
     }
   })();
 

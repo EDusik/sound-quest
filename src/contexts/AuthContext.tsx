@@ -115,7 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: { redirectTo },
     });
     if (error) throw error;
-    // Browser redirects to Google, then to /auth/callback?code=... which exchanges the code and sends user to /dashboard
   };
 
   const signInDemo = () => {

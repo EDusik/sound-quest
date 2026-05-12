@@ -60,7 +60,6 @@ export function LibraryAiChatPage() {
     suggestionsRef.current = suggestions;
   }, [suggestions]);
 
-  // When streaming completes, commit assistant message to history
   useEffect(() => {
     if (status === "done" && streamingText) {
       const latestSuggestions = suggestionsRef.current;
@@ -80,7 +79,6 @@ export function LibraryAiChatPage() {
     setSuggestionTypes,
   ]);
 
-  // Handle errors
   useEffect(() => {
     if (status === "error" && error) {
       if (error === "forbidden") {

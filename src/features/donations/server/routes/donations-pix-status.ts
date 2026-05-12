@@ -53,7 +53,6 @@ export async function GET(
         }
       } catch (e) {
         console.error("[donations/pix/status] mp refresh", e);
-        /* return cached row */
       }
     }
 

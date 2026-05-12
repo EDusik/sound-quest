@@ -24,7 +24,6 @@ export function useAiChat() {
   const textBufferRef = useRef("");
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Flush buffered text to state (batched for performance)
   const flushText = useCallback(() => {
     const text = textBufferRef.current;
     if (text) {
@@ -36,12 +35,10 @@ export function useAiChat() {
 
   const sendMessage = useCallback(
     (messages: ChatMessageInput[]) => {
-      // Abort any in-flight request
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Reset state
       setStreamingText("");
       setSuggestions([]);
       setError(null);
@@ -55,7 +52,6 @@ export function useAiChat() {
         },
         onText: (chunk) => {
           setStatus("streaming");
-          // Buffer text chunks and flush every 50ms
           textBufferRef.current += chunk;
           if (!flushTimerRef.current) {
             flushTimerRef.current = setTimeout(flushText, 50);
@@ -70,12 +66,10 @@ export function useAiChat() {
             flushTimerRef.current = null;
           }
           flushText();
-          // Server sends the full reply on `done`; incremental `text` events may be absent
           setStreamingText((prev) => fullText || prev);
           setStatus("done");
         },
         onError: (err) => {
-          // Flush remaining text
           if (flushTimerRef.current) {
             clearTimeout(flushTimerRef.current);
             flushTimerRef.current = null;
@@ -108,7 +102,6 @@ export function useAiChat() {
     textBufferRef.current = "";
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortRef.current?.abort();

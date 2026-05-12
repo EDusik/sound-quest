@@ -16,7 +16,6 @@ export function extractSpotifyId(
   const trimmed = urlOrUri.trim();
   if (!trimmed) return null;
 
-  // spotify:track:3n3Ppam7vgaVa1iaRUc9Lp
   const uriMatch = trimmed.match(
     /^spotify:(track|album|playlist|episode):([a-zA-Z0-9]+)$/,
   );
@@ -28,7 +27,6 @@ export function extractSpotifyId(
     const url = new URL(trimmed);
     if (!url.hostname.includes("spotify.com")) return null;
 
-    // /track/ID, /album/ID, /playlist/ID, /episode/ID
     const pathMatch = url.pathname.match(
       /\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/,
     );
@@ -36,7 +34,7 @@ export function extractSpotifyId(
       return { id: pathMatch[2], type: pathMatch[1] as SpotifyUriType };
     }
   } catch {
-    // Not a valid URL
+    void 0;
   }
 
   return null;

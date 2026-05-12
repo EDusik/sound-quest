@@ -59,7 +59,7 @@ function saveInactiveAudioIds(sceneId: string, ids: string[]): void {
   try {
     localStorage.setItem(getInactiveAudiosKey(sceneId), JSON.stringify(ids));
   } catch {
-    // ignore quota / private mode
+    void 0;
   }
 }
 
@@ -105,7 +105,6 @@ export default function ScenePage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const showFocusEntry = useFocusEntryOnce("scene");
 
-  // Restore disabled sounds from localStorage when entering the scene (once per scene)
   const hydratedInactiveForScene = useRef<string | null>(null);
   useEffect(() => {
     if (!sceneId || audios.length === 0) return;
@@ -229,7 +228,7 @@ export default function ScenePage() {
       await removeAudioMutation.mutateAsync(id);
       setAudioToDelete(null);
     } catch {
-      // Error could be shown via mutation.error
+      void 0;
     }
   };
 
@@ -285,7 +284,6 @@ export default function ScenePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [audioToDelete, closeDeleteModal]);
 
-  // When opening by id, replace URL with slug so the bar shows the scene name
   useEffect(() => {
     if (!scene?.slug || sceneIdOrSlug === scene.slug) return;
     if (sceneIdOrSlug === scene.id) {

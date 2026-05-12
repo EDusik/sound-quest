@@ -77,7 +77,6 @@ export function HeroWaveParticles({ className }: HeroWaveParticlesProps) {
       time += 0.02;
       colorTick += 1;
 
-      // Periodically sync particle color with CSS accent (supports theme changes)
       if (colorTick % 10 === 0) {
         const rootStyle = getComputedStyle(document.documentElement);
         const accentVar = rootStyle.getPropertyValue("--accent").trim();
@@ -85,7 +84,7 @@ export function HeroWaveParticles({ className }: HeroWaveParticlesProps) {
           try {
             material.color = new THREE.Color(accentVar);
           } catch {
-            // ignore parsing errors and keep previous color
+            void 0;
           }
         }
       }

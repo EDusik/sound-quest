@@ -62,7 +62,6 @@ export default function SupportPage() {
             </p>
 
             <div className="grid w-full grid-cols-1 items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
-              {/* Stripe — cartão */}
               <section
                 className={panelClass}
                 aria-labelledby="support-stripe-heading"
@@ -100,7 +99,6 @@ export default function SupportPage() {
                 </div>
               </section>
 
-              {/* Mercado Pago — Pix */}
               <section
                 className={panelClass}
                 aria-labelledby="support-mercado-pago-heading"
