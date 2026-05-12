@@ -8,7 +8,8 @@
   <a href="#-tech-stack">Tech stack</a> •
   <a href="#-features">Features</a> •
   <a href="#-project-structure">Structure</a> •
-  <a href="#-documentation">Documentation</a>
+  <a href="#-documentation">Documentation</a> •
+  <a href="#-development-guidelines">Guidelines</a>
 </p>
 
 <p align="center">
@@ -249,5 +250,33 @@ docs/
 | [docs/architecture/folder-boundaries.md](docs/architecture/folder-boundaries.md) | Import rules for `app/`, `features/`, `shared/`, and server-only code |
 | [docs/plano-api-endpoints-e-banco.md](docs/plano-api-endpoints-e-banco.md)       | API and database model for the audio library                          |
 | [docs/plano-chat-ia-audios-internet.md](docs/plano-chat-ia-audios-internet.md)   | AI chat / external audio sources design notes                         |
+
+---
+
+## 🤖 Development Guidelines
+
+This project uses [Claude Code](https://claude.ai/code) for AI-assisted development. Two files govern how Claude operates in this repo.
+
+### CLAUDE.md
+
+[`CLAUDE.md`](CLAUDE.md) contains behavioral guidelines that Claude follows when coding in this project. The four core principles are:
+
+| Principle | Summary |
+| --------- | ------- |
+| **Think Before Coding** | State assumptions explicitly; ask when uncertain; surface tradeoffs before implementing. |
+| **Simplicity First** | Minimum code that solves the problem — no speculative features, no premature abstractions. |
+| **Surgical Changes** | Touch only what the task requires; match existing style; don't refactor unrelated code. |
+| **Goal-Driven Execution** | Define verifiable success criteria; plan steps with explicit checks before starting. |
+
+### Claude Code Skills
+
+Skills are slash commands available inside Claude Code. Relevant skills for this project:
+
+| Skill | When to use |
+| ----- | ----------- |
+| `/simplify` | After implementing a feature — reviews the new code for overcomplication and suggests cuts. |
+| `/review` | Before merging — runs a full review of the current pull request. |
+| `/security-review` | Before shipping — audits pending branch changes for security issues. |
+| `/init` | When the codebase structure changes significantly — regenerates `CLAUDE.md` documentation. |
 
 ---
