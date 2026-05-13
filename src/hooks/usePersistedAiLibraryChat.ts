@@ -11,6 +11,8 @@ import {
 } from "@/lib/ai/ai-library-chat-storage";
 import { AUDIO_LIBRARY_TYPES } from "@/lib/validators/api";
 
+const PERSIST_DEBOUNCE_MS = 300;
+
 export function usePersistedAiLibraryChat(options: {
   userId: string | undefined;
   variant: "page" | "scene";
@@ -82,7 +84,7 @@ export function usePersistedAiLibraryChat(options: {
         addedKeys: [...addedKeys],
         persistAddedKeys,
       });
-    }, 300);
+    }, PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [
     hydrated,

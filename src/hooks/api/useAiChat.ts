@@ -7,6 +7,8 @@ import {
   type ChatMessageInput,
 } from "@/lib/api/api-client";
 
+const STREAM_FLUSH_INTERVAL_MS = 50;
+
 export type AiChatStatus =
   | "idle"
   | "thinking"
@@ -54,7 +56,7 @@ export function useAiChat() {
           setStatus("streaming");
           textBufferRef.current += chunk;
           if (!flushTimerRef.current) {
-            flushTimerRef.current = setTimeout(flushText, 50);
+            flushTimerRef.current = setTimeout(flushText, STREAM_FLUSH_INTERVAL_MS);
           }
         },
         onSuggestions: (s) => {
