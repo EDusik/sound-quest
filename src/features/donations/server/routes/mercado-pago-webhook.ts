@@ -10,6 +10,7 @@ import {
   paymentToDonationRowFields,
   verifyMercadoPagoWebhookSignature,
 } from "@/features/donations/server/mercado-pago";
+import { env } from "@/lib/env";
 
 function extractDataId(request: NextRequest, body: unknown): string | null {
   const q = request.nextUrl.searchParams.get("data.id");
@@ -32,7 +33,7 @@ function isPaymentNotification(body: unknown): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
+  const secret = env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
   if (!secret) {
     console.error(
       "[webhooks/mercado-pago] MERCADO_PAGO_WEBHOOK_SECRET is not set.",

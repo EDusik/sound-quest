@@ -7,6 +7,7 @@ import { HeartIcon } from "@/components/icons";
 import { Navbar } from "@/components/layout/Navbar";
 import { PixDonationCard } from "@/features/donations/components/PixDonationCard";
 import { useTranslations } from "@/contexts/I18nContext";
+import { env } from "@/lib/env";
 
 export default function SupportPage() {
   const t = useTranslations();
@@ -84,7 +85,7 @@ export default function SupportPage() {
                 </div>
                 <div className="mt-auto flex flex-1 flex-col justify-end pt-2">
                   <a
-                    href={process.env.NEXT_PUBLIC_STRIPE_URL ?? ""}
+                    href={env.NEXT_PUBLIC_STRIPE_URL ?? ""}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/90 bg-background/80 px-4 py-3.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card dark:border-border dark:bg-background/40"

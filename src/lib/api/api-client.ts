@@ -29,18 +29,38 @@ export type AiChatResponse = {
   suggestions: { name: string; sourceUrl: string; source: string }[];
 };
 
-/** Returns the JWT for Authorization: Bearer, or null if not signed in. */
-export async function getAccessTokenForApi(): Promise<string | null> {
-  if (!supabase) return null;
+let accessTokenInflight: Promise<string | null> | null = null;
+
+async function resolveAccessTokenFromSupabase(): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase!.auth.getSession();
+  const fromSession = session?.access_token;
+  if (fromSession) return fromSession;
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase!.auth.getUser();
   if (error || !user) return null;
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
+    data: { session: refreshed },
+  } = await supabase!.auth.getSession();
+  return refreshed?.access_token ?? null;
+}
+
+/** Returns the JWT for Authorization: Bearer, or null if not signed in. */
+export async function getAccessTokenForApi(): Promise<string | null> {
+  if (!supabase) return null;
+  if (!accessTokenInflight) {
+    accessTokenInflight = (async () => {
+      try {
+        return await resolveAccessTokenFromSupabase();
+      } finally {
+        accessTokenInflight = null;
+      }
+    })();
+  }
+  return accessTokenInflight;
 }
 
 async function parseJsonOrEmpty(res: Response): Promise<unknown> {

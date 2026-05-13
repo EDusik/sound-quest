@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { env } from "@/lib/env";
 
 const AUDIOS_MIME_TYPES = [
   "audio/mpeg",
@@ -15,9 +16,9 @@ const AUDIOS_MIME_TYPES = [
  * Requires Authorization: Bearer <Supabase access_token> (authenticated user).
  */
 export async function POST(request: Request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceRoleKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey || !anonKey) {
     return NextResponse.json(
       {

@@ -5,6 +5,7 @@ import { useTranslations } from "@/contexts/I18nContext";
 import { SoundQuestBrand, textWithBrand } from "@/components/branding/SoundQuestLogo";
 import { ScrollToHashLink } from "@/components/landing/ScrollToHashLink";
 import { getCurrentYear } from "@/lib/utils/date";
+import { env } from "@/lib/env";
 
 export function LandingFooter() {
   const t = useTranslations();
@@ -67,7 +68,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <a
-                  href={process.env.NEXT_PUBLIC_GITHUB_URL ?? "https://github.com/EDusik/sound-quest"}
+                  href={env.NEXT_PUBLIC_GITHUB_URL ?? "https://github.com/EDusik/sound-quest"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-muted transition-colors hover:text-foreground"

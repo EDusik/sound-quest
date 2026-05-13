@@ -1,5 +1,6 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { isAdminUserId } from "@/lib/auth/admin-user-ids";
+import { env } from "@/lib/env";
 
 export function getBearerToken(request: Request): string | null {
   const authHeader = request.headers.get("authorization");
@@ -11,8 +12,8 @@ export function getBearerToken(request: Request): string | null {
 export async function getUserFromAccessToken(
   accessToken: string,
 ): Promise<User | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return null;
   const supabase = createClient(url, anonKey);
   const {

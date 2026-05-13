@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 /**
  * Admin Supabase user UUIDs for audio library + AI features.
  * - `NEXT_USER_ADMIN`: comma-separated IDs (available on server and in API routes).
@@ -8,7 +10,7 @@ function normalizeAdminId(id: string): string {
 }
 
 function parseAdminUserIds(): Set<string> {
-  const merged = [process.env.NEXT_USER_ADMIN ?? "", process.env.NEXT_PUBLIC_USER_ADMIN ?? ""]
+  const merged = [env.NEXT_USER_ADMIN ?? "", env.NEXT_PUBLIC_USER_ADMIN ?? ""]
     .join(",")
     .split(",")
     .map((s) => normalizeAdminId(s))

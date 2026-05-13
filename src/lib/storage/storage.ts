@@ -24,21 +24,10 @@ import {
 } from "@/lib/api/api-client";
 import type { Scene, AudioItem, AudioKind } from "@/lib/utils/types";
 import { slugify, ensureUniqueSlug } from "@/lib/utils/slug";
-import { getFirebaseDb, isFirestoreEnabled } from "@/lib/db/firebase/firebase";
+import { isFirestoreEnabled } from "@/lib/db/firebase/firebase";
+import { getFirestoreBundle } from "@/lib/db/firebase/firebase-firestore";
 import { supabase, isSupabaseConfigured } from "@/lib/db/supabase/supabase";
 import { ANONYMOUS_UID } from "@/lib/auth/authConstants";
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  writeBatch,
-} from "firebase/firestore";
 
 const SCENES_KEY = "audio_scenes_scenes";
 const AUDIOS_KEY = "audio_scenes_audios";
@@ -74,7 +63,7 @@ function isRecoverableAudioMigrateError(e: unknown): boolean {
 const SUPABASE_UID_CACHE_MS = 5000;
 let supabaseUidCache: { userId: string | null; expires: number } | null = null;
 
-/** Returns the Supabase session user id or null (demo / not logged in). Cached briefly to avoid repeated auth.getUser() calls. */
+/** Returns the Supabase session user id or null (demo / not logged in). Cached briefly; prefers local session over network getUser. */
 async function getSupabaseUserId(): Promise<string | null> {
   if (typeof window === "undefined" || !supabase || !isSupabaseConfigured)
     return null;
@@ -82,9 +71,15 @@ async function getSupabaseUserId(): Promise<string | null> {
   if (supabaseUidCache != null && now < supabaseUidCache.expires)
     return supabaseUidCache.userId;
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const userId = user?.id ?? null;
+    data: { session },
+  } = await supabase.auth.getSession();
+  let userId = session?.user?.id ?? null;
+  if (!userId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
+  }
   supabaseUidCache = {
     userId,
     expires: now + SUPABASE_UID_CACHE_MS,
@@ -395,10 +390,14 @@ function relabelAnonymousScenesInLocalStorage(toUserId: string): void {
 }
 
 async function getFirestoreScenes(userId: string): Promise<Scene[]> {
-  const database = getFirebaseDb();
-  if (!database) return getLocalScenes(userId);
-  const q = query(collection(database, "scenes"), where("userId", "==", userId));
-  const snap = await getDocs(q);
+  const bundle = await getFirestoreBundle();
+  if (!bundle) return getLocalScenes(userId);
+  const { db, mod } = bundle;
+  const q = mod.query(
+    mod.collection(db, "scenes"),
+    mod.where("userId", "==", userId),
+  );
+  const snap = await mod.getDocs(q);
   const list = snap.docs.map((d) => {
     const data = d.data();
     const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? 0;
@@ -416,9 +415,10 @@ async function getFirestoreScene(
   sceneId: string,
   userId?: string,
 ): Promise<Scene | null> {
-  const database = getFirebaseDb();
-  if (!database) return getLocalScene(sceneId, userId);
-  const d = await getDoc(doc(database, "scenes", sceneId));
+  const bundle = await getFirestoreBundle();
+  if (!bundle) return getLocalScene(sceneId, userId);
+  const { db, mod } = bundle;
+  const d = await mod.getDoc(mod.doc(db, "scenes", sceneId));
   if (d.exists()) {
     const data = d.data();
     const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? 0;
@@ -433,46 +433,52 @@ async function getFirestoreScene(
 }
 
 async function setFirestoreScene(scene: Scene): Promise<void> {
-  const database = getFirebaseDb();
-  if (!database) {
+  const bundle = await getFirestoreBundle();
+  if (!bundle) {
     setLocalScene(scene);
     return;
   }
+  const { db, mod } = bundle;
   const { id, ...data } = scene;
   const payload: Record<string, unknown> = {
     ...data,
     createdAt: data.createdAt ?? Date.now(),
   };
   if (data.order !== undefined) payload.order = data.order;
-  await setDoc(doc(database, "scenes", id), payload);
+  await mod.setDoc(mod.doc(db, "scenes", id), payload);
 }
 
 async function deleteFirestoreScene(sceneId: string): Promise<void> {
-  const database = getFirebaseDb();
-  if (!database) {
+  const bundle = await getFirestoreBundle();
+  if (!bundle) {
     deleteLocalScene(sceneId);
     return;
   }
-  const audiosSnap = await getDocs(
-    query(collection(database, "audios"), where("sceneId", "==", sceneId)),
+  const { db, mod } = bundle;
+  const audiosSnap = await mod.getDocs(
+    mod.query(
+      mod.collection(db, "audios"),
+      mod.where("sceneId", "==", sceneId),
+    ),
   );
-  const batch = writeBatch(database);
+  const batch = mod.writeBatch(db);
   for (const d of audiosSnap.docs) {
     batch.delete(d.ref);
   }
-  batch.delete(doc(database, "scenes", sceneId));
+  batch.delete(mod.doc(db, "scenes", sceneId));
   await batch.commit();
 }
 
 async function getFirestoreAudios(sceneId: string): Promise<AudioItem[]> {
-  const database = getFirebaseDb();
-  if (!database) return getLocalAudios(sceneId);
-  const q = query(
-    collection(database, "audios"),
-    where("sceneId", "==", sceneId),
-    orderBy("createdAt", "asc"),
+  const bundle = await getFirestoreBundle();
+  if (!bundle) return getLocalAudios(sceneId);
+  const { db, mod } = bundle;
+  const q = mod.query(
+    mod.collection(db, "audios"),
+    mod.where("sceneId", "==", sceneId),
+    mod.orderBy("createdAt", "asc"),
   );
-  const snap = await getDocs(q);
+  const snap = await mod.getDocs(q);
   const list = snap.docs.map((d) => {
     const data = d.data();
     const createdAt = data.createdAt?.toMillis?.() ?? data.createdAt ?? 0;
@@ -487,11 +493,12 @@ async function getFirestoreAudios(sceneId: string): Promise<AudioItem[]> {
 }
 
 async function setFirestoreAudio(audio: AudioItem): Promise<void> {
-  const database = getFirebaseDb();
-  if (!database) {
+  const bundle = await getFirestoreBundle();
+  if (!bundle) {
     setLocalAudio(audio);
     return;
   }
+  const { db, mod } = bundle;
   const { id, ...data } = audio;
   const payload: Record<string, unknown> = {
     ...data,
@@ -499,16 +506,17 @@ async function setFirestoreAudio(audio: AudioItem): Promise<void> {
     createdAt: data.createdAt ?? Date.now(),
   };
   if (data.order !== undefined) payload.order = data.order;
-  await setDoc(doc(database, "audios", id), payload);
+  await mod.setDoc(mod.doc(db, "audios", id), payload);
 }
 
 async function deleteFirestoreAudio(audioId: string): Promise<void> {
-  const database = getFirebaseDb();
-  if (!database) {
+  const bundle = await getFirestoreBundle();
+  if (!bundle) {
     deleteLocalAudio(audioId);
     return;
   }
-  await deleteDoc(doc(database, "audios", audioId));
+  const { db, mod } = bundle;
+  await mod.deleteDoc(mod.doc(db, "audios", audioId));
 }
 
 export async function getScenes(userId: string): Promise<Scene[]> {

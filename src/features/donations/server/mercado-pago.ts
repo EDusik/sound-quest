@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { nanoid } from "nanoid";
 import type { DonationStatus } from "@/features/donations/model/donation";
+import { env } from "@/lib/env";
 
 /** Subset of Mercado Pago payment JSON used by this integration. */
 /** Body returned by the REST client on failed `/v1/payments` calls (thrown as JSON). */
@@ -49,7 +50,7 @@ export type MpPaymentJson = {
 };
 
 function getAccessToken(): string {
-  const t = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
+  const t = env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
   if (!t) throw new Error("Missing MERCADO_PAGO_ACCESS_TOKEN.");
   return t;
 }
@@ -63,17 +64,17 @@ function getPaymentClient(): Payment {
 }
 
 export function getNotificationUrl(): string | undefined {
-  const explicit = process.env.MERCADO_PAGO_NOTIFICATION_URL?.trim();
+  const explicit = env.MERCADO_PAGO_NOTIFICATION_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
   const site =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    (env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined);
   if (!site) return undefined;
   return `${site}/api/webhooks/mercado-pago`;
 }
 
 export function resolveDonationPayerEmail(): string {
-  const fromEnv = process.env.MERCADO_PAGO_DONATION_PAYER_EMAIL?.trim();
+  const fromEnv = env.MERCADO_PAGO_DONATION_PAYER_EMAIL?.trim();
   if (fromEnv) return fromEnv;
   return `soundquest.donor+${nanoid(16)}@users.noreply.github.com`;
 }
