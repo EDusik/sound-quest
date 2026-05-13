@@ -72,8 +72,8 @@ function YouTubeAudioRow({
   const actionBtn =
     "shrink-0 items-center justify-center text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
   const actionBtnClass = compact
-    ? `flex h-7 w-7 rounded-md ${actionBtn}`
-    : `flex h-9 w-9 rounded-lg ${actionBtn}`;
+    ? `flex h-11 w-11 rounded-md sm:h-7 sm:w-7 ${actionBtn}`
+    : `flex h-11 w-11 rounded-lg sm:h-9 sm:w-9 ${actionBtn}`;
   const actionIconClass = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   const videoId = audio.sourceUrl;
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
@@ -460,8 +460,8 @@ function HtmlAudioRow({
   const actionBtn =
     "shrink-0 items-center justify-center text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
   const actionBtnClass = compact
-    ? `flex h-7 w-7 rounded-md ${actionBtn}`
-    : `flex h-9 w-9 rounded-lg ${actionBtn}`;
+    ? `flex h-11 w-11 rounded-md sm:h-7 sm:w-7 ${actionBtn}`
+    : `flex h-11 w-11 rounded-lg sm:h-9 sm:w-9 ${actionBtn}`;
   const actionIconClass = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   const ref = useRef<HTMLAudioElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -731,7 +731,9 @@ function SpotifyLibraryOpenButton({
 }) {
   const t = useTranslations();
   const href = spotifyUriToOpenUrl(sourceUrl);
-  const size = compact ? "flex h-7 w-7 rounded-md" : "flex h-9 w-9 rounded-lg";
+  const size = compact
+    ? "flex h-11 w-11 rounded-md sm:h-7 sm:w-7"
+    : "flex h-11 w-11 rounded-lg sm:h-9 sm:w-9";
   const icon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   return (
     <a
@@ -763,8 +765,8 @@ function SpotifyPlaybackOnlyBar({
 }) {
   const t = useTranslations();
   const addBtn = compact
-    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted"
-    : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted";
+    ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted sm:h-7 sm:w-7"
+    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted sm:h-9 sm:w-9";
   const addIcon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   return (
     <div

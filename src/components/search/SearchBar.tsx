@@ -52,7 +52,7 @@ export function SearchBar({
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded p-0.5 text-muted hover:text-foreground"
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded text-muted hover:text-foreground sm:min-h-0 sm:min-w-0 sm:p-0.5"
           aria-label={t("common.closeSearch")}
         >
           <CloseIcon className="h-4 w-4" />
@@ -65,7 +65,7 @@ export function SearchBar({
     <button
       type="button"
       onClick={onOpen}
-      className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition hover:text-foreground"
+      className="flex h-11 w-11 items-center justify-center rounded-md text-muted transition hover:text-foreground sm:h-8 sm:w-8"
       aria-label={resolvedAriaLabel}
       title={resolvedAriaLabel}
     >

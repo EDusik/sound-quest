@@ -16,7 +16,7 @@ import {
 import type { AudioItem } from "@/lib/utils/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
-import { SceneTitleBlock } from "@/components/scene/SceneTitleBlock";
+import { SceneTitleBlock } from "@/features/scenes/components/SceneTitleBlock";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -33,6 +33,7 @@ import { getLibrarySourceUrlForAudio } from "@/lib/audio/mappers/audio-item-libr
 import { ApiError } from "@/lib/api/api-client";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
+import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 import { toast } from "sonner";
 
 const INACTIVE_AUDIOS_STORAGE_KEY = "soundquest-inactive-audios";
@@ -104,6 +105,7 @@ export default function ScenePage() {
   const [showAddSoundModal, setShowAddSoundModal] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const showFocusEntry = useFocusEntryOnce("scene");
+  const coarsePointer = useCoarsePointer();
 
   const hydratedInactiveForScene = useRef<string | null>(null);
   useEffect(() => {
@@ -187,6 +189,30 @@ export default function ScenePage() {
     e.dataTransfer.dropEffect = "move";
   };
 
+  const commitAudioReorder = useCallback(
+    async (audioId: string, toIndex: number) => {
+      const fromIndex = filteredAudios.findIndex((a) => a.id === audioId);
+      if (fromIndex === -1 || fromIndex === toIndex) return;
+      useAudioStore.getState().stopAll();
+      const reordered = [...filteredAudios];
+      const [removed] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, removed);
+      const rest = audios.filter((a) => !reordered.some((r) => r.id === a.id));
+      const newAudios = reordered.map((a, i) => ({ ...a, order: i }));
+      const orderedIds = [
+        ...newAudios.map((a) => a.id),
+        ...rest.map((a) => a.id),
+      ];
+      setReorderError(null);
+      try {
+        await reorderAudiosMutation.mutateAsync(orderedIds);
+      } catch (err) {
+        setReorderError(getErrorMessage(err, t("scene.failedReorder")));
+      }
+    },
+    [filteredAudios, audios, reorderAudiosMutation, t],
+  );
+
   const handleDrop = async (e: React.DragEvent, toIndex: number) => {
     e.preventDefault();
     const audioId = e.dataTransfer.getData("audioId");
@@ -196,24 +222,25 @@ export default function ScenePage() {
       setDraggedId(null);
       return;
     }
-    useAudioStore.getState().stopAll();
-    const reordered = [...filteredAudios];
-    const [removed] = reordered.splice(fromIndex, 1);
-    reordered.splice(toIndex, 0, removed);
-    const rest = audios.filter((a) => !reordered.some((r) => r.id === a.id));
-    const newAudios = reordered.map((a, i) => ({ ...a, order: i }));
-    const orderedIds = [
-      ...newAudios.map((a) => a.id),
-      ...rest.map((a) => a.id),
-    ];
     setDraggedId(null);
-    setReorderError(null);
-    try {
-      await reorderAudiosMutation.mutateAsync(orderedIds);
-    } catch (err) {
-      setReorderError(getErrorMessage(err, t("scene.failedReorder")));
-    }
+    await commitAudioReorder(audioId, toIndex);
   };
+
+  const handleCoarseReorderStep = useCallback(
+    async (audioId: string, delta: -1 | 1) => {
+      const actives = activeAudios;
+      const ai = actives.findIndex((a) => a.id === audioId);
+      if (ai === -1) return;
+      const ni = ai + delta;
+      if (ni < 0 || ni >= actives.length) return;
+      const neighborId = actives[ni].id;
+      const fromIndex = filteredAudios.findIndex((a) => a.id === audioId);
+      const toIndex = filteredAudios.findIndex((a) => a.id === neighborId);
+      if (fromIndex === -1 || toIndex === -1) return;
+      await commitAudioReorder(audioId, toIndex);
+    },
+    [activeAudios, filteredAudios, commitAudioReorder],
+  );
 
   const handleConfirmDelete = async () => {
     if (!audioToDelete) return;
@@ -422,6 +449,8 @@ export default function ScenePage() {
             sceneId={sceneId}
             draggedId={draggedId}
             reordering={reorderAudiosMutation.isPending}
+            coarseReorder={coarsePointer}
+            onCoarseReorderStep={handleCoarseReorderStep}
             hasAnyAudios={audios.length > 0}
             emptyMessage={t("scene.noAudios")}
             emptySearchMessage={t("scene.noAudiosMatch")}

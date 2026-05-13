@@ -61,7 +61,7 @@ export function AudioRowHeader({
           type="button"
           disabled={addToSceneDisabled}
           onClick={onAddToScene}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted sm:h-9 sm:w-9"
           title={
             addToSceneDisabled
               ? t("addToScene.noScenes")
@@ -81,7 +81,7 @@ export function AudioRowHeader({
           type="button"
           disabled={addToLibraryPending}
           onClick={onAddToLibrary}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-accent hover:bg-border hover:text-foreground disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-accent hover:bg-border hover:text-foreground disabled:opacity-50 sm:h-9 sm:w-9"
           title={t("aiLibrary.addToLibrary")}
           aria-label={t("aiLibrary.addToLibrary")}
         >
@@ -92,7 +92,7 @@ export function AudioRowHeader({
         <button
           type="button"
           onClick={onStartEditName}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground sm:h-9 sm:w-9"
           title={t("common.editSoundName")}
           aria-label={t("common.editSoundName")}
         >
@@ -103,7 +103,7 @@ export function AudioRowHeader({
         <button
           type="button"
           onClick={onDelete}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 hover:text-red-300 sm:h-9 sm:w-9"
           title={t("common.deleteSound")}
           aria-label={t("common.deleteSound")}
         >

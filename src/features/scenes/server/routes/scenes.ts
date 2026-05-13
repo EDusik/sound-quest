@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("scenes")
-    .select("*")
+    .select(
+      "id,user_id,title,description,labels,created_at,order,slug",
+    )
     .eq("user_id", auth.user.id)
     .order("order", { ascending: true, nullsFirst: false });
 

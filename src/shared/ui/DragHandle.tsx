@@ -10,6 +10,8 @@ interface DragHandleProps {
   title?: string;
   /** Optional extra class for the wrapper (e.g. rounded-l-xl for scenes, rounded-l-lg for audios). */
   className?: string;
+  /** When true, drag is disabled and the handle does not receive pointer events. */
+  dragDisabled?: boolean;
 }
 
 export function DragHandle({
@@ -18,19 +20,21 @@ export function DragHandle({
   "aria-label": ariaLabel,
   title: titleProp,
   className = "",
+  dragDisabled = false,
 }: DragHandleProps) {
   const t = useTranslations();
   const label = t("common.dragToReorder");
   const ariaLabelResolved = ariaLabel ?? label;
   const title = titleProp ?? label;
+  const disabledClass = dragDisabled ? "pointer-events-none opacity-50" : "";
   return (
     <div
       role="button"
       data-drag-handle
-      draggable
+      draggable={!dragDisabled}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`flex cursor-grab active:cursor-grabbing touch-none flex-col justify-center border border-border/50 border-r-0 bg-card/50 py-2 pl-2 pr-1 text-muted hover:bg-border/50 hover:text-muted ${className}`}
+      className={`flex cursor-grab active:cursor-grabbing touch-none flex-col justify-center border border-border/50 border-r-0 bg-card/50 py-2 pl-2 pr-1 text-muted hover:bg-border/50 hover:text-muted ${disabledClass} ${className}`}
       title={title}
       aria-label={ariaLabelResolved}
     >

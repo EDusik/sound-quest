@@ -2,7 +2,7 @@
 
 import { useShallow } from "zustand/react/shallow";
 import { useTranslations } from "@/contexts/I18nContext";
-import { useAudioStore } from "../store/audioStore";
+import { useAudioStore } from "@/features/audioPlayer/store/audioStore";
 
 function usePlayingList() {
   return useAudioStore(
@@ -62,14 +62,15 @@ export function AudioBar() {
     }
   };
 
-  const handleProgressClick = (
+  const seekFromBarClientX = (
+    bar: HTMLDivElement,
     id: string,
     duration: number,
-    e: React.MouseEvent<HTMLDivElement>,
+    clientX: number,
   ) => {
-    const bar = e.currentTarget;
     const rect = bar.getBoundingClientRect();
-    const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const w = rect.width || 1;
+    const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / w));
     seekTo(id, fraction * duration);
   };
 
@@ -83,7 +84,7 @@ export function AudioBar() {
       role="region"
       aria-label={t("common.nowPlaying")}
     >
-      <div className="flex w-full flex-col gap-2 px-4 py-3">
+      <div className="flex w-full flex-col gap-2 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-muted">
             {t("common.playingCount", { count: playing.length })}
@@ -91,7 +92,7 @@ export function AudioBar() {
           <button
             type="button"
             onClick={stopAll}
-            className="rounded-lg bg-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border/80"
+            className="min-h-11 rounded-lg bg-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border/80 sm:min-h-0"
             title={t("common.stopAllSongs")}
           >
             {t("common.stopAll")}
@@ -115,7 +116,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => pause(p.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent-hover"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent-hover sm:h-9 sm:w-9"
                       title={t("common.pause")}
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -125,7 +126,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => stop(p.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80 sm:h-9 sm:w-9"
                       title={t("common.stop")}
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -135,7 +136,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => toggleLoop(p.id)}
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors sm:h-9 sm:w-9 ${
                         p.loop
                           ? "bg-accent text-foreground hover:bg-accent-hover"
                           : "bg-border text-foreground hover:bg-border/80"
@@ -162,22 +163,43 @@ export function AudioBar() {
                     >
                       {formatTime(current)}
                     </span>
-                    <div
-                      className="h-3 min-w-0 flex-1 cursor-pointer overflow-hidden rounded-full bg-border"
-                      role="progressbar"
-                      aria-valuenow={current}
-                      aria-valuemin={0}
-                      aria-valuemax={duration}
-                      aria-label={t("common.progressSeek", {
-                        current: formatTime(current),
-                        duration: formatTime(duration),
-                      })}
-                      onClick={(e) => handleProgressClick(p.id, duration, e)}
-                    >
+                    <div className="flex min-h-11 min-w-0 flex-1 items-center [-webkit-tap-highlight-color:transparent]">
                       <div
-                        className="h-full rounded-full bg-accent transition-[width] duration-300 ease-linear pointer-events-none"
-                        style={{ width: `${(current / duration) * 100}%` }}
-                      />
+                        className="h-3 w-full cursor-pointer touch-none overflow-hidden rounded-full bg-border"
+                        role="progressbar"
+                        aria-valuenow={current}
+                        aria-valuemin={0}
+                        aria-valuemax={duration}
+                        aria-label={t("common.progressSeek", {
+                          current: formatTime(current),
+                          duration: formatTime(duration),
+                        })}
+                        onPointerDown={(e) => {
+                          if (e.button !== 0) return;
+                          const bar = e.currentTarget;
+                          bar.setPointerCapture(e.pointerId);
+                          seekFromBarClientX(bar, p.id, duration, e.clientX);
+                        }}
+                        onPointerMove={(e) => {
+                          if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+                          seekFromBarClientX(e.currentTarget, p.id, duration, e.clientX);
+                        }}
+                        onPointerUp={(e) => {
+                          if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                            e.currentTarget.releasePointerCapture(e.pointerId);
+                          }
+                        }}
+                        onPointerCancel={(e) => {
+                          if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                            e.currentTarget.releasePointerCapture(e.pointerId);
+                          }
+                        }}
+                      >
+                        <div
+                          className="h-full rounded-full bg-accent transition-[width] duration-300 ease-linear pointer-events-none"
+                          style={{ width: `${(current / duration) * 100}%` }}
+                        />
+                      </div>
                     </div>
                     <span
                       className="shrink-0 text-xs tabular-nums text-muted-foreground"

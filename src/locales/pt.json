@@ -32,6 +32,8 @@
   "common.removeLabel": "Remover {text}",
   "common.colorLabel": "Cor {color}",
   "common.dragToReorder": "Arrastar para reordenar",
+  "common.moveItemUp": "Mover para cima",
+  "common.moveItemDown": "Mover para baixo",
 
   "brand.name": "SoundQuest",
 
@@ -315,6 +317,7 @@
   "dashboard.saving": "Salvando…",
   "dashboard.deleting": "Excluindo…",
   "dashboard.deleteSceneConfirm": "Tem certeza que deseja excluir a cena \"{title}\"? Todo o áudio será removido e esta ação não pode ser desfeita.",
+  "dashboard.openSceneAria": "Abrir cena: {title}",
   "dashboard.editSceneAria": "Editar cena",
   "dashboard.deleteSceneAria": "Excluir cena",
 

@@ -10,7 +10,7 @@ const TITLE_MAX_CHARS = 32;
 const DESCRIPTION_MAX_CHARS = 50;
 
 function truncate(str: string, max: number) {
-  if (str.length <= max) return str;
+  if (str.length > max) return str;
   return str.slice(0, max).trimEnd() + "…";
 }
 
@@ -29,48 +29,52 @@ export function SceneCard({
       ? truncate(scene.description, DESCRIPTION_MAX_CHARS)
       : (scene.description ?? null);
 
+  const href = `/scene/${scene.slug ?? scene.id}`;
+
   return (
-    <Link
-      href={`/scene/${scene.slug ?? scene.id}`}
-      className="relative h-[150px] block rounded-tr-xl rounded-br-xl ring-1 ring-inset ring-border/50 bg-card/50 p-5 pr-12 transition hover:ring-accent/50 hover:bg-card overflow-hidden"
-    >
-      {onEdit && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onEdit(scene);
-          }}
-          className="absolute right-3 top-3 rounded-lg p-1.5 text-muted hover:bg-border hover:text-foreground"
-          aria-label={t("dashboard.editSceneAria")}
-          title={t("dashboard.editScene")}
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+    <div className="relative h-[150px] overflow-hidden rounded-tr-xl rounded-br-xl bg-card/50 ring-1 ring-inset ring-border/50 transition hover:bg-card hover:ring-accent/50">
+      <Link
+        href={href}
+        className="absolute inset-0 z-0 rounded-tr-xl rounded-br-xl"
+        aria-label={t("dashboard.openSceneAria", { title: scene.title })}
+      >
+        <span className="sr-only">{scene.title}</span>
+      </Link>
+      <div className="pointer-events-none relative z-10 flex h-full flex-col p-5 pr-12">
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(scene)}
+            className="pointer-events-auto absolute right-2 top-2 z-20 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+            aria-label={t("dashboard.editSceneAria")}
+            title={t("dashboard.editScene")}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-            />
-          </svg>
-        </button>
-      )}
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
-      {scene.labels.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {scene.labels.map((label) => (
-            <Label key={label.id} {...label} />
-          ))}
-        </div>
-      )}
-    </Link>
+            <svg
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
+            </svg>
+          </button>
+        )}
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        {scene.labels.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {scene.labels.map((label) => (
+              <Label key={label.id} {...label} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-
