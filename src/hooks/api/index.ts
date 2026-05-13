@@ -1,5 +1,5 @@
-export { useScenesQuery, useCreateSceneMutation, useUpdateSceneMutation, useDeleteSceneMutation, useReorderScenesMutation } from "./useScenes";
-export { useSceneQuery } from "./useScene";
+export { useScenesQuery, useCreateSceneMutation, useUpdateSceneMutation, useDeleteSceneMutation, useReorderScenesMutation } from "@/features/scenes/api/useScenes";
+export { useSceneQuery } from "@/features/scenes/api/useScene";
 export {
   useAudiosQuery,
   useAddAudioMutation,
@@ -8,7 +8,7 @@ export {
   useRemoveAudioMutation,
   useReorderAudiosMutation,
 } from "./useAudios";
-export { useYouTubeTitleQuery } from "./useYouTubeTitle";
+export { useYouTubeTitleQuery } from "@/features/integrations/youtube/api/useYouTubeTitle";
 export { useUploadAudioFileMutation } from "./useUploadAudioFile";
 export {
   useLibraryQuery,

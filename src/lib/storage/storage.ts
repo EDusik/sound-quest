@@ -760,9 +760,7 @@ export async function reorderScenes(
 }
 
 /** Migrates guest-only localStorage scenes into Supabase for the signed-in user. */
-export async function migrateLocalDataToSupabase(
-  _fromUserId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
-): Promise<void> {
+export async function migrateLocalDataToSupabase(): Promise<void> {
   if (typeof window === "undefined") return;
   if (!isSupabaseStorageEnabled()) return;
 

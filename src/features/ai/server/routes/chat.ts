@@ -219,9 +219,15 @@ export async function POST(request: NextRequest) {
       try {
         const sdkStream = anthropic.messages.stream(
           {
-            model: process.env.NEXT_ANTHROPIC_MODEL ?? "claude-opus-4-5",
+            model: process.env.NEXT_ANTHROPIC_MODEL ?? "claude-opus-4-7",
             max_tokens: 4096,
-            system: SYSTEM_PROMPT,
+            system: [
+              {
+                type: "text",
+                text: SYSTEM_PROMPT,
+                cache_control: { type: "ephemeral" },
+              },
+            ],
             messages: parsed.data.messages
               .filter((m) => m.role === "user" || m.role === "assistant")
               .map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),

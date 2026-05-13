@@ -10,7 +10,6 @@ export type { SpotifyTrack };
 
 interface SpotifyAudioRowProps {
   track: SpotifyTrack;
-  sceneId: string;
   isInactive?: boolean;
   onToggleActive?: () => void;
   onRemove?: () => void;
@@ -24,7 +23,6 @@ interface SpotifyAudioRowProps {
 
 export function SpotifyAudioRow({
   track,
-  sceneId, // eslint-disable-line @typescript-eslint/no-unused-vars -- reserved for future use
   isInactive = false,
   onToggleActive,
   onRemove,

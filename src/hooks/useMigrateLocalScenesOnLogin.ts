@@ -15,7 +15,7 @@ export function useMigrateLocalScenesOnLogin() {
   useEffect(() => {
     if (loading || !isConfigured || !isAuthenticated || !uid) return;
 
-    migrateLocalDataToSupabase(uid)
+    migrateLocalDataToSupabase()
       .then(() => {
         queryClient.invalidateQueries({
           queryKey: queryKeys.scenes.list(uid),

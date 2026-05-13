@@ -317,7 +317,7 @@ export function useDeleteScene() {
 ```tsx
 // Consumo no componente
 "use client";
-import { useScenes, useDeleteScene } from "@/hooks/api/useScenes";
+import { useScenes, useDeleteScene } from "@/hooks/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function SceneList() {

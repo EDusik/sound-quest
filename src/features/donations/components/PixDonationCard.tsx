@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { useTranslations } from "@/contexts/I18nContext";
@@ -30,18 +30,15 @@ export function PixDonationCard({ className }: { className?: string } = {}) {
   const [timeExpired, setTimeExpired] = useState(false);
 
   const createMut = useCreateDonationPixMutation();
-  const display = useMemo((): DonationPixDto | null => {
-    if (!donationId || !createMut.data) return null;
-    if (createMut.data.id !== donationId) return null;
-    return createMut.data;
-  }, [donationId, createMut.data]);
+  const display: DonationPixDto | null =
+    donationId && createMut.data?.id === donationId ? createMut.data : null;
 
   const expireAtMs = display ? donationExpiresAt(display).getTime() : null;
-  const canGeneratePix = useMemo(() => {
-    const cents = parseBrlToCents(amountText);
-    if (cents == null) return false;
-    return cents >= MIN_CENTS && cents <= DONATION_MAX_AMOUNT_CENTS;
-  }, [amountText]);
+  const amountCents = parseBrlToCents(amountText);
+  const canGeneratePix =
+    amountCents != null &&
+    amountCents >= MIN_CENTS &&
+    amountCents <= DONATION_MAX_AMOUNT_CENTS;
 
   useEffect(() => {
     if (display?.status !== "pending" || expireAtMs == null) return;

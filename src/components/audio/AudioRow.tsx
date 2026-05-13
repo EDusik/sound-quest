@@ -818,7 +818,6 @@ export function AudioRow(props: AudioRowProps) {
           name: props.audio.name,
           spotifyUri: props.audio.sourceUrl,
         }}
-        sceneId={props.sceneId}
         isInactive={props.isInactive}
         onToggleActive={
           props.onToggleActive
