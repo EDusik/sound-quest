@@ -5,9 +5,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { toast } from "sonner";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
-import { ChatMessageList } from "@/components/chat/ChatMessageList";
-import { ChatInput } from "@/components/chat/ChatInput";
-import { SuggestionList } from "@/components/chat/SuggestionList";
+import { ChatMessageList } from "@/features/ai/components/ChatMessageList";
+import { ChatInput } from "@/features/ai/components/ChatInput";
+import { SuggestionList } from "@/features/ai/components/SuggestionList";
 import { useAuth, isRealUser, getUserChatLabel } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
 import { useAiChat, useAdminFeatures, useCreateLibraryItemMutation } from "@/hooks/api";
