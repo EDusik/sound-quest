@@ -54,3 +54,7 @@ For multi-step tasks, state a brief plan:
    Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 These guidelines are working if: fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## Lighthouse / dashboard performance QA
+
+Measure performance after meaningful client changes with a **production** build, not `next dev`: run `npm run build` then `npm run start`, open Lighthouse in an **incognito** window (extensions such as MetaMask add JS and skew TBT). Compare Core Web Vitals, count of requests to Supabase `auth/v1/user`, and `/api/scenes` latency. Optionally use `@next/bundle-analyzer` on the production bundle to inspect chunk size.
