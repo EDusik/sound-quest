@@ -24,7 +24,7 @@ export function ReorderStepButtons({
   className = "",
 }: ReorderStepButtonsProps) {
   const btn =
-    "flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md text-muted transition hover:bg-border hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition hover:bg-border hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
   return (
     <div
       className={`flex shrink-0 flex-col justify-center gap-px border border-border/50 border-r-0 bg-card/50 py-1 pl-1 pr-0.5 ${className}`.trim()}
@@ -37,7 +37,7 @@ export function ReorderStepButtons({
         aria-label={moveUpLabel}
         title={moveUpLabel}
       >
-        <ChevronUp className="h-5 w-5" aria-hidden />
+        <ChevronUp className="h-4 w-4" aria-hidden />
       </button>
       <button
         type="button"
@@ -47,7 +47,7 @@ export function ReorderStepButtons({
         aria-label={moveDownLabel}
         title={moveDownLabel}
       >
-        <ChevronDown className="h-5 w-5" aria-hidden />
+        <ChevronDown className="h-4 w-4" aria-hidden />
       </button>
     </div>
   );

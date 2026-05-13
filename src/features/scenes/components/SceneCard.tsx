@@ -45,7 +45,7 @@ export function SceneCard({
           <button
             type="button"
             onClick={() => onEdit(scene)}
-            className="pointer-events-auto absolute right-2 top-2 z-20 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-border hover:text-foreground"
+            className="pointer-events-auto absolute right-3 top-3 z-20 rounded-lg p-1.5 text-muted hover:bg-border hover:text-foreground"
             aria-label={t("dashboard.editSceneAria")}
             title={t("dashboard.editScene")}
           >
