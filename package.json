@@ -9,6 +9,7 @@
     "prestart": "node -e \"if(process.env.NODE_ENV!=='production')console.log('\\nTip: use npm run dev for hot reload while editing. npm start only serves the last build; use npm run preview to rebuild then serve.\\n')\"",
     "start": "next start",
     "preview": "next build && next start",
+    "analyze": "ANALYZE=true next build",
     "lint": "eslint .",
     "prepare": "husky"
   },
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.4.3",
     "@commitlint/config-conventional": "^20.4.3",
+    "@next/bundle-analyzer": "^16.1.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.35",
     "@types/react": "^19",
