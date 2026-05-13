@@ -37,8 +37,8 @@ export function PlaybackControls({
   const t = useTranslations();
   const disabledClass = disabled ? "opacity-40 pointer-events-none" : "";
   const btnBase = compact
-    ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7"
-    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9";
+    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+    : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg";
   const btnPrimary =
     "bg-accent text-background hover:bg-accent-hover";
   const btnSecondary =

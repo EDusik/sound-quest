@@ -92,7 +92,7 @@ export function AudioBar() {
           <button
             type="button"
             onClick={stopAll}
-            className="min-h-11 rounded-lg bg-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border/80 sm:min-h-0"
+            className="rounded-lg bg-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border/80"
             title={t("common.stopAllSongs")}
           >
             {t("common.stopAll")}
@@ -116,7 +116,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => pause(p.id)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent-hover sm:h-9 sm:w-9"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-foreground hover:bg-accent-hover"
                       title={t("common.pause")}
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => stop(p.id)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80 sm:h-9 sm:w-9"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-border text-foreground hover:bg-border/80"
                       title={t("common.stop")}
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@ export function AudioBar() {
                     <button
                       type="button"
                       onClick={() => toggleLoop(p.id)}
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors sm:h-9 sm:w-9 ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
                         p.loop
                           ? "bg-accent text-foreground hover:bg-accent-hover"
                           : "bg-border text-foreground hover:bg-border/80"
@@ -163,7 +163,7 @@ export function AudioBar() {
                     >
                       {formatTime(current)}
                     </span>
-                    <div className="flex min-h-11 min-w-0 flex-1 items-center [-webkit-tap-highlight-color:transparent]">
+                    <div className="flex min-h-9 min-w-0 flex-1 items-center [-webkit-tap-highlight-color:transparent]">
                       <div
                         className="h-3 w-full cursor-pointer touch-none overflow-hidden rounded-full bg-border"
                         role="progressbar"

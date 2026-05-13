@@ -18,7 +18,7 @@ export function IconButton({
   className = "",
 }: IconButtonProps) {
   const base =
-    "flex h-11 w-11 items-center justify-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-8 sm:w-8";
+    "flex h-8 w-8 items-center justify-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
   const styles =
     variant === "primary"
       ? "bg-accent text-background hover:bg-accent-hover"
