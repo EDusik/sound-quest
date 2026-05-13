@@ -29,6 +29,7 @@ export const metadata = siteMetadata;
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#EEF2F7" },
     { media: "(prefers-color-scheme: dark)", color: "#0F0E17" },
@@ -56,7 +57,9 @@ export default function RootLayout({
         <Script
           id="theme-init"
           strategy="beforeInteractive"
-          src="/theme-init.js"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem("theme");var dark=t!=="light";if(dark)document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");var href=dark?"/icon.svg":"/icon-dark.svg";var links=document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');for(var i=0;i<links.length;i++)links[i].href=href;})();`,
+          }}
         />
         <Providers>
           <SkipToContent />

@@ -18,77 +18,125 @@ description: >
 
 ---
 
-## 1. Estrutura de Pastas
+## 1. Estrutura de Pastas (Feature-first)
 
 ```
 src/
-├── app/                        # Roteamento (App Router)
-│   ├── (auth)/
-│   │   ├── login/page.tsx
-│   │   └── auth/callback/page.tsx
-│   ├── dashboard/page.tsx
-│   ├── api/                    # Route Handlers (delegam para services/)
-│   │   ├── scenes/route.ts
-│   │   └── library/route.ts
+├── app/                        # App Router (Server Components + Route Handlers)
+│   ├── api/                    # Route Handlers (delegam para features/X/server/)
+│   ├── (rotas)/page.tsx
 │   ├── layout.tsx              # Root layout — Server Component
 │   └── page.tsx
 │
-├── components/
-│   ├── ui/                     # Primitivos visuais (Button, Modal, Spinner)
-│   ├── features/               # Componentes de domínio (SceneCard, AudioBar)
-│   ├── auth/                   # AuthGuard, GlobalAuthLoading
-│   ├── layout/                 # Providers, Header, Sidebar
-│   └── theme/                  # ThemeFavicon, ThemeToggle
+├── features/[name]/            # **Tudo de uma feature vive aqui**
+│   ├── components/             # UI específica da feature
+│   ├── api/                    # React Query hooks + service functions (client → /api)
+│   ├── server/                 # Route handlers, repositórios, lógica server-side
+│   ├── model/                  # Tipos, schemas Zod, constantes de domínio
+│   └── lib/                    # Utilidades internas da feature
 │
-├── contexts/                   # React Contexts (Auth, Theme, I18n)
-│   ├── AuthContext.tsx
-│   ├── ThemeContext.tsx
-│   └── I18nContext.tsx
+├── components/
+│   ├── ui/                     # Primitivos visuais sem domínio (Button, Modal, etc.)
+│   ├── layout/                 # Providers, Header, Sidebar
+│   ├── auth/                   # AuthGuard, GlobalAuthLoading
+│   └── [topic]/                # Componentes globais NÃO espelhados de features
+│
+├── contexts/                   # Auth, Theme, I18n (sessão; nunca dados de servidor)
 │
 ├── hooks/
-│   ├── api/                    # React Query hooks + queryKeys
-│   │   ├── queryKeys.ts
-│   │   ├── useScenes.ts
-│   │   └── useLibrary.ts
-│   └── useFocusTrap.ts         # Hooks utilitários reutilizáveis
+│   ├── api/
+│   │   ├── index.ts            # BARREL — re-exporta hooks de features/[name]/api/
+│   │   └── queryKeys.ts        # Único arquivo centralizado de chaves
+│   └── use[Util].ts            # Hooks utilitários globais (useFocusTrap, useMediaQuery)
 │
 ├── lib/
-│   ├── api/
-│   │   └── axios.ts            # Instância Axios + interceptors Supabase
-│   ├── db/
-│   │   └── supabase/
-│   │       ├── supabase.ts     # Client-side (browser only)
-│   │       └── supabase-server.ts  # Server-side (Route Handlers)
-│   ├── utils/
-│   │   ├── queryClient.ts      # QueryClient singleton
-│   │   └── i18n.ts             # Helpers de locale (getInitialLocale, storeLocale)
-│   └── validators/             # Schemas Zod para Route Handlers
-│       └── api.ts
+│   ├── env.ts                  # **Único** lugar que lê process.env (validado com Zod)
+│   ├── api/                    # Axios + api-client compartilhado
+│   ├── auth/                   # Helpers de auth client+server
+│   ├── db/supabase/            # supabase.ts (client), supabase-{service,user,server-anon}.ts
+│   ├── storage/                # Abstração local/Supabase
+│   ├── utils/types.ts          # Tipos utilitários globais (não-domain)
+│   └── validators/             # Zod schemas compartilhados entre features
 │
-├── locales/                    # Arquivos de tradução
-│   ├── en.json
-│   └── pt.json
-│
-├── services/                   # Funções de acesso à API (uma por domínio)
-│   ├── scenes.service.ts
-│   └── library.service.ts
-│
-├── store/                      # Zustand stores (estado de UI local, não dados de servidor)
-│   └── ui.store.ts
-│
-└── types/                      # Tipos e interfaces globais
-    ├── api.types.ts
-    └── domain.types.ts
+├── locales/                    # JSON de traduções
+├── store/                      # Zustand stores (estado de UI/cliente, nunca server state)
+└── shared/                     # Helpers raramente compartilhados
 ```
 
 **Regras:**
 
-- `components/ui/` — sem lógica de negócio, puramente visuais
-- `components/features/` — podem consumir stores, hooks e contexts
-- `services/` — só chamadas HTTP via Axios, sem lógica de UI
-- `contexts/` — Auth, Theme, I18n (estado de sessão, nunca dados de servidor)
-- `store/` — só estado de UI local/global; dados de servidor ficam no React Query
-- `lib/validators/` — Zod schemas usados apenas em Route Handlers
+- Toda nova chamada de API: cria service function em `features/[name]/api/[X].service.ts` + hook em `features/[name]/api/use[X].ts` + reexporta de `src/hooks/api/index.ts`.
+- Tipos de domínio ficam em `features/[name]/model/`. Tipos utilitários genuinamente globais ficam em `src/lib/utils/types.ts`.
+- `components/ui/` — sem lógica de negócio, puramente visuais.
+- `components/[topic]/` (global) — usar **só** se 2+ features consumirem o componente. **Proibido** criar arquivo que apenas re-exporte de `features/`.
+- `contexts/` — Auth, Theme, I18n. Nunca dados de servidor.
+- `store/` — estado de UI/cliente; dados de servidor ficam no React Query.
+- `lib/validators/` — Zod schemas compartilhados entre features (schemas específicos ficam em `features/[name]/model/`).
+- `lib/env.ts` — único arquivo que lê `process.env`. Todos os demais importam `{ env }` daí.
+
+---
+
+## 1A. Nomenclatura de Arquivos
+
+| Item | Padrão | Exemplo |
+| --- | --- | --- |
+| Componente React | PascalCase.tsx | `SceneCard.tsx` |
+| Hook customizado | useCamelCase.ts | `useScenes.ts`, `useAudioStore.ts` |
+| Service (HTTP) | camelCase.service.ts | `scenes.service.ts` |
+| Schema Zod específico | camelCase.ts (verbo + entity) | `createScene.ts` |
+| Tipos de domínio | dentro de `model/` em arquivos descritivos | `model/donation.ts`, `model/scene.ts` |
+| Tipos utilitários globais | `types.ts` | `lib/utils/types.ts` |
+| Constantes de feature | em `model/` ou `lib/` da feature | `model/donation.ts` exporta `DONATION_MAX_AMOUNT_CENTS` |
+| Constantes globais | `*Constants.ts` em camelCase; valores em `SCREAMING_SNAKE_CASE` | `authConstants.ts` exporta `ANONYMOUS_UID` |
+| Estilos | **Tailwind inline**; agrupados em `*Styles.ts` quando reusados | `sectionStyles.ts` |
+| Barrel re-export | `index.ts` | `features/ai/components/index.ts` |
+
+**Não usar:** `.types.ts`, `.constants.ts`, `interfaces.ts`, `.module.css`, styled-components.
+
+---
+
+## 1B. Importações
+
+- **Sempre** alias `@/...` para imports cross-folder. **Nunca** `../../`.
+- **Exceção** permitida: arquivos no mesmo diretório (`./Component`).
+- **Ordem** de imports:
+  1. React / Next
+  2. Bibliotecas externas
+  3. `@/` (alfabético)
+  4. Relativos (`./`)
+  5. Tipos (`import type ...`)
+
+---
+
+## 1C. Hooks — Assinatura e Localização
+
+- Hooks de **server state** vivem em `features/[name]/api/`. **Devem** retornar o objeto do React Query (`{ data, isLoading, error, mutate, ... }`).
+- Hooks de **client state** complexo: criar Zustand store em `src/store/`. Para estado simples, `useState` direto.
+- Para **persistir** client state: usar `zustand/middleware persist` ou `@tanstack/react-query-persist-client`. **Não** implementar `localStorage` + debounce manual.
+- Hooks **nunca** retornam JSX.
+- `useEffect` com timer **deve** retornar cleanup. Valores numéricos vão para constantes nomeadas com sufixo `_MS`/`_SECONDS`.
+- Reexportar hooks de feature através de `src/hooks/api/index.ts` para que os consumidores importem de `@/hooks/api`.
+
+---
+
+## 1D. Estado React
+
+| Tipo de estado | Onde guardar |
+| --- | --- |
+| Server state (qualquer dado vindo de API) | React Query, hook em `features/[name]/api/` |
+| UI state global (modais, sidebar, player) | Zustand em `src/store/` |
+| UI state local | `useState` no componente |
+| Sessão (auth, theme, locale) | React Context em `src/contexts/` |
+| State persistido | `zustand persist` ou `react-query-persist-client` — nunca localStorage manual |
+
+---
+
+## 1E. Constants & Magic Values
+
+- Timers (`setTimeout`/`setInterval`): **proibido** literal numérico inline. Use `const X_MS = 50`.
+- Strings repetidas em ≥2 lugares: extrair para const com escopo apropriado (módulo ou feature).
+- Limites de domínio (max upload, max amount): `SCREAMING_SNAKE_CASE` em `model/` da feature.
+- Locale codes, theme codes: union type + const tuple `as const`.
 
 ---
 
@@ -196,23 +244,18 @@ api.interceptors.response.use(
 
 ---
 
-## 4. Camada de Serviços
+## 4. Camada de Serviços (Feature-first)
 
-Centralize chamadas HTTP em `services/`, usando a instância do Axios acima. Cada arquivo cobre um domínio.
+Centralize chamadas HTTP em `features/[name]/api/`, usando a instância do Axios. Cada feature mantém suas próprias services + hooks. Reexporte tudo via `src/hooks/api/index.ts` para consumo externo.
 
 ```ts
-// services/scenes.service.ts
+// features/scenes/api/scenes.service.ts
 import { api } from "@/lib/api/axios";
-import type { Scene, CreateSceneDTO } from "@/types/domain.types";
+import type { Scene, CreateSceneDTO } from "@/features/scenes/model/scene";
 
 export async function getScenes(): Promise<Scene[]> {
   const { data } = await api.get<{ scenes: Scene[] }>("/scenes");
   return data.scenes;
-}
-
-export async function getScene(sceneId: string): Promise<Scene> {
-  const { data } = await api.get<Scene>(`/scenes/${sceneId}`);
-  return data;
 }
 
 export async function createScene(payload: CreateSceneDTO): Promise<Scene> {
@@ -220,17 +263,24 @@ export async function createScene(payload: CreateSceneDTO): Promise<Scene> {
   return data;
 }
 
-export async function updateScene(
-  sceneId: string,
-  payload: Partial<CreateSceneDTO>,
-): Promise<Scene> {
-  const { data } = await api.patch<Scene>(`/scenes/${sceneId}`, payload);
-  return data;
-}
-
 export async function deleteScene(sceneId: string): Promise<void> {
   await api.delete(`/scenes/${sceneId}`);
 }
+```
+
+```ts
+// src/hooks/api/index.ts — barrel central de re-exports
+export {
+  useScenesQuery,
+  useCreateSceneMutation,
+  useDeleteSceneMutation,
+} from "@/features/scenes/api/useScenes";
+export { queryKeys } from "./queryKeys";
+```
+
+```tsx
+// Consumo no componente — sempre importa de @/hooks/api
+import { useScenesQuery } from "@/hooks/api";
 ```
 
 ---
@@ -279,13 +329,17 @@ export const queryKeys = {
 Encapsule cada query em um hook — nunca use `useQuery` diretamente nos componentes.
 
 ```ts
-// hooks/api/useScenes.ts
+// features/scenes/api/useScenes.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "./queryKeys";
-import { getScenes, createScene, deleteScene } from "@/services/scenes.service";
-import type { CreateSceneDTO } from "@/types/domain.types";
+import { queryKeys } from "@/hooks/api/queryKeys";
+import {
+  getScenes,
+  createScene,
+  deleteScene,
+} from "@/features/scenes/api/scenes.service";
+import type { CreateSceneDTO } from "@/features/scenes/model/scene";
 
-export function useScenes(userId: string) {
+export function useScenesQuery(userId: string) {
   return useQuery({
     queryKey: queryKeys.scenes.list(userId),
     queryFn: getScenes,
@@ -293,20 +347,10 @@ export function useScenes(userId: string) {
   });
 }
 
-export function useCreateScene() {
+export function useCreateSceneMutation() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateSceneDTO) => createScene(payload),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: queryKeys.scenes.all });
-    },
-  });
-}
-
-export function useDeleteScene() {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteScene(id),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: queryKeys.scenes.all });
     },
@@ -317,7 +361,7 @@ export function useDeleteScene() {
 ```tsx
 // Consumo no componente
 "use client";
-import { useScenes, useDeleteScene } from "@/hooks/api/useScenes";
+import { useScenes, useDeleteScene } from "@/hooks/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function SceneList() {
@@ -901,6 +945,45 @@ NEXT_PUBLIC_USER_ADMIN=uuid-do-admin
 - `NEXT_PUBLIC_` → acessível no browser (nunca coloque segredos)
 - Sem prefixo → só acessível em Server Components e Route Handlers
 - Supabase service role key **nunca** deve ter prefixo `NEXT_PUBLIC_`
+- **Único** lugar permitido para ler `process.env` é `src/lib/env.ts` (validado com Zod). Todos os demais importam `{ env }` daí:
+
+```ts
+// src/lib/env.ts — validação centralizada
+import { z } from "zod";
+
+const serverSchema = z.object({
+  NEXT_SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  NEXT_ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  MERCADO_PAGO_ACCESS_TOKEN: z.string().optional(),
+});
+
+const clientSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+});
+
+const isServer = typeof window === "undefined";
+
+const clientParsed = clientSchema.parse({
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+});
+const serverParsed = isServer
+  ? serverSchema.parse({
+      NEXT_SUPABASE_SERVICE_ROLE_KEY: process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY,
+      NEXT_ANTHROPIC_API_KEY: process.env.NEXT_ANTHROPIC_API_KEY,
+      MERCADO_PAGO_ACCESS_TOKEN: process.env.MERCADO_PAGO_ACCESS_TOKEN,
+    })
+  : {};
+
+export const env = { ...clientParsed, ...serverParsed };
+```
+
+```ts
+// Uso em qualquer outro arquivo
+import { env } from "@/lib/env";
+const apiKey = env.NEXT_ANTHROPIC_API_KEY;
+```
 
 ---
 
@@ -936,29 +1019,39 @@ NEXT_PUBLIC_USER_ADMIN=uuid-do-admin
 
 Antes de criar um novo arquivo, responda:
 
-- [ ] É um dado de servidor? → React Query + hook customizado em `hooks/api/`
-- [ ] É estado de UI global/local? → Zustand store em `store/`
-- [ ] É uma chamada HTTP? → `services/` + `lib/api/axios.ts`
+- [ ] É um dado de servidor? → React Query + hook em `features/[name]/api/`, reexportado de `src/hooks/api/index.ts`
+- [ ] É estado de UI global/local? → Zustand store em `src/store/`; estado persistido com `zustand/middleware persist`
+- [ ] É uma chamada HTTP? → service function em `features/[name]/api/` usando `lib/api/axios.ts`
 - [ ] Precisa de autenticação? → `useAuth()` do AuthContext
 - [ ] É um texto da UI? → `useTranslations()` do I18nContext
-- [ ] É validação de entrada no servidor? → Zod em `lib/validators/`
+- [ ] É validação de entrada no servidor? → Zod em `lib/validators/` (compartilhado) ou `features/[name]/model/` (específico)
 - [ ] Precisa de interatividade? → `"use client"` no menor componente possível
-- [ ] É um tipo de contrato de API? → `types/api.types.ts` ou `types/domain.types.ts`
+- [ ] É um tipo de domínio? → `features/[name]/model/`. Utilitário global? → `lib/utils/types.ts`
+- [ ] Precisa de env var? → adicione em `lib/env.ts` e importe `{ env }`
+- [ ] Timer/debounce? → constante nomeada com sufixo `_MS`/`_SECONDS`
 
 ---
 
 ## 16. Anti-Padrões a Evitar
 
-| ❌ Anti-padrão                      | ✅ Alternativa                            |
-| ----------------------------------- | ----------------------------------------- |
-| `useEffect` + `useState` para fetch | `useQuery` do React Query                 |
-| Axios direto no componente          | Service function + hook customizado       |
-| Estado de servidor no Zustand       | React Query como cache de servidor        |
-| `"use client"` em `layout.tsx`      | Mova lógica para um Provider separado     |
-| `any` no TypeScript                 | Tipo explícito ou `unknown` com guard     |
-| `.env` commitado no git             | `.env.local` + `.gitignore`               |
-| Query keys como strings inline      | `queryKeys` object centralizado           |
-| Validação manual em Route Handler   | Schema Zod com `safeParse`                |
-| `supabase` server-side com anon key | `createSupabaseServer()` com service role |
-| Textos hardcoded em PT/EN           | `t("chave")` via `useTranslations()`      |
-| Token JWT em localStorage           | Sessão gerenciada pelo Supabase client    |
+| ❌ Anti-padrão                                       | ✅ Alternativa                                              |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| `useEffect` + `useState` para fetch                  | `useQuery` do React Query                                  |
+| Axios direto no componente                           | Service function + hook customizado                        |
+| Estado de servidor no Zustand                        | React Query como cache de servidor                         |
+| `"use client"` em `layout.tsx`                       | Mova lógica para um Provider separado                      |
+| `any` no TypeScript                                  | Tipo explícito ou `unknown` com guard                      |
+| `.env` commitado no git                              | `.env.local` + `.gitignore`                                |
+| Query keys como strings inline                       | `queryKeys` object centralizado                            |
+| Validação manual em Route Handler                    | Schema Zod com `safeParse`                                 |
+| `supabase` server-side com anon key                  | `createSupabaseServer()` com service role                  |
+| Textos hardcoded em PT/EN                            | `t("chave")` via `useTranslations()`                       |
+| Token JWT em localStorage                            | Sessão gerenciada pelo Supabase client                     |
+| `src/components/X/` re-exportando `features/X/`      | Importar direto de `@/features/...`                        |
+| `process.env.X` espalhado                            | `import { env } from "@/lib/env"`                          |
+| `setTimeout(fn, 300)` literal                        | `const SAVE_DEBOUNCE_MS = 300`                             |
+| `localStorage.setItem` manual em hook                | Zustand `persist` ou `@tanstack/react-query-persist-client`|
+| Hooks de API fora de `features/[name]/api/`          | Mover para a feature; reexportar do barrel                 |
+| Caminho relativo `../../foo`                         | Alias `@/foo`                                              |
+| Tipos de domínio em `src/types/`                     | `features/[name]/model/`                                   |
+| Componente proxy global apenas para reexport         | Implementação real em `components/[topic]/` (≥2 features)  |

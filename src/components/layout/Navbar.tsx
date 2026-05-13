@@ -47,7 +47,7 @@ export function Navbar({ logo, logoHref, logoAriaLabel }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-10 w-full border-b border-border bg-background backdrop-blur" role="banner">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background backdrop-blur" role="banner">
       <div className="flex w-full items-center">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 gap-0">
           <h1 className="text-base font-semibold text-foreground sm:text-xl">

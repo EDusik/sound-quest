@@ -1,6 +1,7 @@
 import { jsonServerError } from "@/lib/api/http-api";
+import { env } from "@/lib/env";
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = env.NODE_ENV === "development";
 
 /** Logs Supabase/Postgres errors in development; appends migration hint when the table is missing. */
 export function librarySupabaseErrorResponse(

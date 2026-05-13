@@ -2,20 +2,8 @@
 
 import type { Label } from "@/lib/utils/types";
 import { LABEL_TEXT_MAX, LABELS_MAX } from "@/lib/utils/sceneSchema";
+import { LABEL_DEFAULT_COLORS } from "@/lib/utils/labelDefaultColors";
 import { useTranslations } from "@/contexts/I18nContext";
-
-/** WCAG AA compliant with white text (contrast ≥ 4.5:1) */
-const DEFAULT_COLORS = [
-  "#f59e0b",
-  "#ea580c",
-  "#dc2626",
-  "#16a34a",
-  "#0d9488",
-  "#0891b2",
-  "#2563eb",
-  "#7c3aed",
-  "#c026d3",
-];
 
 export function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -53,7 +41,7 @@ export function LabelEditor({
       { id: generateId(), text: t, color: newLabelColor },
     ]);
     onNewLabelTextChange("");
-    onNewLabelColorChange(DEFAULT_COLORS[0]);
+    onNewLabelColorChange(LABEL_DEFAULT_COLORS[0]);
   };
 
   const removeLabel = (id: string) => {
@@ -106,7 +94,7 @@ export function LabelEditor({
           {newLabelText.length}/{LABEL_TEXT_MAX}
         </span>
         <div className="flex flex-wrap gap-1.5">
-          {DEFAULT_COLORS.map((color) => (
+          {LABEL_DEFAULT_COLORS.map((color) => (
             <button
               key={color}
               type="button"
@@ -138,4 +126,4 @@ export function LabelEditor({
   );
 }
 
-export { DEFAULT_COLORS as LABEL_DEFAULT_COLORS };
+export { LABEL_DEFAULT_COLORS } from "@/lib/utils/labelDefaultColors";

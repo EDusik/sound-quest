@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { AudioBar } from "@/components/audio/AudioBar";
+import { AudioBar } from "@/features/audioPlayer/components/AudioBar";
 import { GlobalAuthLoading } from "@/components/auth/GlobalAuthLoading";
 import { ThemeFavicon } from "@/components/theme/ThemeFavicon";
 import { queryClient } from "@/lib/utils/queryClient";

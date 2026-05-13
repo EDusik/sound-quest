@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useCallback, type FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "@/contexts/I18nContext";
@@ -11,20 +12,33 @@ import {
   useReorderScenesMutation,
 } from "@/hooks/api";
 import type { Scene, Label } from "@/lib/utils/types";
+import { LABEL_DEFAULT_COLORS } from "@/lib/utils/labelDefaultColors";
 import { SoundQuestLogo } from "@/components/branding/SoundQuestLogo";
 import { Navbar } from "@/components/layout/Navbar";
 import { SearchBar } from "@/components/search/SearchBar";
-import { ScenesBlock } from "@/components/scene/ScenesBlock";
-import { DashboardSkeleton } from "@/components/scene/DashboardSkeleton";
-import { SceneFormModal } from "@/components/scene/SceneFormModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ScenesBlock } from "@/features/scenes/components/ScenesBlock";
+import { DashboardSkeleton } from "@/features/scenes/components/DashboardSkeleton";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { IconButton } from "@/components/ui/IconButton";
-import { LABEL_DEFAULT_COLORS } from "@/components/editor/LabelEditor";
+
+const SceneFormModal = dynamic(
+  () =>
+    import("@/features/scenes/components/SceneFormModal").then(
+      (m) => m.SceneFormModal,
+    ),
+  { ssr: false },
+);
+
+const ConfirmModal = dynamic(
+  () =>
+    import("@/shared/ui/ConfirmModal").then((m) => m.ConfirmModal),
+  { ssr: false },
+);
 import { validateSceneForm } from "@/lib/utils/sceneSchema";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { useFocusEntryOnce } from "@/hooks/useFocusEntryOnce";
+import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -65,6 +79,7 @@ export default function DashboardPage() {
   >({});
   const showFocusEntry = useFocusEntryOnce("dashboard");
   const t = useTranslations();
+  const coarsePointer = useCoarsePointer();
 
   const error = queryError
     ? getErrorMessage(queryError, t("errors.loadScenes"))
@@ -199,6 +214,27 @@ export default function DashboardPage() {
           return matchTitle || matchDesc || matchLabels;
         });
 
+  const commitSceneReorder = useCallback(
+    async (movedSceneId: string, toIndexFull: number) => {
+      if (!user?.uid) return;
+      const fromIndex = scenes.findIndex((r) => r.id === movedSceneId);
+      if (fromIndex === -1 || toIndexFull === -1 || fromIndex === toIndexFull) {
+        return;
+      }
+      const reordered = [...scenes];
+      const [removed] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndexFull, 0, removed);
+      const orderedIds = reordered.map((r) => r.id);
+      setReorderError(null);
+      try {
+        await reorderScenesMutation.mutateAsync(orderedIds);
+      } catch (err) {
+        setReorderError(getErrorMessage(err, t("errors.reorderScenes")));
+      }
+    },
+    [user?.uid, scenes, reorderScenesMutation, t, setReorderError],
+  );
+
   const handleDrop = async (e: React.DragEvent, toIndexFull: number) => {
     e.preventDefault();
     const sceneId = e.dataTransfer.getData("sceneId");
@@ -208,18 +244,23 @@ export default function DashboardPage() {
       setDraggedId(null);
       return;
     }
-    const reordered = [...scenes];
-    const [removed] = reordered.splice(fromIndex, 1);
-    reordered.splice(toIndexFull, 0, removed);
-    const orderedIds = reordered.map((r) => r.id);
     setDraggedId(null);
-    setReorderError(null);
-    try {
-      await reorderScenesMutation.mutateAsync(orderedIds);
-    } catch (err) {
-      setReorderError(getErrorMessage(err, t("errors.reorderScenes")));
-    }
+    await commitSceneReorder(sceneId, toIndexFull);
   };
+
+  const handleCoarseSceneReorderStep = useCallback(
+    async (sceneId: string, delta: -1 | 1) => {
+      if (!user?.uid) return;
+      const i = filteredScenes.findIndex((s) => s.id === sceneId);
+      if (i === -1) return;
+      const ni = i + delta;
+      if (ni < 0 || ni >= filteredScenes.length) return;
+      const targetId = filteredScenes[ni].id;
+      const toIndexFull = scenes.findIndex((r) => r.id === targetId);
+      await commitSceneReorder(sceneId, toIndexFull);
+    },
+    [user?.uid, filteredScenes, scenes, commitSceneReorder],
+  );
 
   return (
     <div className="bg-background">
@@ -380,6 +421,8 @@ export default function DashboardPage() {
               sceneIds={scenes.map((s) => s.id)}
               draggedId={draggedId}
               reordering={reorderScenesMutation.isPending}
+              coarseReorder={coarsePointer}
+              onCoarseReorderStep={handleCoarseSceneReorderStep}
               onEdit={openEditModal}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}

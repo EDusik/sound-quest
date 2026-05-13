@@ -32,6 +32,8 @@
   "common.removeLabel": "Remove {text}",
   "common.colorLabel": "Color {color}",
   "common.dragToReorder": "Drag to reorder",
+  "common.moveItemUp": "Move up",
+  "common.moveItemDown": "Move down",
 
   "brand.name": "SoundQuest",
 
@@ -308,6 +310,7 @@
   "dashboard.saving": "Saving…",
   "dashboard.deleting": "Deleting…",
   "dashboard.deleteSceneConfirm": "Are you sure you want to delete this scene \"{title}\"? All audio will be removed and this action cannot be undone.",
+  "dashboard.openSceneAria": "Open scene: {title}",
   "dashboard.editSceneAria": "Edit scene",
   "dashboard.deleteSceneAria": "Delete scene",
 

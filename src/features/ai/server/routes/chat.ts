@@ -18,11 +18,12 @@ import {
   resolvePixabayPageAndPreview,
 } from "@/lib/audio/providers/pixabay-chat-sounds";
 import { postAiChatBodySchema } from "@/lib/validators/api";
+import { env } from "@/lib/env";
 
 const ENABLE_PIXABAY_SOUND_ENRICHMENT = false;
 
 const anthropic = new Anthropic({
-  apiKey: process.env.NEXT_ANTHROPIC_API_KEY,
+  apiKey: env.NEXT_ANTHROPIC_API_KEY,
 });
 
 const SYSTEM_PROMPT = `You are a sound effects and music search assistant for a tabletop RPG application called SoundQuest.
@@ -140,9 +141,9 @@ async function enrichSuggestions(
       let working: Enriched = { ...s };
 
       if (ENABLE_PIXABAY_SOUND_ENRICHMENT) {
-        const pixabayApiKey = process.env.NEXT_PIXABAY_API_KEY;
+        const pixabayApiKey = env.NEXT_PIXABAY_API_KEY;
         const pixabaySoundsApiBase =
-          process.env.NEXT_PIXABAY_SOUNDS_API_URL?.replace(/\/?$/, "/") ??
+          env.NEXT_PIXABAY_SOUNDS_API_URL?.replace(/\/?$/, "/") ??
           "https://pixabay.com/api/sounds/";
         if (pixabayApiKey) {
           try {
@@ -219,9 +220,15 @@ export async function POST(request: NextRequest) {
       try {
         const sdkStream = anthropic.messages.stream(
           {
-            model: process.env.NEXT_ANTHROPIC_MODEL ?? "claude-opus-4-5",
+            model: env.NEXT_ANTHROPIC_MODEL ?? "claude-opus-4-7",
             max_tokens: 4096,
-            system: SYSTEM_PROMPT,
+            system: [
+              {
+                type: "text",
+                text: SYSTEM_PROMPT,
+                cache_control: { type: "ephemeral" },
+              },
+            ],
             messages: parsed.data.messages
               .filter((m) => m.role === "user" || m.role === "assistant")
               .map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),

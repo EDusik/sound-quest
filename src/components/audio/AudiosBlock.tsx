@@ -3,6 +3,7 @@
 import type { AudioItem } from "@/lib/utils/types";
 import { AudioRow } from "@/components/audio/AudioRow";
 import { DragHandle } from "@/components/ui/DragHandle";
+import { ReorderStepButtons } from "@/shared/ui/ReorderStepButtons";
 import { useTranslations } from "@/contexts/I18nContext";
 
 interface AudiosBlockProps {
@@ -12,6 +13,10 @@ interface AudiosBlockProps {
   sceneId: string;
   draggedId: string | null;
   reordering: boolean;
+  /** When true, show up/down controls for touch reorder (coarse pointer). */
+  coarseReorder?: boolean;
+  /** Move one step among active audios (-1 up, +1 down). */
+  onCoarseReorderStep?: (audioId: string, delta: -1 | 1) => void | Promise<void>;
   /** When true, show emptySearchMessage when list is empty; otherwise emptyMessage. */
   hasAnyAudios: boolean;
   emptyMessage: string;
@@ -35,6 +40,8 @@ export function AudiosBlock({
   sceneId,
   draggedId,
   reordering,
+  coarseReorder = false,
+  onCoarseReorderStep,
   hasAnyAudios,
   emptyMessage,
   emptySearchMessage,
@@ -60,7 +67,7 @@ export function AudiosBlock({
             {hasAnyAudios ? emptySearchMessage : emptyMessage}
           </li>
         )}
-        {activeAudios.map((audio) => (
+        {activeAudios.map((audio, activeIndex) => (
           <li
             key={audio.id}
             onDragOver={onDragOver}
@@ -73,13 +80,28 @@ export function AudiosBlock({
             onDragEnd={onDragEnd}
             className={`flex items-stretch rounded-lg transition-opacity ${
               draggedId === audio.id ? "opacity-50" : ""
-            } ${reordering ? "pointer-events-none" : ""}`}
+            }`}
           >
-            <DragHandle
-              onDragStart={(e) => onDragStart(e, audio.id)}
-              onDragEnd={onDragEnd}
-              className="rounded-l-lg bg-card/60"
-            />
+            <div className="flex shrink-0 items-stretch">
+              {coarseReorder && onCoarseReorderStep && (
+                <ReorderStepButtons
+                  className="rounded-l-lg"
+                  disabled={reordering}
+                  moveUpDisabled={activeIndex <= 0}
+                  moveDownDisabled={activeIndex >= activeAudios.length - 1}
+                  onMoveUp={() => void onCoarseReorderStep(audio.id, -1)}
+                  onMoveDown={() => void onCoarseReorderStep(audio.id, 1)}
+                  moveUpLabel={t("common.moveItemUp")}
+                  moveDownLabel={t("common.moveItemDown")}
+                />
+              )}
+              <DragHandle
+                onDragStart={(e) => onDragStart(e, audio.id)}
+                onDragEnd={onDragEnd}
+                dragDisabled={reordering}
+                className={`bg-card/60 ${coarseReorder ? "rounded-l-none" : "rounded-l-lg"}`}
+              />
+            </div>
             <div className="min-w-0 flex-1">
               <AudioRow
                 audio={audio}
